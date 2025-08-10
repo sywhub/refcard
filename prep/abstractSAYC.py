@@ -18,14 +18,19 @@ class AbstractSAYC:
         with open(fname, 'r') as file:
             fstr = file.read()
         fstr = fstr.replace('\n', '')
-        fstr = fstr[fstr.find('{'):-1]
-        self.data = json.loads(fstr)
-        self.rules = []
+        vars = fstr.split('};')
+        self.data = []
+        for v in vars:
+            if (v.find('{') < 0):
+                continue
+            v = v[v.find('{'):]
+            v += '}'
+            self.data.append(json.loads(v))
         self.bidQue = []
         return
 
-    def AbsObj(self, seq, name='AbstractSAYC'):
-        rules = [x for x in self.data['BidRules'] if x['BidSeq'] == seq]
+    def AbsObj(self, seq, d, newRules, name='AbstractSAYC'):
+        rules = [x for x in d['BidRules'] if x['BidSeq'] == seq]
         if (len(rules) == 0):
             return
 
@@ -50,7 +55,7 @@ class AbstractSAYC:
             if isnew:
                 seqObj['Choices'].append(obj)
             self.addToQueue(x['Bid'], seq)
-        self.rules.append(seqObj)
+        newRules.append(seqObj)
     
     def addToQueue(self, bid, seq):
         toAdd = [*seq, bid]
@@ -61,22 +66,30 @@ class AbstractSAYC:
         if (toAdd not in self.bidQue):
             self.bidQue.append(toAdd)
 
-    def loopQ(self):
-        self.seedQue()
+    def loopVars(self):
+        for v in self.data:
+            r = self.loopQ(v)
+            self.output(v['System Name'], r)
+
+    def loopQ(self, d):
+        r = self.seedQue(d)
         while (len(self.bidQue) > 0):
             seq = self.bidQue.pop(0)
             qName = self.makeName(seq)
-            self.AbsObj(seq, qName)
+            self.AbsObj(seq, d, r, qName)
+        return r
 
-    def seedQue(self):
+    def seedQue(self, d):
         self.rootSet = []
-        for x in self.data['BidRules']:
-            if x['BidSeq'] not in self.rootSet and self.noPrecedeccsor(x['BidSeq']):
+        for x in d['BidRules']:
+            if x['BidSeq'] not in self.rootSet and self.noPrecedeccsor(x['BidSeq'], d):
                 self.rootSet.append(x['BidSeq'])
+        r = []
         for x in self.rootSet:
-            self.AbsObj(x, self.data['System Name'])
+            self.AbsObj(x, d, r, d['System Name'])
+        return r
 
-    def noPrecedeccsor(self, seq):
+    def noPrecedeccsor(self, seq, d):
         if (len(seq) == 0):
             return True
         for x in self.bidQue:
@@ -84,7 +97,7 @@ class AbstractSAYC:
                 return False
         t = seq[:-1]
         while (len(t) >= 0):
-            for y in self.data['BidRules']:
+            for y in d['BidRules']:
                 if y['BidSeq'] == t:
                     return False
             if (len(t) == 0):
@@ -101,9 +114,14 @@ class AbstractSAYC:
                 str += i
         return str
 
-    def output(self):
+    def output(self, vname, rules):
+        for c in [' ', '-', '/', '.']:
+            vname = vname.replace(c, '')
+        print(f"var {vname} = ", end='')
         p = pprint.PrettyPrinter(indent=2,width=132)
-        p.pprint(self.rules)
+        s = p.pformat(rules)
+        s += ';'
+        print(s)
 
 if __name__ == "__main__":
     # Example usage
@@ -112,6 +130,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     sayc = AbstractSAYC(args.file)
-    sayc.loopQ()
-    sayc.output()
+    sayc.loopVars()
 
