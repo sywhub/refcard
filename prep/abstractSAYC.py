@@ -1,4 +1,4 @@
-#!/usr/env/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 abstractSAYC.py
@@ -9,7 +9,6 @@ import argparse
 import os
 import json
 import pprint
-import ast
 
 class AbstractSAYC:
     def __init__(self, fname='baseSAYC.json'):
@@ -25,22 +24,7 @@ class AbstractSAYC:
         self.bidQue = []
         return
 
-    def init(self):
-        self.AbsObj(name='Open', seq=[])
-        #self.initQ()
-
-    def initQ(self):
-        self.bidQue = []
-        tQ = []
-        for x in self.rules[0]['Choices']:
-            if (x['Bid'] not in self.bidQue):
-                tQ.append(x['Bid'])
-        for x in tQ:
-            self.bidQue.append([x ,'-'])
-        for x in tQ:
-            self.bidQue.append([x])
-
-    def AbsObj(self, name='AbstractSAYC', seq=[]):
+    def AbsObj(self, seq, name='AbstractSAYC'):
         rules = [x for x in self.data['BidRules'] if x['BidSeq'] == seq]
         if (len(rules) == 0):
             return
@@ -69,20 +53,44 @@ class AbstractSAYC:
         self.rules.append(seqObj)
     
     def addToQueue(self, bid, seq):
-        toAdd = list(seq)
-        toAdd.append(bid)
-        toAdd2 = list(toAdd)
-        toAdd2.append('-')
+        toAdd = [*seq, bid]
         if (toAdd not in self.bidQue):
             self.bidQue.append(toAdd)
-        if (toAdd2 not in self.bidQue):
-            self.bidQue.append(toAdd2)
+
+        toAdd = [*toAdd, '-']
+        if (toAdd not in self.bidQue):
+            self.bidQue.append(toAdd)
 
     def loopQ(self):
+        self.seedQue()
         while (len(self.bidQue) > 0):
             seq = self.bidQue.pop(0)
             qName = self.makeName(seq)
-            self.AbsObj(qName, seq)
+            self.AbsObj(seq, qName)
+
+    def seedQue(self):
+        self.rootSet = []
+        for x in self.data['BidRules']:
+            if x['BidSeq'] not in self.rootSet and self.noPrecedeccsor(x['BidSeq']):
+                self.rootSet.append(x['BidSeq'])
+        for x in self.rootSet:
+            self.AbsObj(x, self.data['System Name'])
+
+    def noPrecedeccsor(self, seq):
+        if (len(seq) == 0):
+            return True
+        for x in self.bidQue:
+            if (x == seq):
+                return False
+        t = seq[:-1]
+        while (len(t) >= 0):
+            for y in self.data['BidRules']:
+                if y['BidSeq'] == t:
+                    return False
+            if (len(t) == 0):
+                break
+            t = t[:-1]
+        return True
 
     def makeName(self, seq):
         str = ''
@@ -104,7 +112,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     sayc = AbstractSAYC(args.file)
-    sayc.init()
     sayc.loopQ()
     sayc.output()
 
