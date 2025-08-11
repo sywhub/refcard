@@ -10,7 +10,7 @@ import os
 import json
 import pprint
 
-class AbstractSAYC:
+class ReformatRules:
     def __init__(self, fname='baseSAYC.json'):
         if (os.path.exists(fname) == False):
             raise FileNotFoundError(f"File {fname} does not exist.")
@@ -29,31 +29,28 @@ class AbstractSAYC:
         self.bidQue = []
         return
 
-    def AbsObj(self, seq, d, newRules, name='AbstractSAYC'):
+    def AbsObj(self, seq, d, newRules, name):
         rules = [x for x in d['BidRules'] if x['BidSeq'] == seq]
         if (len(rules) == 0):
             return
 
-        seqObj = {'Ctx': {'Name': name, 'Seq': seq}, 'Choices': []}
+        seqObj = {'Ctx': {'Name': name, 'Seq': seq}, 'Bids': []}
         for x in rules:
-            obj = [y for y in seqObj['Choices'] if x['Bid'] == y['Bid']]
+            obj = [y for y in seqObj['Bids'] if x['Bid'] in y.keys()]
             isnew = (len(obj) == 0)
             if isnew:
-                obj = {'Bid': x['Bid']}
+                obj = {x['Bid']: []}
             else:
                 obj = obj[0]
             if 'Criteria' in x:
-                if ('Criteria' in obj):
-                    obj['Criteria'].append(x['Criteria'])
-                else:
-                    obj['Criteria'] = [x['Criteria']]
+                obj[x['Bid']].append({'Criteria': x['Criteria']})
             else:
-                obj['Criteria'] = {}
+                obj[x['Bid']].append({'Criteria': []})
             for k in ['Convention', 'GF', 'Forcing']:
                 if k in x:
-                    obj[k] = x[k]
+                    obj[x['Bid']][len(obj[x['Bid']])-1][k] = x[k]
             if isnew:
-                seqObj['Choices'].append(obj)
+                seqObj['Bids'].append(obj)
             self.addToQueue(x['Bid'], seq)
         newRules.append(seqObj)
     
@@ -129,6 +126,6 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--file', type=str, default='baseSAYC.json')
     args = parser.parse_args()
 
-    sayc = AbstractSAYC(args.file)
-    sayc.loopVars()
+    newrule = ReformatRules(args.file)
+    newrule.loopVars()
 

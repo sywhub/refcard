@@ -1,0 +1,39 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="Sin-Yaw Wang">
+<meta name="description" content="Bridge Bidding Quick Ref v3">
+<meta name="title" content="Bridge Bidding Quick Ref v3">
+<script>"use strict";</script>
+<script src="carddeck.js"></script>
+<script src="board.js"></script>
+<script src="tools.js"></script>
+<script src="enzh.json"></script>
+<script src="deploydate.js"></script>
+<script src="base.json"></script>
+<script>
+document.title=document.querySelector('meta[name="title"]').content
+</script>
+<link rel="stylesheet" href="styles.css" type="text/css">
+</head>
+<body>
+<div id='HeadMenu' style="padding-bottom: 1vh; border-bottom: 1px solid rgb(202, 199, 199);"></div>
+<div class="ListDisplay" id="ListDisplay" style="clear: both;"></div>
+<script>
+[['About', 'About'], ['Settings', 'Config3'], ['Quick Reference', 'QRef3']].forEach(x => {
+    let divE = document.getElementById('HeadMenu');
+    let e = document.createElement('input');
+    e.setAttribute('type', 'button');
+    e.setAttribute('value', trEnZh(x[0]));
+    e.setAttribute('onclick', x[1]+'("ListDisplay")');
+    e.setAttribute('id', 'Bid'+x[0].replace(' ',''));
+    e.setAttribute('class', 'BidHeadMenu');
+    e.style['font-family'] = 'inherit';
+    e.style['font-size'] = 'inherit';
+    divE.appendChild(e);
+});
+</script>
+</body>
+</html>
