@@ -1,9 +1,5 @@
 /*
- * Handle persisted configuration, aka: cookies
- * LocalStorage is now the better solution than cookies.  So I heard.
- * Sin-Yaw Wang, 2025
- * 
- * For now, there's really only two values: language and 2-over-1 adoption.
+ * Save states with localStorage
  */
 class Settings {
     Heading = 'ConfigHeading';
@@ -38,49 +34,11 @@ class Settings {
     makeBidRules() {
         // JS copying is shallow
         var working = {};
-        working['BidRules'] = [];
-        this.copyKeyValues(working, this[this.bases[0]]);
-        working['BidRules'] = this[this.bases[0]].BidRules;
-        for (const rs of this.bases.slice(1)) {
-            if (this[rs] != undefined && this[rs].BidRules != undefined)
-                working['BidRules'] = this.mergeRules(working.BidRules, this[rs].BidRules, this.BaseSAYC.NoMergeGIdx);
+        working['BidRules'] = JSON.parse(JSON.stringify(BidComponents[0]))
+        for (let i = 1; i < BidComponents.length; i++) {
+            BidComponents[i][0].Name;
+            working['BidRules'] = this.mergeRules(working['BidRules'], BidComponents[i]);
         }
-
-        // Merging their key/values execept for the bidding rules
-        // Merge 2/1 into SAYC
-        var mergeObj = this.Thurston;
-        if (config.AdoptGIB) 
-            mergeObj = this.GIB21;
-        if (mergeObj != undefined && (config.AdoptThurston || config.AdoptGIB)) {
-            working['BidRules'] = this.mergeRules(working.BidRules, mergeObj.BidRules, this.BaseSAYC.NoMergeGIdx);
-        }
-        if (config.AdoptLebensohl && this.Lebensohl != undefined) {
-            working['BidRules'] = this.mergeRules(working.BidRules, this.Lebensohl.BidRules, this.BaseSAYC.NoMergeGIdx);
-            let remove = [["1NT",'2D','2H','-'], ["1NT",'2D','X','-']];
-            working['BidRules'] =
-                working['BidRules'].filter(r => !compSequence(r.BidSeq, remove[0]) && !compSequence(r.BidSeq, remove[1]));
-        }
-        for (const rs of this.additions.slice(2)) {
-            let flagName = 'Adopt' + rs;
-            if (config[flagName] && this[rs] && this[rs].BidRules != undefined)
-                working['BidRules'] = this.mergeRules(working.BidRules, this[rs].BidRules, this.BaseSAYC.NoMergeGIdx);
-        }
-        // Override the date with whichever later
-        working.Generated = this.latestTouch;
-        working['NumRules'] = working['BidRules'].length;
-        this.WorkingSet = working; 
-
-        var cSet = new Set;
-        const preLoadConventions = ['Better Minor', '5-Card Major', 'Strong 2C', 'Strong NT',
-            'Jacoby Transfer', '2S Minor Transfer', 'Opener Reverse', 'High Reverse', 'HSGT'];
-        preLoadConventions.forEach(x => cSet.add(x));
-        this.WorkingSet.BidRules.forEach(r => {
-            if (r.Convention)
-                cSet.add(r.Convention);
-        });
-        this.WorkingSet.Conventions = [...cSet].sort();
-        // Preserve backward compatibility
-        globalThis.Biddings = this.WorkingSet;
     }
 
     // Flip 0314 and 1430
@@ -113,13 +71,6 @@ class Settings {
         return duplist;
     }
 
-    copyKeyValues(dest, src) {
-        for (const [k, v] of Object.entries(src)) {
-            if (k != 'BidRules')
-                dest[k] = v;
-        }
-    }
-
     dedup(r, duplist, nomerge) {
         if (r.GIdx != undefined && Number(r.GIdx) == Number(nomerge))
             return true;
@@ -134,7 +85,7 @@ class Settings {
     YesNo(f) { return f ? 'Yes' : 'No';}
     showConfig() {
         clearContents(this.disp);
-        this.makeControl(this.disp);
+        this.makeControl();
         var gridDiv = document.createElement('div');
         gridDiv.setAttribute('class', 'ConfigDisplay');
         this.disp.appendChild(gridDiv);
@@ -145,11 +96,10 @@ class Settings {
             'Version': this.Version,
             'Language Using': this.Language,
         };
-        // display non-date entries
-        // then conventions
-        // then all the dates
+        
+        var e;
         for (const [k,v] of Object.entries(configData)) {
-            let e = gridElement(gridDiv, trEnZh(k), 1, row);
+            e = gridElement(gridDiv, trEnZh(k), 1, row);
             e.setAttribute('class', this.Heading);
             e = gridElement(gridDiv, trEnZh(v), 2, row++);
             e.setAttribute('class', this.Data);
@@ -188,11 +138,11 @@ class Settings {
         this.LastLaunch = defaultSet.LastLaunch;
     }
 
-    makeControl(d) {
+    makeControl() {
         var subd = document.createElement('div');
         subd.style['margin-top'] = '20px';
         subd.style['float'] = 'left';
-        d.appendChild(subd);
+        this.disp.appendChild(subd);
 
         var btn;
         btn = document.createElement('input');
@@ -365,20 +315,19 @@ class Settings {
     }
 }
 
+// OnClick handler for the config button
 function Config3(divname) {
-    var config = new Settings();
-    config.init(document.getElementById(divname));
-    config.getDefaults();
-    config.showConfig();
+    Config.init(document.getElementById(divname));
+    Config.showConfig();
 }
 
 function dumpenzh(btn) {
-    clearContents(config.disp);
+    clearContents(Config.disp);
     var divElem = document.createElement('div');
     divElem.style['display'] = 'grid';
     divElem.style['grid-template-columns'] = '25em 25em';
     divElem.setAttribute('id', 'EnZh')
-    config.disp.appendChild(divElem);
+    Config.disp.appendChild(divElem);
     var btn = document.createElement('input');
     btn.setAttribute('type', 'button');
     btn.setAttribute('value', 'Save...');

@@ -15,16 +15,25 @@ var BidComponents = [];
 <script src="tools.js"></script>
 <script src="data/enzh.json"></script>
 <script src="data/deploydate.data"></script>
+<script src="about.js"></script>
 <script src="config.js"></script>
+<script>
+var Config = new Settings();
+Config.getDefaults();
+</script>
 <!-- Bid Componengts must begein with BaseSAYC -->
 <script src="data/BaseSAYC.json"></script>
 <script src="data/D0P1.json"></script>
-<script src="data/LeapingMichaels.json"></script>
-<script src="data/Ogust.json"></script>
-<script src="data/PreemptiveOvercall.json"></script>
 <script src="data/R0P1.json"></script>
-<script src="data/ResponsiveDBL.json"></script>
+<script src="data/PThurston21.json"></script>
+<script src="data/GIB21.json"></script>
 <script src="data/TakeOutRebid.json"></script>
+<script src="data/PreemptiveOvercall.json"></script>
+<script src="data/NewMinorForcing.json"></script>
+<script src="data/Lebensohl.json"></script>
+<script src="data/Ogust.json"></script>
+<script src="data/ResponsiveDBL.json"></script>
+<script src="data/LeapingMichaels.json"></script>
 <script>
 document.title=document.querySelector('meta[name="title"]').content
 </script>
@@ -46,6 +55,7 @@ document.title=document.querySelector('meta[name="title"]').content
     e.style['font-size'] = 'inherit';
     divE.appendChild(e);
 });
+showFooter(Card.suitchars(), Config.DisplayDate);
 </script>
 </body>
 </html>

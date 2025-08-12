@@ -23,7 +23,7 @@ function showFooter(suits, footerDate) {
         document.body.appendChild(d);
     }
     var author = trEnZh(document.querySelector('meta[name="author"]').content);
-    var datestring = footerDate.toLocaleDateString(config.Language, {month: "short", year: "numeric", day: "numeric"});
+    var datestring = footerDate.toLocaleDateString(Config.Language, {month: "short", year: "numeric", day: "numeric"});
     author += ", " + datestring;
     var htmlString = suits + '<span style="font-style: italic; font-size: small;">&nbsp;' + author + "</span>";
     d.innerHTML = htmlString;
@@ -110,14 +110,10 @@ function timeString() {
 }
 
 function trEnZh(s) {
-	return s;
-
-	/*
-    if (config.Language == 'zh-TW' && s in enzh)
+    if (Config.Language == 'zh-TW' && s in enzh)
         return enzh[s];
 
     if (!(s in enzh))
         enzh[s] = s;
     return s;
-	*/
 }
