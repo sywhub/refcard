@@ -12,6 +12,7 @@ import pprint
 
 class ReformatRules:
     def __init__(self, fname='baseSAYC.json'):
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
         if (os.path.exists(fname) == False):
             raise FileNotFoundError(f"File {fname} does not exist.")
         
@@ -29,28 +30,27 @@ class ReformatRules:
         self.bidQue = []
         return
 
-    def AbsObj(self, seq, d, newRules, name):
+    def AbsObj(self, seq, d, newRules, name=''):
         rules = [x for x in d['BidRules'] if x['BidSeq'] == seq]
         if (len(rules) == 0):
             return
 
-        seqObj = {'Ctx': {'Name': name, 'Seq': seq}, 'Bids': []}
+        seqObj = {'Ctx': {'Seq': seq}, 'Bids': []}
+        if (name != ''):
+            seqObj['Name'] = name
         for x in rules:
-            obj = [y for y in seqObj['Bids'] if x['Bid'] in y.keys()]
-            isnew = (len(obj) == 0)
-            if isnew:
-                obj = {x['Bid']: []}
+            key = x['Bid']
+            y = [x for x in seqObj['Bids'] if x.get('Bid') == key]
+            if (len(y) <= 0):
+                seqObj['Bids'].append({'Bid': key, 'Criteria': []})
+                y = seqObj['Bids'][-1]
             else:
-                obj = obj[0]
+                y = y[0]
             if 'Criteria' in x:
-                obj[x['Bid']].append({'Criteria': x['Criteria']})
-            else:
-                obj[x['Bid']].append({'Criteria': []})
+                y['Criteria'].append(x['Criteria'])
             for k in ['Convention', 'GF', 'Forcing']:
                 if k in x:
-                    obj[x['Bid']][len(obj[x['Bid']])-1][k] = x[k]
-            if isnew:
-                seqObj['Bids'].append(obj)
+                    y[k] = x[k]
             self.addToQueue(x['Bid'], seq)
         newRules.append(seqObj)
     
@@ -72,8 +72,7 @@ class ReformatRules:
         r = self.seedQue(d)
         while (len(self.bidQue) > 0):
             seq = self.bidQue.pop(0)
-            qName = self.makeName(seq)
-            self.AbsObj(seq, d, r, qName)
+            self.AbsObj(seq, d, r)
         return r
 
     def seedQue(self, d):
@@ -111,21 +110,29 @@ class ReformatRules:
                 str += i
         return str
 
-    def output(self, vname, rules):
+    def output(self, fname, rules):
         for c in [' ', '-', '/', '.']:
-            vname = vname.replace(c, '')
-        print(f"var {vname} = ", end='')
+            fname = fname.replace(c, '')
+        f = open(f'../data/{fname}.json', 'w')
+        print(f"BidComponents.push(", end='', file=f)
         p = pprint.PrettyPrinter(indent=2,width=132)
         s = p.pformat(rules)
-        s += ';'
-        print(s)
+        s = s.replace('True', 'true')
+        s = s.replace('False', 'false')
+        s += ');'
+        print(s, file=f)
 
 if __name__ == "__main__":
     # Example usage
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--file', type=str, default='baseSAYC.json')
+    parser.add_argument('-a', '--all', action='store_true')
     args = parser.parse_args()
+    allFiles = ['baseSAYC.json', 'gib2o1.json', 'lebensohl.json', 'nmf.json', 'supplemental.json', 'thurston.json']
 
-    newrule = ReformatRules(args.file)
-    newrule.loopVars()
+    if not args.all:
+        allFiles = [args.file]
+    for f in allFiles:
+        newrule = ReformatRules(f)
+        newrule.loopVars()
 

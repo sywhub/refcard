@@ -6,16 +6,12 @@
  * For now, there's really only two values: language and 2-over-1 adoption.
  */
 class Settings {
-    CommitDate = "Jul 27, 2025";
-    ConfigVersion = "1.0";
     Heading = 'ConfigHeading';
     Data = 'ConfigData';
     langDict = {'zh-TW': 'Switch to English', 'en-US': '改用中文'};
     UIClass = 'ConfigUI';
 
     constructor(){
-        this.bases = ['BaseSAYC', 'Open1XRebid', 'PreEmptOver', 'R0P1', 'D0P1', 'NMF'];
-        this.additions = ['Thurston', 'GIB21', 'Lebensohl', 'ResponsiveDBL', 'LeapMichaels', 'Ogust'];
         this.Version = LatestGitTag;
         this.DisplayDate = DeployDate;
         globalThis.LatestGitTag = undefined;
@@ -28,23 +24,6 @@ class Settings {
 
     getConfig() {
         this.getDefaults();
-        // privatize these globals
-        var varList = this.bases.concat(this.additions);
-        varList.forEach(x=> {
-            this[x] = globalThis[x];
-            globalThis[x] = undefined;
-            if (this[x] != undefined && this[x]['Generated'] != undefined) {
-                let oDate = new Date(this[x].Generated)
-                this[x]['Generated'] = oDate;
-                if (this.latestTouch == undefined || oDate > this.latestTouch)
-                    this.latestTouch = oDate;
-            }
-        });
-        let oDate = new Date(this.CommitDate);
-        this.CommitDate = oDate;
-        if (oDate > this.latestTouch)
-                this.latestTouch = oDate;
-
         this.makeBidRules();
     }
 
@@ -162,11 +141,9 @@ class Settings {
 
         var row = 1;
         var configData ={
-            'System': Biddings['System Name'],
-            'RKCB': this.RKCBFlag ? '0314': '1430',
+            // 'System': Biddings['System Name'],
             'Version': this.Version,
             'Language Using': this.Language,
-            'Bidding Rules': Biddings['BidRules'].length,
         };
         // display non-date entries
         // then conventions
@@ -177,63 +154,6 @@ class Settings {
             e = gridElement(gridDiv, trEnZh(v), 2, row++);
             e.setAttribute('class', this.Data);
         }
-
-        for (const k of this.additions) {
-            let e = gridElement(gridDiv, trEnZh(this[k]['System Name'] + ' Adopted'), 1, row);
-            e.setAttribute('class', this.Heading);
-            e = gridElement(gridDiv, this.YesNo(this['Adopt'+k]), 2, row++);
-            e.setAttribute('class', this.Data);
-
-        }
-        var e = gridElement(gridDiv, trEnZh('All Conventions'), 1, row);
-        e.setAttribute('class', this.Heading);
-        var i = 1;
-        var lineStr = '';
-        for (const c of Biddings.Conventions) {
-            const perLine = 2;
-            if (lineStr.length > 1)
-                lineStr += ', '
-            let url = this.ConventionURL(c);
-            let addC = trEnZh(c);
-            if (url != null)
-                addC = '<a href=' + url + '>' + addC + '</a>';
-            lineStr += addC;
-            if (i % perLine == 0) {
-                e = gridElement(gridDiv, lineStr, 2, row++);
-                e.setAttribute('class', this.Data);
-                lineStr = '';
-            }
-            ++i;
-        }
-
-        var lastDate = new Date(0); // epoch
-        for (const k of this.bases) {
-            let dObj = this[k]['Generated'];
-            if (dObj > lastDate)
-                lastDate = dObj;
-        }
-        e = gridElement(gridDiv, trEnZh(this[this.bases[0]]['System Name']), 1, row);
-        e.setAttribute('class', this.Heading);
-        e = gridElement(gridDiv,
-            lastDate.toLocaleDateString(this.Language, {month: "short", year: "numeric", day: "numeric"}) , 2, row++);
-        e.setAttribute('class', this.Data);
-        lastDate = new Date(0); // epoch
-        for (const k of this.additions) {
-            let dObj = this[k]['Generated'];
-            if (dObj > lastDate)
-                lastDate = dObj;
-        }
-        e = gridElement(gridDiv, trEnZh('Extra Conventions'), 1, row);
-        e.setAttribute('class', this.Heading);
-        e = gridElement(gridDiv,
-            lastDate.toLocaleDateString(this.Language, {month: "short", year: "numeric", day: "numeric"}) , 2, row++);
-        e.setAttribute('class', this.Data);
-
-        e = gridElement(gridDiv, trEnZh('Commit Date'), 1, row);
-        e.setAttribute('class', this.Heading);
-        e = gridElement(gridDiv,
-            this.CommitDate.toLocaleDateString(this.Language, {month: "short", year: "numeric", day: "numeric"}) , 2, row++);
-        e.setAttribute('class', this.Data);
     }
 
     // Retrieve previously saved options from localStorage, if any.
@@ -241,26 +161,13 @@ class Settings {
     getDefaults() {
         var defaultSet = {
             'Language': 'en-US',
-            'AdoptThurston': 'Yes',
-            'RKCBFlag': 'Yes',
             'LastLaunch': undefined,
         };
-        for (const cName of this.additions) {
-            let fName = 'Adopt' + cName;
-            if (defaultSet[fName] == undefined)
-                defaultSet[fName] = 'No';
-        }
         // get language from the browser
         if (navigator.languages.length > 0 && navigator.languages[0].length > 0)
             defaultSet.Language = navigator.languages[0];
         else if (navigator.language)
             defaultSet.Language = navigator.language;
-
-        if ('ConfigVersion' in localStorage && Number(localStorage.getItem('ConfigVersion')) > Number(this.ConfigVersion)) {
-            window.alert('localStorage version incompatible');
-            return;
-        }
-        defaultSet['ConfigVersion'] = this.ConfigVersion;
 
         // replace everything with whatever saved before
         for (const k of Object.keys(defaultSet)) {
@@ -279,47 +186,14 @@ class Settings {
         // now receive the settings
         this.Language = defaultSet.Language;
         this.LastLaunch = defaultSet.LastLaunch;
-        this.ConfigVersion = defaultSet.ConfigVersion;
-        var optionSet = ['RKCBFlag'];
-        this.additions.forEach(x => optionSet.push('Adopt'+x));
-        optionSet.forEach(flag=> {
-            this[flag] = defaultSet[flag].toLowerCase() == 'yes';
-        });
     }
 
     makeControl(d) {
-        btn = document.createElement('input');
-        btn.setAttribute('type', 'button');
-        btn.setAttribute('class', this.UIClass);
-        btn.setAttribute('value', trEnZh('Dictionary'));
-        btn.setAttribute('onclick', 'dumpenzh(this)');
-        btn.style['float'] = 'right';
-        d.appendChild(btn);
-
         var subd = document.createElement('div');
         subd.style['margin-top'] = '20px';
         subd.style['float'] = 'left';
         d.appendChild(subd);
 
-        // subd.insertAdjacentHTML('beforeend', trEnZh('RKCB')+' ')
-        this.mkToggle(subd, [
-            {'Id': 'RKCB0314', 'HTML': 'RKCB 0314', 'Flag': 'RKCBFlag', 'FuncName': 'switchRKCB'},
-            {'Id': 'RKCB1430', 'HTML': '1430', 'Flag': 'RKCBFlag', 'FuncName': 'switchRKCB'}]);
-        document.getElementById('RKCB0314').checked = this.RKCBFlag;
-        document.getElementById('RKCB1430').checked = !this.RKCBFlag;
-        subd.insertAdjacentHTML('beforeend', '<br>')
-
-        this.mkToggle(subd, [
-            {'Id': 'ConfigThurston', 'HTML': 'Thurston', 'Flag': 'AdoptThurston', 'FuncName': 'switch21'},
-            {'Id': 'ConfigGIB', 'HTML': 'GIB', 'Flag': 'AdoptGIB', 'FuncName': 'switch21'}]);
-        subd.insertAdjacentHTML('beforeend', '<br>')
-
-        var flips = [];
-        for (const f of this.additions.slice(2)) 
-            flips.push({'HTML': this[f]['System Name'], 'Flag': 'Adopt'+f, 'FuncName': f});
-        flips = flips.sort((x,y)=>x.HTML.localeCompare(y.HTML));
-        this.mkFlip(subd, flips);
-        
         var btn;
         btn = document.createElement('input');
         btn.setAttribute('type', 'button');
@@ -336,14 +210,6 @@ class Settings {
         btn.addEventListener('click', (e) => this.switchLang(e));
         subd.appendChild(btn);
         subd.insertAdjacentHTML('beforeend', '<br>')
-
-        var feedback = document.createElement('a');
-        feedback.setAttribute('href', 'mailto:syw.cuper+bridge@gmail.com?Subject=Feedback%20for%20Bidding%20Quick%20Reference')
-        feedback.innerHTML = trEnZh('Send Feedback');
-        feedback.setAttribute('class', this.UIClass);
-        feedback.style['margin-bottom'] = '10px';
-        subd.appendChild(feedback);
-        subd.insertAdjacentHTML('beforeend', '<br>');
     }
 
     mkToggle(subd, twoofthem) {
@@ -499,8 +365,10 @@ class Settings {
     }
 }
 
-function Config(divname) {
+function Config3(divname) {
+    var config = new Settings();
     config.init(document.getElementById(divname));
+    config.getDefaults();
     config.showConfig();
 }
 
@@ -534,14 +402,4 @@ function dumpenzh(btn) {
         gridElement(d, "'"+v+"',", 2, r);
         r++;
     }
-}
-
-function trEnZh(s) {
-    if (config.Language == 'zh-TW' && s in enzh)
-        return enzh[s];
-
-    // remember it so that we can translate later
-    if (!(s in enzh))
-        enzh[s] = s;
-    return s;
 }
