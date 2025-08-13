@@ -6,6 +6,16 @@ class Settings {
     Data = 'ConfigData';
     langDict = {'zh-TW': 'Switch to English', 'en-US': '改用中文'};
     UIClass = 'ConfigUI';
+    OptionItems = {
+        'RKCBFlag': {HTML: 'RKCB',  IDs: ['0314', '1430']},
+        'TwoOneChoice': {HTML: '2/1 Choice',  IDs: ['None', 'Thurston', 'GIB']},
+        'Language': {HTML: 'Language', IDs: ['en-US', 'zh-TW']},
+        'Ogust': {HTML: 'Ogust'}, // Ogust off by default
+        'Sandwich1NT': {HTML: 'Sandwich 1NT'}, // Sandwich 1NT off by default
+        'Lebensohl': {HTML: 'Lebensohl'}, // Lebensohl off by default
+        'LeaningMichaels': {HTML: 'Leaping Michaels'}, // Leaping Michaels off by default
+        'WeakJumpShift': {HTML: 'Weak Jump Shift'} // Weak Jump Shift off by default
+        };
 
     constructor(){
         this.Version = LatestGitTag;
@@ -91,51 +101,71 @@ class Settings {
         this.disp.appendChild(gridDiv);
 
         var row = 1;
-        var configData ={
-            // 'System': Biddings['System Name'],
-            'Version': this.Version,
-            'Language Using': this.Language,
-        };
-        
-        var e;
-        for (const [k,v] of Object.entries(configData)) {
-            e = gridElement(gridDiv, trEnZh(k), 1, row);
+        var e = gridElement(gridDiv, trEnZh('Version'), 1, row);
+        e.setAttribute('class', this.Heading);
+        e = gridElement(gridDiv, trEnZh(this.Version), 2, row++);
+        e.setAttribute('class', this.Data);
+        row = this.showBaseCard(gridDiv, row)
+        this.showOptions(gridDiv, row);
+    }
+    showBaseCard(gridDiv, row) {
+        var headings = {'General': '5-Card Major, Better Minor, Strong 2C, Strong NT, RKCB',
+             'Major':
+                '5+ cards, 12+ points. Reverse Drury, Jacoby 2NT, Limited Raise, Negative Double. Cue-bid 3-Card Support.',
+             'No Trump':
+                '1NT 15-17 HCP, 2NT 20~21 HCP. No voids, no singletons, at most one doubleton. Gerber, Stayman, Smolen, Jacoby Transfer. Texas Transfer, 2S Minor Transfer. 2NT invitational.',
+             'Minor':
+                '3+ cards, 12+ points. Inverted Minor',
+             'Strong 2C': '22+HCP or 9+ tricks.  2D waiting, denies strong suit. 2H "Double Negative" 3-HCP.',
+             'Preemptive': '6+ cards with honor(s), 8-11 points',
+             'OverCall':
+                "5+ cards, 8+ points. 1NT as open, with stopper in opponent's suit. Michaels/Unusual 2NT, DONT",
+             'Double':
+                'Take-out up to 3&spades;, Responsive Double, Support Double, Negative Double',
+             'Others': 'Strong Jump Shift, Splinter, New Minor Forcing (NMF), 4th Suit Forcing (4SF), Doubl-0-pass-1 (D0P1), Redouble-0-pass-1 (R0P1)',
+            };
+        for (const [k,v] of Object.entries(headings)) {
+            var e = gridElement(gridDiv, trEnZh(k), 1, row);
             e.setAttribute('class', this.Heading);
             e = gridElement(gridDiv, trEnZh(v), 2, row++);
             e.setAttribute('class', this.Data);
-        }
+        }    
+        return row;
+    }
+
+    showOptions(gridDiv, row) {
+        var e = gridElement(gridDiv, trEnZh('Options'), 1, row);
+        e.setAttribute('class', this.Heading);
+        row = this.mkToggles(gridDiv, row);
+        row = this.mkFlips(gridDiv, row);
     }
 
     // Retrieve previously saved options from localStorage, if any.
     // Save back, immediately, the current values
     getDefaults() {
-        var defaultSet = {
-            'Language': 'en-US',
-            'LastLaunch': undefined,
-        };
         // get language from the browser
+        var lang;
         if (navigator.languages.length > 0 && navigator.languages[0].length > 0)
-            defaultSet.Language = navigator.languages[0];
+            lang = navigator.languages[0];
         else if (navigator.language)
-            defaultSet.Language = navigator.language;
+            lang = navigator.language;
+        var langIdx = this.OptionItems.Language.IDs.indexOf(lang);
+        this.OptionItems.Language['Value'] = langIdx;
+
 
         // replace everything with whatever saved before
-        for (const k of Object.keys(defaultSet)) {
+        for (const k of Object.keys(this.OptionItems)) {
             if (k in localStorage)
-                defaultSet[k] = localStorage.getItem(k);
+                this.OptionItems[k]['Value'] = localStorage.getItem(k);
+            else if (k != 'Language') // Language is set above
+                this.OptionItems[k]['Value'] = 0;
         }
-        // replace launch date
-        let d = new Date(Date.now());
-        defaultSet['LastLaunch'] = d;
         
         // save the fresh copy
         localStorage.clear();
-        for (const [k,v] of Object.entries(defaultSet))
-            localStorage.setItem(k, v)
-
-        // now receive the settings
-        this.Language = defaultSet.Language;
-        this.LastLaunch = defaultSet.LastLaunch;
+        for (const [k,v] of Object.entries(this.OptionItems)) {
+            localStorage.setItem(k, v['Value']);
+        }
     }
 
     makeControl() {
@@ -162,44 +192,81 @@ class Settings {
         subd.insertAdjacentHTML('beforeend', '<br>')
     }
 
-    mkToggle(subd, twoofthem) {
-        for (const toggle of twoofthem) {
-            let sp = document.createElement('span')
+    mkToggles(gridDiv, row) {
+        var allToggles = [];
+        Object.entries(this.OptionItems).forEach(([k, v]) => {
+            if ('IDs' in v && v.IDs.length > 0)  {
+                let o = {};
+                o[k] = v;
+                allToggles.push(o)
+            }
+        });
+        for (const toggle of allToggles) {
+            let v = Object.values(toggle)[0];
+            let d = document.createElement('div')
+            d.setAttribute('class', 'ConfigToggle');
+            d.style['grid-row-start'] = row++;
+            d.style['grid-column-start'] = 2;
+            gridDiv.appendChild(d);
+            let s = document.createElement('span')
             let l = document.createElement('label');
-            l.setAttribute('for', toggle.Id)
             l.setAttribute('class', this.UIClass);
             l.style['margin-left'] = '10px';
-            l.innerHTML = trEnZh(toggle.HTML)+': ';
+            l.innerHTML = trEnZh(v['HTML']+': ');
+            s.appendChild(l)
+            d.appendChild(s)
 
-            let ck = document.createElement('input');
-            ck.setAttribute('type', 'checkbox');
-            ck.setAttribute('id', toggle.Id);
-            ck.setAttribute('class', this.UIClass);
-            ck.addEventListener('click', (e) => this[toggle.FuncName](e));
-            ck.checked = this[toggle.Flag];
-            sp.appendChild(l);
-            sp.appendChild(ck);
-            subd.appendChild(sp)
+            for (const tId of v['IDs']) {
+                if (tId == 'None') continue; // skip None
+                let ck = document.createElement('input');
+                let tLabel = document.createElement('label');
+                tLabel.setAttribute('for', tId);
+                tLabel.innerHTML = trEnZh(tId);
+                s.appendChild(tLabel);
+                ck.setAttribute('name', toggle.Flag);
+                ck.setAttribute('type', 'checkbox');
+                ck.setAttribute('id', tId);
+                ck.setAttribute('class', this.UIClass);
+                // ck.addEventListener('click', (e) => this[toggle.FuncName](e));
+                ck.checked  = v[Config[Object.keys(toggle)[0]]] == tId;
+                s.appendChild(ck);
+            }
         }
+        return row;
     }
 
-    mkFlip(subd, flipItems) {
+    mkFlips(gridDiv, row) {
+        var flipItems = [];
+        Object.entries(this.OptionItems).forEach(([k, v]) => {
+            if (!('IDs' in v && v.IDs.length > 0)) {
+                let o = {};
+                o[k] = v;
+                flipItems.push(o);
+            }
+        });
         for (const fItem of flipItems) {
-            var sp = document.createElement('span')
-            var l = document.createElement('label');
+            let v = Object.values(fItem)[0];
+            let d = document.createElement('div')
+            d.setAttribute('class', 'ConfigToggle');
+            d.style['grid-row-start'] = row++;
+            d.style['grid-column-start'] = 2;
+            gridDiv.appendChild(d);
+            let sp = document.createElement('span')
+            let l = document.createElement('label');
             l.setAttribute('class', this.UIClass);
             l.style['margin-left'] = '10px';
-            l.innerHTML = trEnZh(fItem.HTML)+': ';
+            l.innerHTML = trEnZh(v.HTML)+': ';
             var chk = document.createElement('input');
             chk.setAttribute('type', 'checkbox');
             chk.setAttribute('class', this.UIClass);
-            chk.checked = this[fItem.Flag];
-            chk.addEventListener('click', (e) => this.flipFlag(e, 'Adopt'+fItem.FuncName));
+            chk.setAttribute('id', Object.keys(fItem)[0]);
+            chk.checked = v['Value'] > 0;
+            chk.addEventListener('click', (e) => this.flipFlag(e));
             sp.appendChild(l);
             sp.appendChild(chk);
-            subd.appendChild(sp);
-            subd.insertAdjacentHTML('beforeend', '<br>')
+            d.appendChild(sp);
         }
+        return row;
     }
 
     switch21(chk) {
@@ -247,12 +314,9 @@ class Settings {
     }
 
 
-    flipFlag(e, flagName) {
-        this[flagName] = e.target.checked;
-        localStorage.setItem(flagName, this.YesNo(this[flagName]));
-        this.makeBidRules();
-        this.showConfig();
-        this.getDefaults();
+    flipFlag(e) {
+        var chk = document.getElementById(e.target.id);
+        var flag = chk.checked;
     }
 
     resetTopControls() {
@@ -319,36 +383,4 @@ class Settings {
 function Config3(divname) {
     Config.init(document.getElementById(divname));
     Config.showConfig();
-}
-
-function dumpenzh(btn) {
-    clearContents(Config.disp);
-    var divElem = document.createElement('div');
-    divElem.style['display'] = 'grid';
-    divElem.style['grid-template-columns'] = '25em 25em';
-    divElem.setAttribute('id', 'EnZh')
-    Config.disp.appendChild(divElem);
-    var btn = document.createElement('input');
-    btn.setAttribute('type', 'button');
-    btn.setAttribute('value', 'Save...');
-    btn.setAttribute('onclick', 'DownLoadToFile("enzh.json","EnZh")');
-    btn.style['grid-column-start'] = 2;
-    btn.style['grid-row-start'] = 1;
-    divElem.appendChild(btn);
-    var e=gridElement(divElem, '<span class="Zero">English</span>:', 1, 2);
-    e.style['justify-self'] = 'right';
-    e.style['margin-right'] = '10px';
-    gridElement(divElem, '中文', 2, 2);
-    var r = 3;
-    for (const [k,v] of Object.entries(enzh)) {
-        var d = document.createElement('div');
-        d.style['display'] = 'contents';
-        divElem.appendChild(d);
-        e = gridElement(d, "'"+k+"':", 1, r);
-        e.setAttribute('class', 'Zero');
-        e.style['justify-self'] = 'right';
-        e.style['margin-right'] = '10px';
-        gridElement(d, "'"+v+"',", 2, r);
-        r++;
-    }
 }

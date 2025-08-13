@@ -1,4 +1,4 @@
 // Generated, do not edit
-var DeployDate = new Date("August 11, 2025");
+var DeployDate = new Date("August 12, 2025");
 var LatestGitTag = "0.01";
 

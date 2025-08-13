@@ -64,7 +64,7 @@ h2, h3 {color: blueviolet;}
     margin-top: 20px;
     width: 40em;
     display: grid;
-    grid-template-columns: 17em 15em;
+    grid-template-columns: 17em 25em;
 }
 .ConfigHeading {
     justify-self: right;
