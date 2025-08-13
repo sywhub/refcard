@@ -186,7 +186,9 @@ class Settings {
         btn = document.createElement('input');
         btn.setAttribute('type', 'button');
         btn.setAttribute('class', this.UIClass);
-        btn.setAttribute('value', this.langDict[this.Language]);
+        let langIdx = this.OptionItems.Language['Value'];
+        let langValue = this.OptionItems.Language['IDs'][langIdx];
+        btn.setAttribute('value', this.langDict[langValue]);
         btn.addEventListener('click', (e) => this.switchLang(e));
         subd.appendChild(btn);
         subd.insertAdjacentHTML('beforeend', '<br>')
@@ -195,7 +197,7 @@ class Settings {
     mkToggles(gridDiv, row) {
         var allToggles = [];
         Object.entries(this.OptionItems).forEach(([k, v]) => {
-            if ('IDs' in v && v.IDs.length > 0)  {
+            if (k != 'Language' && 'IDs' in v)  {
                 let o = {};
                 o[k] = v;
                 allToggles.push(o)
@@ -217,7 +219,6 @@ class Settings {
             d.appendChild(s)
 
             for (const tId of v['IDs']) {
-                if (tId == 'None') continue; // skip None
                 let ck = document.createElement('input');
                 let tLabel = document.createElement('label');
                 tLabel.setAttribute('for', tId);
@@ -227,8 +228,8 @@ class Settings {
                 ck.setAttribute('type', 'checkbox');
                 ck.setAttribute('id', tId);
                 ck.setAttribute('class', this.UIClass);
-                // ck.addEventListener('click', (e) => this[toggle.FuncName](e));
-                ck.checked  = v[Config[Object.keys(toggle)[0]]] == tId;
+                ck.addEventListener('click', (e) => this.doOption(e));
+                ck.checked  = v.IDs[v.Value] == tId;
                 s.appendChild(ck);
             }
         }
@@ -261,7 +262,7 @@ class Settings {
             chk.setAttribute('class', this.UIClass);
             chk.setAttribute('id', Object.keys(fItem)[0]);
             chk.checked = v['Value'] > 0;
-            chk.addEventListener('click', (e) => this.flipFlag(e));
+            chk.addEventListener('click', (e) => this.doOption(e));
             sp.appendChild(l);
             sp.appendChild(chk);
             d.appendChild(sp);
@@ -304,19 +305,48 @@ class Settings {
         var lang = Object.keys(this.langDict).find(k=>this.langDict[k] == btnString);
         lang = Object.keys(this.langDict).find(k=> k != lang);
 
-        this.Language = lang;
+        var langIdx = this.OptionItems.Language.IDs.indexOf(lang);
+        this.OptionItems.Language['Value'] = langIdx
         btn.value = this.langDict[lang];
 
-        localStorage.setItem('Language', this.Language);
+        localStorage.setItem('Language', langIdx);
         this.resetTopControls();
         this.showConfig();
         showFooter(Card.suitchars(), this.DisplayDate);
     }
 
 
-    flipFlag(e) {
+    doOption(e) {
         var chk = document.getElementById(e.target.id);
-        var flag = chk.checked;
+        for (const [k, v] of Object.entries(this.OptionItems)) {
+            if ('IDs' in v && v.IDs.includes(chk.id)) { 
+                let thisIdx = v.IDs.indexOf(chk.id);
+                if (v.IDs.length == 2) {
+                    let otherIdx = 1 - thisIdx;
+                    let otherElem = document.getElementById(v.IDs[otherIdx]);
+                    otherElem.checked = !chk.checked;
+                    v['Value'] = chk.checked ? thisIdx : otherIdx;
+                } else {    
+                    if (chk.checked) {
+                        for (let otherIdx = 0; otherIdx < v.IDs.length; otherIdx++) {
+                            if (otherIdx != thisIdx) {
+                                let otherElem = document.getElementById(v.IDs[otherIdx]);
+                                otherElem.checked = false;
+                            }
+                        }
+                        v['Value'] = thisIdx;
+                    } else { 
+                        let thisItem = document.getElementById(v.IDs[0]);
+                        thisItem.checked = true; // reset to first item
+                        v['Value'] = 0;
+                    }
+                }
+                break;
+            } else if (k == chk.id) {
+                v['Value'] = chk.checked ? 1 : 0;
+                break;
+            }
+        }
     }
 
     resetTopControls() {
