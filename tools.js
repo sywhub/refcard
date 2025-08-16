@@ -110,7 +110,8 @@ function timeString() {
 }
 
 function trEnZh(s) {
-    if (Config.Language == 'zh-TW' && s in enzh)
+    var langIdx = Config.OptionItems.Language.Value;
+    if (Config.OptionItems.Language.IDs[langIdx] == 'zh-TW' && s in enzh)
         return enzh[s];
 
     if (!(s in enzh))

@@ -101,15 +101,15 @@ function About(d) {
     right.style['grid-column-start'] = 2;
     right.style['grid-row-start'] = 1;
     divDisp.appendChild(right);
-    right.innerHTML = Config.Language == 'en-US' ? enAboutText : zhAboutText;
+    right.innerHTML = Config.OptionItems.Language.IDs[Config.OptionItems.Language.Value] == 'en-US' ? enAboutText : zhAboutText;
     right.insertAdjacentHTML('beforeend', '<h2>Technical Details<h2>');
     right.insertAdjacentHTML('beforeend', `<h3>${trEnZh('Components')}</h3>`);
     for (const comp of BidComponents) 
-        right.insertAdjacentHTML('beforeend', `${trEnZh(comp[0].Name)}<br>`);
+        right.insertAdjacentHTML('beforeend', `${trEnZh(comp.Name)}<br>`);
     right.insertAdjacentHTML('beforeend', `<h3>${trEnZh('Coded Conventions')}</h3>`);
     let conv = [];
     for (const comp of BidComponents) {
-        for (const r of comp) {
+        for (const r of comp.BidRules) {
             for (const b of r.Bids) {
                 if ('Convention' in b && !conv.includes(b.Convention))
                     conv.push(b.Convention);

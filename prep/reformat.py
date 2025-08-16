@@ -11,6 +11,8 @@ import json
 import pprint
 
 class ReformatRules:
+    BuildIns = ['Base SAYC', 'D0P1', 'R0P1', 'Take-Out Rebid', 'Preemptive Overcall', \
+            'New Minor Forcing', 'Responsive DBL'];
     def __init__(self, fname='baseSAYC.json'):
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
         if (os.path.exists(fname) == False):
@@ -30,14 +32,12 @@ class ReformatRules:
         self.bidQue = []
         return
 
-    def AbsObj(self, seq, d, newRules, name=''):
+    def AbsObj(self, seq, d, newRules):
         rules = [x for x in d['BidRules'] if x['BidSeq'] == seq]
         if (len(rules) == 0):
             return
 
-        seqObj = {'Ctx': {'Seq': seq}, 'Bids': []}
-        if (name != ''):
-            seqObj['Name'] = name
+        seqObj = {'Seq': seq, 'Bids': []}
         for x in rules:
             key = x['Bid']
             y = [x for x in seqObj['Bids'] if x.get('Bid') == key]
@@ -66,7 +66,11 @@ class ReformatRules:
     def loopVars(self):
         for v in self.data:
             r = self.loopQ(v)
-            self.output(v['System Name'], r)
+            varname = self.makeVarName(v['System Name'])
+            outObj = {'Flag': varname, 'Name': v['System Name'], 'BidRules': r}
+            if v['System Name'] in ReformatRules.BuildIns:
+                outObj['BuildIn'] = True
+            self.output(varname, outObj)
 
     def loopQ(self, d):
         r = self.seedQue(d)
@@ -82,7 +86,7 @@ class ReformatRules:
                 self.rootSet.append(x['BidSeq'])
         r = []
         for x in self.rootSet:
-            self.AbsObj(x, d, r, d['System Name'])
+            self.AbsObj(x, d, r)
         return r
 
     def noPrecedeccsor(self, seq, d):
@@ -110,9 +114,12 @@ class ReformatRules:
                 str += i
         return str
 
-    def output(self, fname, rules):
+    def makeVarName(self, name):
         for c in [' ', '-', '/', '.']:
-            fname = fname.replace(c, '')
+           name = name.replace(c, '')
+        return name
+
+    def output(self, fname, rules):
         f = open(f'../data/{fname}.json', 'w')
         print(f"BidComponents.push(", end='', file=f)
         p = pprint.PrettyPrinter(indent=2,width=132)

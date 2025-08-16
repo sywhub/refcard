@@ -4,17 +4,11 @@
 class Settings {
     Heading = 'ConfigHeading';
     Data = 'ConfigData';
-    langDict = {'zh-TW': 'Switch to English', 'en-US': '改用中文'};
     UIClass = 'ConfigUI';
     OptionItems = {
+        'Language': {HTML: 'Language', IDs: ['en-US', 'zh-TW'], Prompts: ['改用中文','Switch to English']},
         'RKCBFlag': {HTML: 'RKCB',  IDs: ['0314', '1430']},
-        'TwoOneChoice': {HTML: '2/1 Choice',  IDs: ['None', 'Thurston', 'GIB']},
-        'Language': {HTML: 'Language', IDs: ['en-US', 'zh-TW']},
-        'Ogust': {HTML: 'Ogust'}, // Ogust off by default
-        'Sandwich1NT': {HTML: 'Sandwich 1NT'}, // Sandwich 1NT off by default
-        'Lebensohl': {HTML: 'Lebensohl'}, // Lebensohl off by default
-        'LeaningMichaels': {HTML: 'Leaping Michaels'}, // Leaping Michaels off by default
-        'WeakJumpShift': {HTML: 'Weak Jump Shift'} // Weak Jump Shift off by default
+        'TwoOneChoice': {HTML: '2/1 GF Choice',  IDs: ['None', 'P. Thurston 2/1', 'GIB 2/1']},
         };
 
     constructor(){
@@ -26,11 +20,10 @@ class Settings {
 
     init(e) {
         this.disp = e;
-    }
-
-    getConfig() {
-        this.getDefaults();
-        this.makeBidRules();
+        for (const bidComp of BidComponents) {
+            if (!('BuildIn' in bidComp) && !this.OptionItems['TwoOneChoice'].IDs.includes(bidComp.Name)) 
+                this.OptionItems[bidComp.Flag] = {'HTML': bidComp.Name};
+        }
     }
 
     /* In sequence:
@@ -44,47 +37,80 @@ class Settings {
     makeBidRules() {
         // JS copying is shallow
         var working = {};
-        working['BidRules'] = JSON.parse(JSON.stringify(BidComponents[0]))
+        working['BidRules'] = this.mergeRules({}, BidComponents[0].BidRules);
         for (let i = 1; i < BidComponents.length; i++) {
-            BidComponents[i][0].Name;
-            working['BidRules'] = this.mergeRules(working['BidRules'], BidComponents[i]);
+            if ('BuildIn' in BidComponents[i])
+                working['BidRules'] = this.mergeRules(working['BidRules'], BidComponents[i].BidRules);
+            else if (this.OptionItems.TwoOneChoice.IDs.includes[BidComponents[i].Name]) {
+                let idx = this.OptionItems.TwoOneChoice.Value;
+                if (idx > 0 && bidComp.Name == this.OptionItems.TwoOneChoice.IDs[idx]) 
+                        working['BidRules'] = this.mergeRules(working['BidRules'], BidComponents[i].BidRules);
+            } else if (BidComponents[i].Flag in this.OptionItems && this.OptionItems[BidComponents[i].Flag].Value > 0)
+                    working['BidRules'] = this.mergeRules(working['BidRules'], BidComponents[i].BidRules);
         }
+        this.WorkingSet = working;
+        this.changeRKCB();
     }
 
     // Flip 0314 and 1430
     changeRKCB() {
-        var rkcbrules = this.WorkingSet.BidRules.filter(r=>
-            r.Convention == 'RKCB' && (r.Bid == '5C' || r.Bid == '5D') &&
-            r.BidSeq[r.BidSeq.length - 2] == '4NT');
-        for (let r of rkcbrules) {
-            if (r.Bid == '5C') {
-                if (this.RKCBFlag)
-                    r.Criteria.KeyCard = [0, 3];
-                else
-                    r.Criteria.KeyCard = [1, 4];
+        var rkcbIdx = []
+        for (let [k, x] of Object.entries(this.WorkingSet.BidRules)) {
+            for (let r of x.Bids) {
+                if (r.Convention == 'RKCB' && (r.Bid == '5C' || r.Bid == '5D') &&
+                    x.Seq.length > 2 && x.Seq.at(-2) == '4NT' && !rkcbIdx.includes(k)) {
+                        rkcbIdx.push(k);
+                }
             }
-            else if (r.Bid == '5D') {
-                if (this.RKCBFlag)
-                    r.Criteria.KeyCard = [1, 4];
-                else
-                    r.Criteria.KeyCard = [0, 3];
+        }
+        for (const i of rkcbIdx) {
+            for (let j = 0; j < this.WorkingSet.BidRules[i].Bids.length; j++) {
+                if (this.WorkingSet.BidRules[i].Bids[j].Bid == '5C') {
+                    if (this.OptionItems.RKCBFlag.Value == 0)
+                        this.WorkingSet.BidRules[i].Bids[j].Criteria.KeyCard = [0, 3];
+                    else
+                        this.WorkingSet.BidRules[i][j].Criteria.KeyCard = [1, 4];
+                } else if (this.WorkingSet.BidRules[i].Bids[j].Bid == '5D') {
+                    if (this.OptionItems.RKCBFlag.Value == 0)
+                        this.WorkingSet.BidRules[i].Bids[j].Criteria.KeyCard = [1, 4];
+                    else
+                        this.WorkingSet.BidRules[i].Bids[j].Criteria.KeyCard = [0, 3];
+                }
             }
         }
     }
 
+    seqKey(seq) {
+        if (seq.length == 0)
+            return 'Open';
+
+        var sKey = '';
+        for (const s of seq) {
+            if (s == '-')
+                sKey += 'p';
+            else
+                sKey += s;
+        }
+        return sKey;
+    }
     // remove from list one those with same bidseq and bid
     // then add 2nd list
     // this is not perfect as some conventions are not based on bidseq and bidding
-    mergeRules(rules1, rules2, nomerge) {
-        let duplist = rules1.filter(x => this.dedup(x, rules2, nomerge));
-        rules2.forEach(x=>duplist.push(x));
-        return duplist;
+    mergeRules(toMerge, newset) {
+        var keys = Object.keys(toMerge);
+        for (const r of newset) {
+            let k = this.seqKey(r.Seq);
+            if (k in keys)
+                r.Bids.forEach(b => {toMerge[k].Bids.push(b)});
+            else {
+                toMerge[k] = {'Seq': r.Seq, 'Bids': []};
+                toMerge[k].Bids = r.Bids;
+            }
+        }
+        return toMerge;
     }
 
-    dedup(r, duplist, nomerge) {
-        if (r.GIdx != undefined && Number(r.GIdx) == Number(nomerge))
-            return true;
-
+    dedup(r, duplist) {
         for (const d of duplist) {
             if (compSequence(r.BidSeq, d.BidSeq) && r.Bid == d.Bid)
                 return false;
@@ -92,7 +118,6 @@ class Settings {
         return true;
     }
 
-    YesNo(f) { return f ? 'Yes' : 'No';}
     showConfig() {
         clearContents(this.disp);
         this.makeControl();
@@ -109,20 +134,20 @@ class Settings {
         this.showOptions(gridDiv, row);
     }
     showBaseCard(gridDiv, row) {
-        var headings = {'General': '5-Card Major, Better Minor, Strong 2C, Strong NT, RKCB',
+        var headings = {'General': `5-Card Major, Better Minor, Strong 2${Card.ltr2html('C')}, Strong NT, RKCB`,
              'Major':
                 '5+ cards, 12+ points. Reverse Drury, Jacoby 2NT, Limited Raise, Negative Double. Cue-bid 3-Card Support.',
              'No Trump':
-                '1NT 15-17 HCP, 2NT 20~21 HCP. No voids, no singletons, at most one doubleton. Gerber, Stayman, Smolen, Jacoby Transfer. Texas Transfer, 2S Minor Transfer. 2NT invitational.',
+                `1NT 15-17 HCP, 2NT 20~21 HCP. Gerber, Stayman, Smolen, Jacoby Transfer. Texas Transfer, 2${Card.ltr2html('S')} Minor Transfer. 2NT invitational.`,
              'Minor':
                 '3+ cards, 12+ points. Inverted Minor',
-             'Strong 2C': '22+HCP or 9+ tricks.  2D waiting, denies strong suit. 2H "Double Negative" 3-HCP.',
+             'Strong 2C': `22+HCP or 9+ tricks.  2${Card.ltr2html('D')} waiting, denies strong suit. 2${Card.ltr2html('H')} "Double Negative" 3-HCP.`,
              'Preemptive': '6+ cards with honor(s), 8-11 points',
              'OverCall':
                 "5+ cards, 8+ points. 1NT as open, with stopper in opponent's suit. Michaels/Unusual 2NT, DONT",
              'Double':
-                'Take-out up to 3&spades;, Responsive Double, Support Double, Negative Double',
-             'Others': 'Strong Jump Shift, Splinter, New Minor Forcing (NMF), 4th Suit Forcing (4SF), Doubl-0-pass-1 (D0P1), Redouble-0-pass-1 (R0P1)',
+                `Take-out up to 3${Card.ltr2html('S')}, Responsive Double, Support Double, Negative Double`,
+             'Others': 'Strong Jump Shift, Splinter, New Minor Forcing (NMF), 4th Suit Forcing (4SF), Doubl-0-pass-1 (D0P1), Redouble-0-pass-1 (R0P1), Sandwich 1NT, High Reverse',
             };
         for (const [k,v] of Object.entries(headings)) {
             var e = gridElement(gridDiv, trEnZh(k), 1, row);
@@ -187,8 +212,7 @@ class Settings {
         btn.setAttribute('type', 'button');
         btn.setAttribute('class', this.UIClass);
         let langIdx = this.OptionItems.Language['Value'];
-        let langValue = this.OptionItems.Language['IDs'][langIdx];
-        btn.setAttribute('value', this.langDict[langValue]);
+        btn.setAttribute('value', this.OptionItems.Language.Prompts[langIdx]);
         btn.addEventListener('click', (e) => this.switchLang(e));
         subd.appendChild(btn);
         subd.insertAdjacentHTML('beforeend', '<br>')
@@ -270,44 +294,11 @@ class Settings {
         return row;
     }
 
-    switch21(chk) {
-        var chkId = chk.target.id;
-        var tbl = {'ConfigThurston': 'AdoptThurston',
-            'ConfigGIB': 'AdoptGIB'}
-        this[tbl[chkId]] = chk.target.checked;
-        var other = [...Object.keys(tbl)].filter(k => k != chkId)[0];
-        if (this[tbl[chkId]])
-            this[tbl[other]] = !this[tbl[chkId]];
-        localStorage.setItem(tbl[chkId], this.YesNo(this[tbl[chkId]]));
-        localStorage.setItem(tbl[other], this.YesNo(this[tbl[other]]));
-        var otherElem = document.getElementById(other);
-        if (otherElem != null)
-            otherElem.checked = this[tbl[other]];
-        this.makeBidRules();
-        this.showConfig();
-        this.getDefaults();
-    }
-
-    // One of them is always checked
-    switchRKCB(chk) {
-        const tbl = ['RKCB0314', 'RKCB1430'];
-        var chkIdx = tbl.indexOf(chk.target.id);
-        document.getElementById(tbl[1-chkIdx]).checked = !chk.target.checked;
-        this.RKCBFlag = (chk.target.checked && chkIdx == 0) || (chkIdx == 1 && !chk.target.checked);
-        localStorage.setItem('RKCBFlag', this.YesNo(this.RKCBFlag));
-        this.changeRKCB();
-        this.showConfig();
-        this.getDefaults();
-    }
-
     switchLang(btn) {
         var btnString = btn.target.value;
-        var lang = Object.keys(this.langDict).find(k=>this.langDict[k] == btnString);
-        lang = Object.keys(this.langDict).find(k=> k != lang);
-
-        var langIdx = this.OptionItems.Language.IDs.indexOf(lang);
-        this.OptionItems.Language['Value'] = langIdx
-        btn.value = this.langDict[lang];
+        var langIdx = this.OptionItems.Language.Prompts.indexOf(btnString);
+        this.OptionItems.Language['Value'] = 1-langIdx; // toggle
+        btn.value = this.OptionItems.Language.Prompts[langIdx]
 
         localStorage.setItem('Language', langIdx);
         this.resetTopControls();
@@ -315,18 +306,24 @@ class Settings {
         showFooter(Card.suitchars(), this.DisplayDate);
     }
 
-
+    // When one of the options were clicked
     doOption(e) {
+        // who was clicked?
         var chk = document.getElementById(e.target.id);
+        var changed = []
         for (const [k, v] of Object.entries(this.OptionItems)) {
+            // Was it one of the multiple choices?
             if ('IDs' in v && v.IDs.includes(chk.id)) { 
+                // Which of the multiples was clicked?
                 let thisIdx = v.IDs.indexOf(chk.id);
-                if (v.IDs.length == 2) {
+                if (v.IDs.length == 2) {    // one of the two.  It is a toggle.
                     let otherIdx = 1 - thisIdx;
                     let otherElem = document.getElementById(v.IDs[otherIdx]);
                     otherElem.checked = !chk.checked;
                     v['Value'] = chk.checked ? thisIdx : otherIdx;
                 } else {    
+                    // One of the multiple (more than 2).
+                    // If checked yes, then uncheck all others.
                     if (chk.checked) {
                         for (let otherIdx = 0; otherIdx < v.IDs.length; otherIdx++) {
                             if (otherIdx != thisIdx) {
@@ -336,17 +333,26 @@ class Settings {
                         }
                         v['Value'] = thisIdx;
                     } else { 
+                        // Otherwise, reset to the first item.
                         let thisItem = document.getElementById(v.IDs[0]);
                         thisItem.checked = true; // reset to first item
                         v['Value'] = 0;
                     }
                 }
+                changed.push(k);
                 break;
             } else if (k == chk.id) {
+                // The "yes/no" option
                 v['Value'] = chk.checked ? 1 : 0;
+                changed.push(k);
                 break;
+
             }
         }
+        // Persist
+        for (const [k, v] of Object.entries(this.OptionItems))
+            localStorage.setItem(k, v['Value']);
+        this.makeBidRules();
     }
 
     resetTopControls() {
