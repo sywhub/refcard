@@ -80,26 +80,13 @@ class Settings {
         }
     }
 
-    seqKey(seq) {
-        if (seq.length == 0)
-            return 'Open';
-
-        var sKey = '';
-        for (const s of seq) {
-            if (s == '-')
-                sKey += 'p';
-            else
-                sKey += s;
-        }
-        return sKey;
-    }
     // remove from list one those with same bidseq and bid
     // then add 2nd list
     // this is not perfect as some conventions are not based on bidseq and bidding
     mergeRules(toMerge, newset) {
         var keys = Object.keys(toMerge);
         for (const r of newset) {
-            let k = this.seqKey(r.Seq);
+            let k = seqKey(r.Seq);
             if (k in keys)
                 r.Bids.forEach(b => {toMerge[k].Bids.push(b)});
             else {

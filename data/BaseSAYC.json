@@ -1,5 +1,4 @@
-BidComponents.push({ 'BidRules': [ { 'Bids': [ {'Bid': '3NT', 'Criteria': [{'HCP': [25, 27], 'Shape': 'Balanced'}]},
-                            {'Bid': '2C', 'Criteria': [{'HCP': 22}, {'LTC': [0, 5], 'TP': 22}]},
+BidComponents.push({ 'BidRules': [ { 'Bids': [
                             { 'Bid': '1S',
                               'Criteria': [ {'HCP': [12, 22], 'SuitLen': 5},
                                             {'HCP': [11, 22], 'Shape': '5-4', 'SuitLen': 5},
@@ -12,6 +11,8 @@ BidComponents.push({ 'BidRules': [ { 'Bids': [ {'Bid': '3NT', 'Criteria': [{'HCP
                               'Criteria': [ {'HCP': [15, 17], 'Shape': 'Balanced'},
                                             {'HCP': [12, 17], 'Seat': [3, 4], 'Shape': 'Balanced'}]},
                             {'Bid': '2NT', 'Criteria': [{'HCP': [20, 21], 'Shape': 'Balanced'}]},
+                            {'Bid': '3NT', 'Criteria': [{'HCP': [25, 27], 'Shape': 'Balanced'}]},
+                            {'Bid': '2C', 'Criteria': [{'HCP': 22}, {'LTC': [0, 5], 'TP': 22}]},
                             { 'Bid': '1D',
                               'Criteria': [{'HCP': [12, 22], 'SuitLen': 3}, {'HCP': [11, 22], 'Shape': '5-4', 'SuitLen': 5}]},
                             { 'Bid': '1C',

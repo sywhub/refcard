@@ -6,59 +6,14 @@ h2, h3 {color: blueviolet;}
     width: 90vw;
 }
 .Footer { position: fixed; bottom: 2vh; right: 3vw; }
-.PracDisplay {
-    display: grid;
-    grid-template-columns: 2em 10em 13em 3em 2.1em;
-    margin-top: 2vh;
-}
-.PracHints {
-    margin-top: 15px;
-    display: grid;
-    grid-template-columns: 2em 3em 30vw 50vw;
-}
-.StatsDisplay {margin-top: 1vh; }
-.PracHeader, .ScrubEnd, .ScrubHeader, .BidHeader, .StatHeader {color: red; font-weight: bold;}
-.PracHeader {color: darkblue; font-style: italic;}
-.ScrubData, .BidData, .StatData {color: black; font-weight: normal;}
-.StatSummary {
-    font-weight: bold;
-    font-style: italic;
-    color:blueviolet;
-    margin-top: 10px;
-    border-top: 1px solid blueviolet;
-    justify-content: center;
-    align-items: stretch;
-}
-.Zero {color:blueviolet; font-style: italic;}
 .QRefBidSeq {margin-left: 20px;}
-.QRefDisplay {grid-template-columns: 4vw 23vw 10vw 8vw; display: grid; }
-.ScrubData, .QRefDisplay .QRefBidList { display: contents; }
-.QRefDisplay .QRefBidList:nth-child(even) * { background-color: #f5f5f5;}
-.ScrubDisplay .ScrubData:nth-child(odd) * { background-color: #f5f5f5;}
-.PracDisplay .BandDiv:nth-child(even) * { background-color: #f5f5f5;}
-.PracHints .BandDiv:nth-child(odd) * { background-color: #f5f5f5;}
+.QRefBidList {grid-template-columns: 4vw 23vw 10vw 8vw; display: grid; }
+.QRefBidList:nth-child(even) { background-color: #f5f5f5;}
 .Error, .BidDesc {font-style: italic; color:blueviolet;}
 .BidFlags {font-style: italic; color: brown;}
-.ScrubText {font-family: 'Courier New', Courier, monospace; font-size: smaller;}
-.ScrubText {width: 4em; margin-left: 5px;}
-.ScrubEnd {grid-column-end: 4; font-style: italic;}
-.QRefBidGroup {font-style: italic; font-weight: bold; color: #022078; margin-left: -10px; grid-column-end:  4;}
-.ScrubDisplay {
-    display: grid;
-    grid-template-columns: 3em 10em 4em 25em 25em 5em;
-    grid-column-gap: 5px;
-    margin-top: 2vh;
-}
 .BidHeadMenu { width: 8em; margin-right: 5px; margin-left: 5px; }
 .SeqBid, .SeqHeader {justify-self: center;}
 .SeqHeader {font-weight: bold; font-style: italic; background-color: azure;}
-.PracBand {align-self: top; margin-bottom: 2px; margin-top: 2px;}
-.StatsAllStatus {
-    position: fixed;
-    top: 1vh;
-    right: 3vw;
-    text-align: right;
-}
 .ConfigDisplay {
     float: left;
     margin-top: 20px;
@@ -74,9 +29,9 @@ h2, h3 {color: blueviolet;}
 }
 .ConfigData { font-style: italic; }
 .BidKeys { display: grid; grid-template-columns: repeat(3, 15vw) 20vw; }
-.ConfigUI, .PracUI, .QRefUI, .StatUI { font-family: inherit; font-size: inherit; margin: 5px;}
+.ConfigUI, .QRefUI, { font-family: inherit; font-size: inherit; margin: 5px;}
 @media screen and (max-width: 981px) {
 body {font-size: 3vw;}
-.QRefDisplay {grid-template-columns: 8vw 50vw 30vw 16vw;}
+.QRefBidList {grid-template-columns: 8vw 50vw 30vw 16vw;}
 .ConfigDisplay {grid-template-columns: 45vw 45vw;
 }

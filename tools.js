@@ -118,3 +118,17 @@ function trEnZh(s) {
         enzh[s] = s;
     return s;
 }
+
+function seqKey(seq) {
+    if (seq.length == 0)
+        return 'Open';
+
+    var sKey = '';
+    for (const s of seq) {
+        if (s == '-')
+            sKey += 'p';
+        else
+            sKey += s;
+    }
+    return sKey;
+}
