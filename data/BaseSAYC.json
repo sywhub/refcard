@@ -1,5 +1,4 @@
-BidComponents.push({ 'BidRules': [ { 'Bids': [
-                            { 'Bid': '1S',
+BidComponents.push({ 'BidRules': [ { 'Bids': [ { 'Bid': '1S',
                               'Criteria': [ {'HCP': [12, 22], 'SuitLen': 5},
                                             {'HCP': [11, 22], 'Shape': '5-4', 'SuitLen': 5},
                                             {'HCP': [10, 22], 'Seat': [3, 4], 'SuitLen': 5}]},

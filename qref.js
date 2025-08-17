@@ -18,7 +18,7 @@ class QReference {
     run(seq) {
         clearContents(this.disp);
         this.breadCrumb(seq);
-        this.bidChoices(seqKey(seq));
+        this.bidChoices(seq);
     }
 
     breadCrumb(seq) {
@@ -29,25 +29,41 @@ class QReference {
         span.innerHTML = seqS
     }
 
-    bidChoices(seqKey) {
+    bidChoices(seq) {
+        var k = seqKey(seq)
         var e = document.createElement('div');
         e.setAttribute('id', 'QRefBidList');
         e.setAttribute('class', 'QRefBidList');
         this.disp.appendChild(e);
-        var bids = Config.WorkingSet.BidRules[seqKey];
+        var bids = Config.WorkingSet.BidRules[k];
         var row = 1;
+        var linkFunc = (pDiv, s, col, html) => {
+            let refKey = seqKey(s);
+            if (Config.WorkingSet.BidRules[refKey] != undefined) {
+                let elem = gridElement(pDiv, '', col, row);
+                let link = document.createElement('a');
+                link.setAttribute('href', '#');
+                link.addEventListener('click', (e) => {this.run(s);});
+                link.innerHTML = trEnZh(html);
+                elem.appendChild(link);
+            }
+        };
         for (let c of bids.Bids) {
             let rowDiv = document.createElement('div');
             rowDiv.style['display'] = 'contents';
             gridElement(rowDiv, this.htmlBid(c.Bid), 1, row);
-            gridElement(rowDiv, this.criteriaString(c.Criteria[0], c.Bid), 2, row++);
+            gridElement(rowDiv, this.criteriaString(c.Criteria[0], c.Bid), 2, row);
             e.appendChild(rowDiv);
             for (let i = 1; i < c.Criteria.length; ++i) {
                 rowDiv = document.createElement('div');
                 rowDiv.style['display'] = 'contents';
-                gridElement(rowDiv, this.criteriaString(c.Criteria[i], c.Bid), 2, row++);
+                gridElement(rowDiv, this.criteriaString(c.Criteria[i], c.Bid), 2, ++row);
                 e.appendChild(rowDiv);
             }
+            linkFunc(rowDiv, [...seq, c.Bid], 3, "Compete")
+            linkFunc(rowDiv, [...seq, c.Bid, '-'], 4, "Reply")
+            e.appendChild(rowDiv);
+            row++;
         }
     } 
 

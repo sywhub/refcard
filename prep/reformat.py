@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-abstractSAYC.py
-
-This module provides an abstract base class for implementing the SAYC (Standard American Yellow Card) bidding system.
-"""
 import argparse
 import os
 import json
 import pprint
 
+# Reformat previous version bidding rules for new version
 class ReformatRules:
     BuildIns = ['Base SAYC', 'D0P1', 'R0P1', 'Take-Out Rebid', 'Preemptive Overcall', \
             'New Minor Forcing', 'Responsive DBL'];
@@ -70,6 +66,7 @@ class ReformatRules:
             outObj = {'Flag': varname, 'Name': v['System Name'], 'BidRules': r}
             if v['System Name'] in ReformatRules.BuildIns:
                 outObj['BuildIn'] = True
+            self.reorderOpens(outObj)
             self.output(varname, outObj)
 
     def loopQ(self, d):
@@ -119,6 +116,21 @@ class ReformatRules:
            name = name.replace(c, '')
         return name
 
+    def reorderOpens(self, rules):
+        if rules['Flag'] != 'BaseSAYC':
+            return
+        
+        neworders = list(range(len(rules['BidRules'][0]['Bids'])))
+        neworders[0] = 2
+        neworders[1] = 3
+        neworders[2] = 4
+        neworders[3] = 5
+        neworders[4] = 0
+        neworders[5] = 1
+        n = [rules['BidRules'][0]['Bids'][i] for i in neworders]
+        rules['BidRules'][0]['Bids'] = n
+        return
+        
     def output(self, fname, rules):
         f = open(f'../data/{fname}.json', 'w')
         print(f"BidComponents.push(", end='', file=f)
