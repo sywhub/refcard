@@ -64,17 +64,18 @@ class Settings {
             }
         }
         for (const i of rkcbIdx) {
-            for (let j = 0; j < this.WorkingSet.BidRules[i].Bids.length; j++) {
-                if (this.WorkingSet.BidRules[i].Bids[j].Bid == '5C') {
+            let r = this.WorkingSet.BidRules[i]
+            for (let j = 0; j < r.Bids.length; j++) {
+                if (r.Bids[j].Bid == '5C') {
                     if (this.OptionItems.RKCBFlag.Value == 0)
-                        this.WorkingSet.BidRules[i].Bids[j].Criteria.KeyCard = [0, 3];
+                        r.Bids[j].Criteria[0].KeyCard = [0, 3];
                     else
-                        this.WorkingSet.BidRules[i][j].Criteria.KeyCard = [1, 4];
-                } else if (this.WorkingSet.BidRules[i].Bids[j].Bid == '5D') {
+                        r.Bids[j].Criteria[0].KeyCard = [1, 4];
+                } else if (r.Bids[j].Bid == '5D') {
                     if (this.OptionItems.RKCBFlag.Value == 0)
-                        this.WorkingSet.BidRules[i].Bids[j].Criteria.KeyCard = [1, 4];
+                        r.Bids[j].Criteria[0].KeyCard = [1, 4];
                     else
-                        this.WorkingSet.BidRules[i].Bids[j].Criteria.KeyCard = [0, 3];
+                        r.Bids[j].Criteria[0].KeyCard = [0, 3];
                 }
             }
         }

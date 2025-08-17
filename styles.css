@@ -7,13 +7,15 @@ h2, h3 {color: blueviolet;}
 }
 .Footer { position: fixed; bottom: 2vh; right: 3vw; }
 .QRefBidSeq {margin-left: 20px;}
-.QRefBidList {grid-template-columns: 4vw 23vw 10vw 8vw; display: grid; }
-.QRefBidList:nth-child(even) { background-color: #f5f5f5;}
+.QRefBidList {grid-template-columns: 4vw 23vw 10vw 8vw 10vw; display: grid; }
+.QRefDisplay .QRefBidList:nth-child(even) * { background-color: #f5f5f5;}
 .Error, .BidDesc {font-style: italic; color:blueviolet;}
 .BidFlags {font-style: italic; color: brown;}
 .BidHeadMenu { width: 8em; margin-right: 5px; margin-left: 5px; }
+.BidHeader {color: red; font-weight: bold;}
 .SeqBid, .SeqHeader {justify-self: center;}
 .SeqHeader {font-weight: bold; font-style: italic; background-color: azure;}
+.Zero {color:blueviolet; font-style: italic;}
 .ConfigDisplay {
     float: left;
     margin-top: 20px;
@@ -29,7 +31,7 @@ h2, h3 {color: blueviolet;}
 }
 .ConfigData { font-style: italic; }
 .BidKeys { display: grid; grid-template-columns: repeat(3, 15vw) 20vw; }
-.ConfigUI, .QRefUI, { font-family: inherit; font-size: inherit; margin: 5px;}
+.ConfigUI, .QRefUI { font-family: inherit; font-size: inherit; margin: 5px;}
 @media screen and (max-width: 981px) {
 body {font-size: 3vw;}
 .QRefBidList {grid-template-columns: 8vw 50vw 30vw 16vw;}
