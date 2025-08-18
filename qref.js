@@ -101,6 +101,9 @@ class QReference {
             gridElement(rowDiv, this.htmlBid(c.Bid), 1, row);
             gridElement(rowDiv, this.criteriaString(c.Criteria[0], c.Bid), 2, row);
             e.appendChild(rowDiv);
+            // Link up  follow-ups
+            linkFunc(rowDiv, [...seq, c.Bid], 3, "Compete")
+            linkFunc(rowDiv, [...seq, c.Bid, '-'], 4, "Reply")
             // Do we have more than one criteria for this bid?
             for (let i = 1; i < c.Criteria.length; ++i) {
                 rowDiv = document.createElement('div');
@@ -109,9 +112,6 @@ class QReference {
                 gridElement(rowDiv, this.criteriaString(c.Criteria[i], c.Bid), 2, ++row);
                 e.appendChild(rowDiv);
             }
-            // Link up  follow-ups
-            linkFunc(rowDiv, [...seq, c.Bid], 3, "Compete")
-            linkFunc(rowDiv, [...seq, c.Bid, '-'], 4, "Reply")
             
             // Display flags and convention
             let flagElem = null;

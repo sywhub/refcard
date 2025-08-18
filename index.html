@@ -20,7 +20,6 @@ var BidComponents = [];
 <script src="qref.js"></script>
 <script>
 var Config = new Settings();
-Config.getDefaults();
 </script>
 <!-- Bid Componengts must begein with BaseSAYC -->
 <script src="data/BaseSAYC.json"></script>
@@ -56,7 +55,7 @@ document.title=document.querySelector('meta[name="title"]').content
     e.style['font-size'] = 'inherit';
     divE.appendChild(e);
 });
-QRef3('ListDisplay');
+document.getElementById('BidQuickReference').click();
 showFooter(Card.suitchars(), Config.DisplayDate);
 </script>
 </body>

@@ -118,6 +118,57 @@ function About(d) {
     }
     conv.sort();
     conv.forEach(c => {
-        right.insertAdjacentHTML('beforeend', `${trEnZh(c)}<br>`);
+        let url = ConventionURL(c);
+        let text = trEnZh(c);
+        if (url) {
+            let e = document.createElement('a')
+            e.setAttribute('href', url)
+            e.innerHTML = text;
+            right.appendChild(e)
+            right.insertAdjacentHTML('beforeend', `<br>`);
+        } else
+            right.insertAdjacentHTML('beforeend', `${text}<br>`);
     });
+}
+
+function ConventionURL(c) {
+    const ConvURL = {
+        '2/1 GF': '',
+        '2C-2D Waiting': '',
+        '2C-2H Double Negative': '',
+        '2S Minor Transfer': '', 
+        '4SF': 'https://www.bridgebum.com/fourth_suit_forcing.php',
+        'Bergen Raise': 'https://www.bridgebum.com/bergen_raises.php',
+        'D0P1': 'https://www.bridgebum.com/double_0_pass_1.php',
+        'DONT': 'https://www.bridgebum.com/dont.php',
+        'Gerber': '',
+        'HSGT': 'https://www.bridgebum.com/help_suit_game_try.php',
+        'High Reverse': 'https://www.bridgehands.com/H/High_Reverse.htm',
+        'Inverted Minor': '',
+        'Jacoby 2NT': '',
+        'Jacoby Transfer': '',
+        'Leaping Michaels': 'https://www.bridgebum.com/leaping_michaels.php',
+        'Lebensohl': '',
+        'Michaels': 'https://www.bridgebum.com/michaels_cuebid.php',
+        'NMF': 'https://www.bridgebum.com/new_minor_forcing.php',
+        'Negative DBL': '',
+        'Ogust': 'https://www.bridgebum.com/ogust.php',
+        'Opener Reverse': 'https://www.bridgehands.com/R/Reverse.htm',
+        'R0P1': 'https://www.bridgebum.com/ropi.php',
+        'RKCB': 'https://www.bridgebum.com/roman_key_card_blackwood.php',
+        'Responsive DBL': 'https://www.bridgebum.com/responsive_double.php',
+        'Reverse Drury': 'https://www.bridgebum.com/reverse_drury.php',
+        'Sandwich 1NT': 'https://www.bridgebum.com/sandwich_1nt.php',
+        'Smolen': 'https://web2.acbl.org/documentLibrary/play/Commonly_Used_Conventions/smolen.pdf',
+        'Splinter': '',
+        'Stayman': '',
+        'Strong 2C': '',
+        'Strong Jump Shift': '',
+        'Support DBL': '',
+        'Take-Out DBL': '',
+        'Texas Transfer': '',
+        'Unusual 2NT': 'https://www.bridgebum.com/unusual_2nt.php'};
+    if (c in ConvURL && ConvURL[c] != '')
+        return ConvURL[c];
+    return null;
 }

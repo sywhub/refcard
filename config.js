@@ -21,7 +21,8 @@ class Settings {
     init(e) {
         this.disp = e;
         for (const bidComp of BidComponents) {
-            if (!('BuildIn' in bidComp) && !this.OptionItems['TwoOneChoice'].IDs.includes(bidComp.Name)) 
+            if (!('BuildIn' in bidComp) && !this.OptionItems['TwoOneChoice'].IDs.includes(bidComp.Name) &&
+                this.OptionItems[bidComp.Flag] == undefined) 
                 this.OptionItems[bidComp.Flag] = {'HTML': bidComp.Name};
         }
     }
@@ -359,52 +360,12 @@ class Settings {
         this.resetTopControls();
     }
 
-    ConventionURL(c) {
-        const ConvURL = {
-            '2/1 GF': '',
-            '2C-2D Waiting': '',
-            '2C-2H Double Negative': '',
-            '2S Minor Transfer': '', 
-            '5-Card Major': '',
-            'Bergen Raise': 'https://www.bridgebum.com/bergen_raises.php',
-            'Better Minor': '',
-            'D0P1': 'https://www.bridgebum.com/double_0_pass_1.php',
-            'DONT': '',
-            'Gerber': '',
-            'HSGT': 'https://www.bridgebum.com/help_suit_game_try.php',
-            'High Reverse': 'https://www.bridgehands.com/H/High_Reverse.htm',
-            'Inverted Minor': '',
-            'Jacoby 2NT': '',
-            'Jacoby Transfer': '',
-            'Leaping Michaels': 'https://www.bridgebum.com/leaping_michaels.php',
-            'Lebensohl': '',
-            'Michaels': '',
-            'Negative DBL': '',
-            'Ogust': 'https://www.bridgebum.com/ogust.php',
-            'Opener Reverse': 'https://www.bridgehands.com/R/Reverse.htm',
-            'R0P1': 'https://www.bridgebum.com/ropi.php',
-            'RKCB': 'https://www.bridgebum.com/roman_key_card_blackwood.php',
-            'Responsive DBL': 'https://www.bridgebum.com/responsive_double.php',
-            'Reverse Drury': 'https://www.bridgebum.com/reverse_drury.php',
-            'Smolen': 'https://web2.acbl.org/documentLibrary/play/Commonly_Used_Conventions/smolen.pdf',
-            'Splinter': '',
-            'Sandwich 1NT': 'https://www.bridgebum.com/sandwich_1nt.php',
-            'Stayman': '',
-            'Strong 2C': '',
-            'Strong Jump Shift': '',
-            'Strong NT': '',
-            'Support DBL': '',
-            'Take-Out DBL': '',
-            'Texas Transfer': '',
-            'Unusual 2NT': ''};
-        if (c in ConvURL && ConvURL[c] != '')
-            return ConvURL[c];
-        return null;
-    }
+
 }
 
 // OnClick handler for the config button
 function Config3(divname) {
     Config.init(document.getElementById(divname));
+    Config.getDefaults();
     Config.showConfig();
 }
