@@ -88,11 +88,12 @@ class Settings {
         var keys = Object.keys(toMerge);
         for (const r of newset) {
             let k = seqKey(r.Seq);
-            if (k in keys)
+            if (keys.includes(k))
                 r.Bids.forEach(b => {toMerge[k].Bids.push(b)});
             else {
                 toMerge[k] = {'Seq': r.Seq, 'Bids': []};
                 toMerge[k].Bids = r.Bids;
+                keys.push(k);
             }
         }
         return toMerge;

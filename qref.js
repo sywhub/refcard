@@ -1,5 +1,9 @@
+/*
+ * Quick Reference Displaying
+ */
 class QReference {
     UIClass = 'QRefUI';
+
     constructor(displayId) {
         var e = document.getElementById(displayId);
         clearContents(e);
@@ -14,21 +18,25 @@ class QReference {
         e.appendChild(this.disp);
     }
 
+    // workhorse
     run(seq) {
         clearContents(this.disp);
         this.breadCrumb(seq);
         this.bidChoices(seq);
     }
 
+    // Those bids leading to here
     breadCrumb(seq) {
         let span = document.createElement('span');
         span.setAttribute('id', 'QRefBidSeq');
         span.setAttribute('class', 'Zero');
         this.disp.appendChild(span);
         let seqS = this.seqString(seq);
+        // Special case for opening bids
         if (seqS == "")
             span.innerHTML = trEnZh('Open');
         else {
+            // If competitive/responsive bids were coded in the system
             span.innerHTML = `${trEnZh('Previous Bid')}: `;
             let last = seq.at(-1);
             let prevSeq;
@@ -36,6 +44,7 @@ class QReference {
                 prevSeq = seq.slice(0, seq.length - 2)
             else
                 prevSeq = seq.slice(0, seq.length - 1)
+            // Setup the link to be clickable
             let link = document.createElement('a');
             link.setAttribute('href', '#');
             link.addEventListener('click', (e) => {this.run(prevSeq);});
@@ -44,21 +53,24 @@ class QReference {
         }
     }
 
+    // List the bids coded under this situation
     bidChoices(seq) {
-        var k = seqKey(seq)
+        var k = seqKey(seq) // guaranteed to exist
+        // recreate the div everytime
         var e = document.createElement('div');
         e.setAttribute('id', 'QRefBidList');
         e.setAttribute('class', 'QRefBidList');
         this.disp.appendChild(e);
         // Grid headers
-        var hdrChoice = gridElement(e, trEnZh("Bid Choices"), 1, 1);
+        var row = 1;
+        var hdrChoice = gridElement(e, trEnZh("Bid Choices"), 1, row++);
         hdrChoice.style['grid-column-end'] = 4;
         hdrChoice.style['justify-self'] = 'center';
         hdrChoice.setAttribute('class', "BidHeader");
         hdrChoice.setAttribute('id', "BidChoices");
 
         var bids = Config.WorkingSet.BidRules[k];
-        var row = 2;
+        // Two local functions
         var linkFunc = (pDiv, s, col, html) => {
             let refKey = seqKey(s);
             if (Config.WorkingSet.BidRules[refKey] != undefined) {
@@ -79,13 +91,17 @@ class QReference {
                     elem.insertAdjacentHTML('beforeend', `, ${trEnZh(txt)}`);
             return elem;
         };
+
+        // Process each bid
         for (let c of bids.Bids) {
+            // Package all row info into a container div
             let rowDiv = document.createElement('div');
             rowDiv.style['display'] = 'contents';
             rowDiv.setAttribute('class', 'GridList');
             gridElement(rowDiv, this.htmlBid(c.Bid), 1, row);
             gridElement(rowDiv, this.criteriaString(c.Criteria[0], c.Bid), 2, row);
             e.appendChild(rowDiv);
+            // Do we have more than one criteria for this bid?
             for (let i = 1; i < c.Criteria.length; ++i) {
                 rowDiv = document.createElement('div');
                 rowDiv.style['display'] = 'contents';
@@ -93,17 +109,21 @@ class QReference {
                 gridElement(rowDiv, this.criteriaString(c.Criteria[i], c.Bid), 2, ++row);
                 e.appendChild(rowDiv);
             }
+            // Link up  follow-ups
             linkFunc(rowDiv, [...seq, c.Bid], 3, "Compete")
             linkFunc(rowDiv, [...seq, c.Bid, '-'], 4, "Reply")
+            
+            // Display flags and convention
             let flagElem = null;
             flagElem = forceFlag(rowDiv, row, c, 'Convention', c.Convention, flagElem);
             flagElem = forceFlag(rowDiv, row, c, 'Forcing', '1RF', flagElem);
             flagElem = forceFlag(rowDiv, row, c, 'GF', 'GF', flagElem);
             e.appendChild(rowDiv);
-            row++;
+            row++;  // onward
         }
     } 
 
+    // Turn bid sequence into pretty string
     seqString(sequence) { 
         var seqStr = "";
         var opponent = sequence.length % 2;
@@ -120,6 +140,7 @@ class QReference {
         return seqStr;
     } 
 
+    // Turn bid into pretty HTML code
     htmlBid(txtBid) {
         if (txtBid == "X" || txtBid == "XX" || txtBid == '-')
             return txtBid;
@@ -187,6 +208,9 @@ class QReference {
     }
 
     criteriaString(c, bid) {
+        if (c === undefined || c == null || c.length <= 0)
+            return '';
+
         var dispatchTbl = {
             'SuitLen': this.suitLenString,
             'AnySuit': this.anySuitString,
@@ -286,6 +310,7 @@ class QReference {
     }
 }
 
+// Onclick function
 function QRef3(displayId) {
     var qref = new QReference(displayId);
     if (Config.WorkingSet == undefined || Config.WorkingSet == null) {

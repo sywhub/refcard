@@ -8,7 +8,7 @@ h2, h3 {color: blueviolet;}
 .Footer { position: fixed; bottom: 2vh; right: 3vw; }
 .QRefBidSeq {margin-left: 20px;}
 .QRefBidList {grid-template-columns: 4vw 23vw 10vw 8vw 10vw; display: grid; }
-.QRefDisplay .QRefBidList:nth-child(even) * { background-color: #f5f5f5;}
+.QRefBidList > div:nth-child(even) { background-color: #f5f5f5;}
 .Error, .BidDesc {font-style: italic; color:blueviolet;}
 .BidFlags {font-style: italic; color: brown;}
 .BidHeadMenu { width: 8em; margin-right: 5px; margin-left: 5px; }
