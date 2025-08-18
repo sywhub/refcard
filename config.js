@@ -184,8 +184,7 @@ class Settings {
 
     makeControl() {
         var subd = document.createElement('div');
-        subd.style['margin-top'] = '20px';
-        subd.style['float'] = 'left';
+        subd.setAttribute('class', 'ConfigLeft')
         this.disp.appendChild(subd);
 
         var btn;
