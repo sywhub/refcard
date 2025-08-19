@@ -27,27 +27,21 @@ class Settings {
         }
     }
 
-    /* In sequence:
-     * get Supplmental2 rules, with or without Leaping Michaels
-     * Merge with BaseSAYC
-     * As options: merge in either Thurston or GIB21
-     * Then, also as option, merge in Lebensohl
-     * 
-     * Lastly, preload 3 conventions, then search for all the conventions in the system
-     */
+    // Go through each component and merge into base if so chosen
     makeBidRules() {
         // JS copying is shallow
         var working = {};
         working['BidRules'] = this.mergeRules({}, BidComponents[0].BidRules);
         for (let i = 1; i < BidComponents.length; i++) {
-            if ('BuildIn' in BidComponents[i])
-                working['BidRules'] = this.mergeRules(working['BidRules'], BidComponents[i].BidRules);
-            else if (this.OptionItems.TwoOneChoice.IDs.includes[BidComponents[i].Name]) {
+            let bidComp = BidComponents[i];
+            if ('BuildIn' in bidComp)
+                working['BidRules'] = this.mergeRules(working['BidRules'], bidComp.BidRules);
+            else if (this.OptionItems.TwoOneChoice.IDs.includes(bidComp.Name)) {
                 let idx = this.OptionItems.TwoOneChoice.Value;
                 if (idx > 0 && bidComp.Name == this.OptionItems.TwoOneChoice.IDs[idx]) 
-                        working['BidRules'] = this.mergeRules(working['BidRules'], BidComponents[i].BidRules);
-            } else if (BidComponents[i].Flag in this.OptionItems && this.OptionItems[BidComponents[i].Flag].Value > 0)
-                    working['BidRules'] = this.mergeRules(working['BidRules'], BidComponents[i].BidRules);
+                    working['BidRules'] = this.mergeRules(working['BidRules'], bidComp.BidRules);
+            } else if (bidComp.Flag in this.OptionItems && this.OptionItems[bidComp.Flag].Value > 0)
+                    working['BidRules'] = this.mergeRules(working['BidRules'], bidComp.BidRules);
         }
         this.WorkingSet = working;
         this.changeRKCB();
