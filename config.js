@@ -92,14 +92,14 @@ class Settings {
                     if (idx < toMerge[k].Bids.length) {
                         for (const [x,v] of Object.entries(b))
                             if (x != 'Bid')
-                                toMerge[k].Bids[idx][x] = v;
+                                toMerge[k].Bids[idx][x] = JSON.parse(JSON.stringify(v));
                     }
                     else
-                        toMerge[k].Bids.push(b);
+                        toMerge[k].Bids.push(JSON.parse(JSON.stringify(b)));
                 }
             } else {
-                toMerge[k] = {'Seq': r.Seq, 'Bids': []};
-                toMerge[k].Bids = r.Bids;
+                toMerge[k] = {'Seq': r.Seq};
+                toMerge[k]['Bids'] = JSON.parse(JSON.stringify(r.Bids));
                 keys.push(k);
             }
         }
