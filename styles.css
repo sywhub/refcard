@@ -12,8 +12,8 @@ h2, h3 {color: blueviolet;}
 .Error, .BidDesc {font-style: italic; color:blueviolet;}
 .BidFlags {font-style: italic; color: brown;}
 .BidHeadMenu { width: 8em; margin-right: 5px; margin-left: 5px; }
-.BidHeader {color: red; font-weight: bold;}
-.SeqBid, .SeqHeader {justify-self: center;}
+.BidHeader, .ConventionCard {color: red; font-weight: bold;}
+.SeqBid, .SeqHeader, .ConventionCard {justify-self: center;}
 .SeqHeader {font-weight: bold; font-style: italic; background-color: azure;}
 .Zero {color:blueviolet; font-style: italic;}
 .ConfigLeft {

@@ -134,25 +134,33 @@ class Settings {
     showBaseCard(gridDiv, row) {
         var headings = {'General': `5-Card Major, Better Minor, Strong 2${Card.ltr2html('C')}, Strong NT, RKCB`,
              'Major':
-                '5+ cards, 12+ points. Reverse Drury, Jacoby 2NT, Limited Raise, Negative Double. Cue-bid 3-Card Support.',
+                'Reverse Drury, Jacoby 2NT, Limited Raise, Negative Double, Cue-bid 3-Card Support',
              'No Trump':
-                `1NT 15-17 HCP, 2NT 20~21 HCP. Gerber, Stayman, Smolen, Jacoby Transfer. Texas Transfer, 2${Card.ltr2html('S')} Minor Transfer. 2NT invitational.`,
+                `1NT 15-17 HCP, 2NT 20~21 HCP, Gerber, Stayman, Smolen, Jacoby Transfer, Texas Transfer, 2S Minor Transfer, 2NT invitational`,
              'Minor':
-                '3+ cards, 12+ points. Inverted Minor',
-             'Strong 2C': `22+HCP or 9+ tricks.  2${Card.ltr2html('D')} waiting, denies strong suit. 2${Card.ltr2html('H')} "Double Negative" 3-HCP.`,
-             'Preemptive': '6+ cards with honor(s), 8-11 points',
+                'Inverted Minor',
+             'Strong 2C': `2C-2D Waiting, 2C-2H Double Negative`,
+             'Preemptive': '6+ cards with honor(s), 8-11 HCP',
              'OverCall':
-                "5+ cards, 8+ points. 1NT as open, with stopper in opponent's suit. Michaels/Unusual 2NT, DONT",
+                "Michaels, Unusual 2NT, DONT",
              'Double':
-                `Take-out up to 3${Card.ltr2html('S')}, Responsive Double, Support Double, Negative Double`,
-             'Others': 'Strong Jump Shift, Splinter, New Minor Forcing (NMF), 4th Suit Forcing (4SF), Doubl-0-pass-1 (D0P1), Redouble-0-pass-1 (R0P1), Sandwich 1NT, High Reverse',
+                `Take-out up to 3${Card.ltr2html('S')}, Responsive DBL, Support DBL, Negative DBL`,
+             'Others': 'Strong Jump Shift, Splinter, New Minor Forcing (NMF), 4th Suit Forcing (4SF), D0P1, R0P1, Sandwich 1NT, High Reverse',
             };
+        var e = gridElement(gridDiv, trEnZh('Convention Card'), 1, row++);
+        e.style['grid-column'] = '1 / span 2'
+        e.setAttribute('class', 'ConventionCard');
         for (const [k,v] of Object.entries(headings)) {
-            var e = gridElement(gridDiv, trEnZh(k), 1, row);
+            e = gridElement(gridDiv, trEnZh(k), 1, row);
             e.setAttribute('class', this.Heading);
-            e = gridElement(gridDiv, trEnZh(v), 2, row++);
+            let trUnits = v.split(',')
+            let trStr = ''
+            trUnits.forEach((x) => trStr += `${trEnZh(x.trim())}, `);
+            trStr = trStr.substring(0, trStr.length - 2)
+            e = gridElement(gridDiv, trStr, 2, row++);
             e.setAttribute('class', this.Data);
-        }    
+        }
+        // this.showOptionalConventions();
         return row;
     }
 
@@ -161,6 +169,31 @@ class Settings {
         e.setAttribute('class', this.Heading);
         row = this.mkToggles(gridDiv, row);
         row = this.mkFlips(gridDiv, row);
+    }
+
+    showOptionalConventions() {
+        for (const bidComp of BidComponents) {
+            if ('BuildIn' in bidComp)
+                continue;
+            let conv = []
+            bidComp.BidRules.forEach((r) => {
+                r.Bids.forEach((b) => {
+                    if ('Criteria' in b)
+                        b.Criteria.forEach((c) => {
+                            if ('Meta' in c && 'Convention' in c.Meta && !conv.includes(c.Meta.Convention))
+                                conv.push(c.Meta.Convention);
+                        });
+                });
+            });
+            if (conv.length > 0) {
+                conv.sort();
+                let s = `${bidComp.Name}: `;
+                conv.forEach((c) => s += ` ${c},`);
+                s = s.substring(0, s.length - 1);
+                e.insertAdjacentHTML('beforeend', s)
+                e.insertAdjacentHTML('beforeend', '<br>')
+            }
+        }
     }
 
     // Retrieve previously saved options from localStorage, if any.
@@ -294,10 +327,10 @@ class Settings {
     switchLang(btn) {
         var btnString = btn.target.value;
         var langIdx = this.OptionItems.Language.Prompts.indexOf(btnString);
-        this.OptionItems.Language['Value'] = 1-langIdx; // toggle
         btn.value = this.OptionItems.Language.Prompts[langIdx]
+        this.OptionItems.Language['Value'] = 1-langIdx; // toggle
 
-        localStorage.setItem('Language', langIdx);
+        localStorage.setItem('Language', this.OptionItems.Language['Value']);
         this.resetTopControls();
         this.showConfig();
         showFooter(Card.suitchars(), this.DisplayDate);
