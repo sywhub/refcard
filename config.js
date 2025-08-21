@@ -1,4 +1,5 @@
 /*
+ * Manage configurations
  * Save states with localStorage
  */
 class Settings {
@@ -76,42 +77,42 @@ class Settings {
         }
     }
 
-    // remove from list one those with same bidseq and bid
-    // then add 2nd list
-    // this is not perfect as some conventions are not based on bidseq and bidding
-    mergeRules(toMerge, newset) {
-        var keys = Object.keys(toMerge);
+    // Deep copy source into the working set
+    // Replace duplicates
+    mergeRules(targetSet, newset) {
+        var keys = Object.keys(targetSet);  // cache
         for (const r of newset) {
             let k = seqKey(r.Seq);
             if (keys.includes(k)){
+                // case of this rule has been in the existing set already
                 for (const b of r.Bids) {
-                    let idx = 0;
-                    for (idx = 0; idx < toMerge[k].Bids.length; ++idx)
-                        if (toMerge[k].Bids[idx].Bid == b.Bid)
-                            break;
-                    if (idx < toMerge[k].Bids.length) {
-                        for (const [x,v] of Object.entries(b))
-                            if (x != 'Bid')
-                                toMerge[k].Bids[idx][x] = JSON.parse(JSON.stringify(v));
+                    let idx = targetSet[k].Bids.findIndex((e)=> {return e.Bid == b.Bid;});
+                    if (idx < 0)
+                        // The current ruleset does not have a same bid, we simply add to the end
+                        targetSet[k].Bids.push(JSON.parse(JSON.stringify(b)));
+                    else {
+                        // found a bid that's the same.
+                        // decide to replace the current criteria or append
+                        // the only decision factor is whether it was Drury or not
+                        let findDrury = (e) => {return e.Meta && e.Meta.Convention == 'Reverse Drury';};
+                        let druryIdx = targetSet[k].Bids[idx].Criteria.findIndex(findDrury);
+                        if (druryIdx < 0)
+                            druryIdx = b.Criteria.findIndex(findDrury);
+                        if (druryIdx >= 0) 
+                            b.Criteria.forEach((c) => {targetSet[k].Bids[idx].Criteria.push(JSON.parse(JSON.stringify(c)));});
+                        else
+                            for (const [x,v] of Object.entries(b))
+                                targetSet[k].Bids[idx][x] = JSON.parse(JSON.stringify(v));
                     }
-                    else
-                        toMerge[k].Bids.push(JSON.parse(JSON.stringify(b)));
                 }
             } else {
-                toMerge[k] = {'Seq': r.Seq};
-                toMerge[k]['Bids'] = JSON.parse(JSON.stringify(r.Bids));
-                keys.push(k);
+                // wholesale copy
+                targetSet[k] = {'Seq': r.Seq};
+                targetSet[k]['Bids'] = JSON.parse(JSON.stringify(r.Bids));
+                keys.push(k);   // don't make a dup next time
             }
         }
-        return toMerge;
-    }
-
-    dedup(r, duplist) {
-        for (const d of duplist) {
-            if (compSequence(r.BidSeq, d.BidSeq) && r.Bid == d.Bid)
-                return false;
-        }
-        return true;
+        return targetSet;
     }
 
     showConfig() {
@@ -129,6 +130,7 @@ class Settings {
         row = this.showBaseCard(gridDiv, row)
         this.showOptions(gridDiv, row);
     }
+
     showBaseCard(gridDiv, row) {
         var headings = {'General': `5-Card Major, Better Minor, Strong 2${Card.ltr2html('C')}, Strong NT, RKCB`,
              'Major':
@@ -199,7 +201,7 @@ class Settings {
         btn.setAttribute('type', 'button');
         btn.setAttribute('class', this.UIClass);
         btn.setAttribute('value', trEnZh('Reset'));
-        btn.addEventListener('click', (e) => this.reset(e));
+        btn.addEventListener('click', () => this.reset());
         subd.appendChild(btn);
         subd.insertAdjacentHTML('beforeend', '<br>')
 
@@ -371,7 +373,6 @@ class Settings {
 
 // OnClick handler for the config button
 function Config3(divname) {
-    Config.init(document.getElementById(divname));
     Config.getDefaults();
     Config.showConfig();
 }

@@ -111,8 +111,9 @@ function About(d) {
     for (const comp of BidComponents) {
         for (const r of comp.BidRules) {
             for (const b of r.Bids) {
-                if ('Convention' in b && !conv.includes(b.Convention))
-                    conv.push(b.Convention);
+                b.Criteria.forEach((c) => {
+                    if ('Meta' in c && 'Convention' in c.Meta && !conv.includes(c.Meta.Convention))
+                        conv.push(c.Meta.Convention);});
             }
         }
     }

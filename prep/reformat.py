@@ -46,7 +46,11 @@ class ReformatRules:
                 y['Criteria'].append(x['Criteria'])
             for k in ['Convention', 'GF', 'Forcing']:
                 if k in x:
-                    y[k] = x[k]
+                    if 'Criteria' not in y or len(y['Criteria']) == 0:
+                        y['Criteria'] = [{'Meta': {}}]
+                    elif 'Meta' not in y['Criteria'][len(y['Criteria'])-1]:
+                        y['Criteria'][len(y['Criteria'])-1]['Meta'] = {}
+                    y['Criteria'][len(y['Criteria'])-1]['Meta'][k] = x[k]
             self.addToQueue(x['Bid'], seq)
         newRules.append(seqObj)
     

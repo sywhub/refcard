@@ -83,12 +83,15 @@ class QReference {
             }
         };
         var forceFlag = (rowDiv, row, c, flag, txt, elem) => {
-            if (c[flag])
+            if ('Meta' in c && c.Meta[flag]) {
+                if (txt == '')
+                    txt = c.Meta[flag];
                 if (elem == null) {
                     elem = gridElement(rowDiv, trEnZh(txt), 5, row);
                     elem.setAttribute('class', 'BidFlags');
                 } else
                     elem.insertAdjacentHTML('beforeend', `, ${trEnZh(txt)}`);
+            }
             return elem;
         };
 
@@ -100,6 +103,10 @@ class QReference {
             rowDiv.setAttribute('class', 'GridList');
             gridElement(rowDiv, this.htmlBid(c.Bid), 1, row);
             gridElement(rowDiv, this.criteriaString(c.Criteria[0], c.Bid), 2, row);
+            let flagElem = null;
+            flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'Convention', '', flagElem);
+            flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'Forcing', '1RF', flagElem);
+            flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'GF', 'GF', flagElem);
             e.appendChild(rowDiv);
             // Link up  follow-ups
             linkFunc(rowDiv, [...seq, c.Bid], 3, "Compete")
@@ -110,14 +117,14 @@ class QReference {
                 rowDiv.style['display'] = 'contents';
                 rowDiv.setAttribute('class', 'GridList');
                 gridElement(rowDiv, this.criteriaString(c.Criteria[i], c.Bid), 2, ++row);
+                flagElem = null;
+                flagElem = forceFlag(rowDiv, row, c.Criteria[i], 'Convention', '', flagElem);
+                flagElem = forceFlag(rowDiv, row, c.Criteria[i], 'Forcing', '1RF', flagElem);
+                flagElem = forceFlag(rowDiv, row, c.Criteria[i], 'GF', 'GF', flagElem);
                 e.appendChild(rowDiv);
             }
             
             // Display flags and convention
-            let flagElem = null;
-            flagElem = forceFlag(rowDiv, row, c, 'Convention', c.Convention, flagElem);
-            flagElem = forceFlag(rowDiv, row, c, 'Forcing', '1RF', flagElem);
-            flagElem = forceFlag(rowDiv, row, c, 'GF', 'GF', flagElem);
             e.appendChild(rowDiv);
             row++;  // onward
         }
@@ -300,6 +307,9 @@ class QReference {
                 case 'SideKing':
                     retString += v ? trEnZh('Have Side King(s)') : trEnZh('No Side King');
                     break;
+                case 'Meta':
+                    comma = false;
+                    break;
                 default:
                     retString += '"' + k + '": "' + v + '"';
                     break;
@@ -314,7 +324,6 @@ class QReference {
 function QRef3(displayId) {
     var qref = new QReference(displayId);
     if (Config.WorkingSet == undefined || Config.WorkingSet == null) {
-        Config.init(displayId);
         Config.getDefaults();
         Config.makeBidRules();
     }
