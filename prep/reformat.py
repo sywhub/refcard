@@ -10,6 +10,7 @@ class ReformatRules:
     BuildIns = ['Base SAYC', 'Reverse Drury', 'DONT', 'D0P1', 'R0P1', 'Open Rebid', 'Preemptive Overcall', \
             'New Minor Forcing', 'Responsive DBL']
     AllowDup = ['Reverse Drury']
+    DefaultOn = ['DONT']
     ChoiceSet = {'2/1 Choice': ["GIB 2/1", "P. Thurston 2/1"], 
                  'NT Compete': ["DONT", 'Cappelletti']}
     ChoiceSetReverse = {}
@@ -81,6 +82,8 @@ class ReformatRules:
                 outObj['BuildIn'] = True
             if v['System Name'] in ReformatRules.AllowDup:
                 outObj['AllowDup'] = True
+            if v['System Name'] in ReformatRules.DefaultOn:
+                outObj['DefaultOn'] = True
             if v['System Name'] in ReformatRules.ChoiceSetReverse.keys():
                 outObj['ChoiceOf'] = ReformatRules.ChoiceSetReverse[v['System Name']]
             self.reorderOpens(outObj)

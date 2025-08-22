@@ -7,9 +7,8 @@ class Settings {
     Data = 'ConfigData';
     UIClass = 'ConfigUI';
     OptionItems = {
-        'Language': {HTML: 'Language', IDs: ['en-US', 'zh-TW'], Prompts: ['改用中文','Switch to English']},
+        'Language': {HTML: 'Language', Choices: true, IDs: ['en-US', 'zh-TW'], Prompts: ['改用中文','Switch to English']},
         'RKCBFlag': {HTML: 'RKCB',  IDs: ['0314', '1430']},
-        'TwoOneChoice': {HTML: '2/1 GF Choice',  IDs: ['None', 'P. Thurston 2/1', 'GIB 2/1']},
         };
 
     constructor(){
@@ -21,10 +20,35 @@ class Settings {
 
     init(e) {
         this.disp = e;
+        var choiceSet = [];
+        // Construct GUI options from data
         for (const bidComp of BidComponents) {
-            if (!('BuildIn' in bidComp) && !this.OptionItems['TwoOneChoice'].IDs.includes(bidComp.Name) &&
-                this.OptionItems[bidComp.Flag] == undefined) 
+            if (bidComp.ChoiceOf != undefined) {
+                if (!choiceSet.includes(bidComp.ChoiceOf))
+                    choiceSet.push(bidComp.ChoiceOf)
+            }
+            if (!('BuildIn' in bidComp) && bidComp.ChoiceOf == undefined) {
                 this.OptionItems[bidComp.Flag] = {'HTML': bidComp.Name};
+                if (bidComp.DefaultOn != undefined && bidComp.DefaultOn)
+                    this.OptionItems[bidComp.Flag]['Value'] = 1;
+            }
+        }
+        for (const choice of choiceSet) {
+            let flagSet = [];
+            BidComponents.forEach(comp => {
+                if (comp.ChoiceOf && comp.ChoiceOf == choice)
+                    flagSet.push(comp.Flag);
+            });
+            this.OptionItems[choice] = {'HTML': choice, 'Choices': true, IDs: ['None']}
+            let idx = 1;
+            BidComponents.forEach(comp => {
+                if (flagSet.includes(comp.Flag)) {
+                    this.OptionItems[choice].IDs.push(comp.Name);
+                    if (comp.DefaultOn != undefined && comp.DefaultOn)
+                        this.OptionItems[choice]['Value'] = idx;
+                    ++idx;
+                }
+            });
         }
     }
 
@@ -37,9 +61,9 @@ class Settings {
             let bidComp = BidComponents[i];
             if ('BuildIn' in bidComp)
                 working['Rules'] = this.mergeRules(working['Rules'], bidComp);
-            else if (this.OptionItems.TwoOneChoice.IDs.includes(bidComp.Name)) {
-                let idx = this.OptionItems.TwoOneChoice.Value;
-                if (idx > 0 && bidComp.Name == this.OptionItems.TwoOneChoice.IDs[idx]) 
+            else if (bidComp.Choices != undefined && bidComp.IDs.includes(bidComp.Name)) {
+                let idx = this.OptionItems[i].Value;
+                if (idx > 0 && bidComp.Name == this.OptionItems[i].IDs[idx]) 
                     working['Rules'] = this.mergeRules(working['Rules'], bidComp);
             } else if (bidComp.Flag in this.OptionItems && this.OptionItems[bidComp.Flag].Value > 0)
                     working['Rules'] = this.mergeRules(working['Rules'], bidComp);
@@ -88,6 +112,7 @@ class Settings {
                     c.Meta['AllowDup'] = true;
                 });
         }
+
         var keys = Object.keys(targetSet);  // cache
         for (const r of newset.Rules) {
             let k = seqKey(r.Seq);
@@ -101,11 +126,11 @@ class Settings {
                         let lastIdx = targetSet[k].Bids.length - 1;
                         dupFlag(newset.AllowDup, targetSet[k].Bids[lastIdx]);
                     } else {
-                        let dup = false;
+                        let dupOK = false;
                         targetSet[k].Bids[idx].Criteria.forEach((c) => {
-                            dup = dup || (c.Meta != undefined && c.Meta.AllowDup != undefined && c.Meta.AllowDup);
+                            dupOK = dupOK || (c.Meta != undefined && c.Meta.AllowDup != undefined && c.Meta.AllowDup);
                         });
-                        if (newset.AllowDup || dup) {
+                        if (newset.AllowDup || dupOK) {
                             b.Criteria.forEach((c) => {
                                 targetSet[k].Bids[idx].Criteria.push(JSON.parse(JSON.stringify(c)));
                                 dupFlag(true, targetSet[k].Bids[idx]);
@@ -138,11 +163,12 @@ class Settings {
         e.setAttribute('class', this.Heading);
         e = gridElement(gridDiv, trEnZh(this.Version), 2, row++);
         e.setAttribute('class', this.Data);
-        row = this.showBaseCard(gridDiv, row)
+        row = this.ConventionCard(gridDiv, row)
         this.showOptions(gridDiv, row);
     }
 
-    showBaseCard(gridDiv, row) {
+    // Text are mostly hand-coded.
+    ConventionCard(gridDiv, row) {
         var headings = {'General': `5-Card Major, Better Minor, Strong 2${Card.ltr2html('C')}, Strong NT, RKCB`,
              'Major':
                 'Reverse Drury, Jacoby 2NT, Limited Raise, Negative Double, Cue-bid 3-Card Support',
@@ -161,6 +187,7 @@ class Settings {
         var e = gridElement(gridDiv, trEnZh('Convention Card'), 1, row++);
         e.style['grid-column'] = '1 / span 2'
         e.setAttribute('class', 'ConventionCard');
+        // Translate words one by one
         for (const [k,v] of Object.entries(headings)) {
             e = gridElement(gridDiv, trEnZh(k), 1, row);
             e.setAttribute('class', this.Heading);
@@ -175,6 +202,7 @@ class Settings {
         return row;
     }
 
+    // User clickables
     showOptions(gridDiv, row) {
         var e = gridElement(gridDiv, trEnZh('Options'), 1, row);
         e.setAttribute('class', this.Heading);
@@ -182,6 +210,7 @@ class Settings {
         row = this.mkFlips(gridDiv, row);
     }
 
+    // Conventions from optional components
     showOptionalConventions() {
         for (const bidComp of BidComponents) {
             if ('BuildIn' in bidComp)
@@ -224,7 +253,7 @@ class Settings {
         for (const k of Object.keys(this.OptionItems)) {
             if (k in localStorage)
                 this.OptionItems[k]['Value'] = localStorage.getItem(k);
-            else if (k != 'Language') // Language is set above
+            else if (k != 'Language' && this.OptionItems[k].Value == undefined) // Language is set above
                 this.OptionItems[k]['Value'] = 0;
         }
         
@@ -269,10 +298,11 @@ class Settings {
         */
     }
 
+    // GUI for multiple choices
     mkToggles(gridDiv, row) {
         var allToggles = [];
         Object.entries(this.OptionItems).forEach(([k, v]) => {
-            if (k != 'Language' && 'IDs' in v)  {
+            if (k != 'Language' && 'Choices' in v)  {
                 let o = {};
                 o[k] = v;
                 allToggles.push(o)
@@ -311,10 +341,11 @@ class Settings {
         return row;
     }
 
+    // Yes/No options
     mkFlips(gridDiv, row) {
         var flipItems = [];
         Object.entries(this.OptionItems).forEach(([k, v]) => {
-            if (!('IDs' in v && v.IDs.length > 0)) {
+            if (v.Choices == undefined || !v.Choices) {
                 let o = {};
                 o[k] = v;
                 flipItems.push(o);

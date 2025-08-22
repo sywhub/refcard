@@ -1,5 +1,6 @@
 BidComponents.push({ 'BuildIn': true,
   'ChoiceOf': 'NT Compete',
+  'DefaultOn': true,
   'Flag': 'DONT',
   'Name': 'DONT',
   'Rules': [ { 'Bids': [ {'Bid': '2S', 'Criteria': [{'HCP': [8, 10], 'Meta': {'Convention': 'DONT'}, 'SuitLen': {'S': 6}}]},
