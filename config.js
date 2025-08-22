@@ -87,10 +87,18 @@ class Settings {
                 // case of this rule has been in the existing set already
                 for (const b of r.Bids) {
                     let idx = targetSet[k].Bids.findIndex((e)=> {return e.Bid == b.Bid;});
-                    if (idx < 0)
+                    if (idx < 0) {
                         // The current ruleset does not have a same bid, we simply add to the end
                         targetSet[k].Bids.push(JSON.parse(JSON.stringify(b)));
-                    else {
+                        if (newset.AllowDup) {
+                            let lastIdx = targetSet[k].Bids.length - 1;
+                            targetSet[k].Bids[lastIdx].Criteria[lastIdx].forEach((c) => {
+                                if (c.Meta == undefined)
+                                    c['Meta'] = {}
+                                c.Meta['AllowDup'] = true;
+                            });
+                        }
+                    } else {
                         let dup = false;
                         targetSet[k].Bids[idx].Criteria.forEach((c) => {
                             dup = dup || (c.Meta != undefined && c.Meta.AllowDup != undefined && c.Meta.AllowDup);
@@ -112,6 +120,14 @@ class Settings {
                 // wholesale copy
                 targetSet[k] = {'Seq': r.Seq};
                 targetSet[k]['Bids'] = JSON.parse(JSON.stringify(r.Bids));
+                if (newset.AllowDup)
+                    targetSet[k].Bids.forEach((b)=> {
+                        b.Criteria.forEach((c) => {
+                            if (c.Meta == undefined)
+                                c['Meta'] = {}
+                            c.Meta['AllowDup'] = true;
+                        });
+                    });
                 keys.push(k);   // don't make a dup next time
             }
         }
