@@ -69,12 +69,12 @@ class QReference {
         hdrChoice.setAttribute('class', "BidHeader");
         hdrChoice.setAttribute('id', "BidChoices");
 
-        var bids = Config.WorkingSet.BidRules[k];
+        var bids = Config.WorkingSet.Rules[k];
         // Two local functions
         var linkFunc = (pDiv, s, col, html) => {
             let refKey = seqKey(s);
             let elem = gridElement(pDiv, '', col, row);
-            if (Config.WorkingSet.BidRules[refKey] != undefined) {
+            if (Config.WorkingSet.Rules[refKey] != undefined) {
                 let link = document.createElement('a');
                 link.setAttribute('href', '#');
                 link.addEventListener('click', (e) => {this.run(s);});

@@ -7,8 +7,12 @@ import pprint
 
 # Reformat previous version bidding rules for new version
 class ReformatRules:
-    BuildIns = ['Base SAYC', 'DONT', 'D0P1', 'R0P1', 'Open Rebid', 'Preemptive Overcall', \
-            'New Minor Forcing', 'Responsive DBL'];
+    BuildIns = ['Base SAYC', 'Reverse Drury', 'DONT', 'D0P1', 'R0P1', 'Open Rebid', 'Preemptive Overcall', \
+            'New Minor Forcing', 'Responsive DBL']
+    AllowDup = ['Reverse Drury']
+    ChoiceSet = {'2/1 Choice': ["GIB 2/1", "P. Thurston 2/1"], 
+                 'NT Compete': ["DONT", 'Cappelletti']}
+    ChoiceSetReverse = {}
     def __init__(self, fname='baseSAYC.json'):
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
         if (os.path.exists(fname) == False):
@@ -27,6 +31,9 @@ class ReformatRules:
             self.data.append(json.loads(v))
         self.bidQue = []
         self.fname = fname
+        for k,v in ReformatRules.ChoiceSet.items():
+            for m in v:
+                ReformatRules.ChoiceSetReverse[m] = k
         return
 
     def AbsObj(self, seq, d, newRules):
@@ -69,9 +76,13 @@ class ReformatRules:
         for v in self.data:
             r = self.loopQ(v)
             varname = self.makeVarName(v['System Name'])
-            outObj = {'Flag': varname, 'Name': v['System Name'], 'BidRules': r}
+            outObj = {'Flag': varname, 'Name': v['System Name'], 'Rules': r}
             if v['System Name'] in ReformatRules.BuildIns:
                 outObj['BuildIn'] = True
+            if v['System Name'] in ReformatRules.AllowDup:
+                outObj['AllowDup'] = True
+            if v['System Name'] in ReformatRules.ChoiceSetReverse.keys():
+                outObj['ChoiceOf'] = ReformatRules.ChoiceSetReverse[v['System Name']]
             self.reorderOpens(outObj)
             allVars.append([varname, outObj])
         self.output(allVars, self.fname)
@@ -127,15 +138,15 @@ class ReformatRules:
         if rules['Flag'] != 'BaseSAYC':
             return
         
-        neworders = list(range(len(rules['BidRules'][0]['Bids'])))
+        neworders = list(range(len(rules['Rules'][0]['Bids'])))
         neworders[0] = 2
         neworders[1] = 3
         neworders[2] = 4
         neworders[3] = 5
         neworders[4] = 0
         neworders[5] = 1
-        n = [rules['BidRules'][0]['Bids'][i] for i in neworders]
-        rules['BidRules'][0]['Bids'] = n
+        n = [rules['Rules'][0]['Bids'][i] for i in neworders]
+        rules['Rules'][0]['Bids'] = n
         return
         
     def output(self, vars, fname):
@@ -156,7 +167,7 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--file', type=str, default='base.json')
     parser.add_argument('-a', '--all', action='store_true')
     args = parser.parse_args()
-    allFiles = ['base.json', 'ntcompete.json', 'gib2o1.json', 'lebensohl.json', 'nmf.json', 'supplemental.json', 'thurston.json']
+    allFiles = ['base.json', 'drury.json', 'ntcompete.json', 'gib2o1.json', 'lebensohl.json', 'nmf.json', 'supplemental.json', 'thurston.json']
 
     if not args.all:
         allFiles = [args.file]

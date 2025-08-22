@@ -32,17 +32,17 @@ class Settings {
     makeBidRules() {
         // JS copying is shallow
         var working = {};
-        working['BidRules'] = this.mergeRules({}, BidComponents[0].BidRules);
+        working['Rules'] = this.mergeRules({}, BidComponents[0]);
         for (let i = 1; i < BidComponents.length; i++) {
             let bidComp = BidComponents[i];
             if ('BuildIn' in bidComp)
-                working['BidRules'] = this.mergeRules(working['BidRules'], bidComp.BidRules);
+                working['Rules'] = this.mergeRules(working['Rules'], bidComp);
             else if (this.OptionItems.TwoOneChoice.IDs.includes(bidComp.Name)) {
                 let idx = this.OptionItems.TwoOneChoice.Value;
                 if (idx > 0 && bidComp.Name == this.OptionItems.TwoOneChoice.IDs[idx]) 
-                    working['BidRules'] = this.mergeRules(working['BidRules'], bidComp.BidRules);
+                    working['Rules'] = this.mergeRules(working['Rules'], bidComp);
             } else if (bidComp.Flag in this.OptionItems && this.OptionItems[bidComp.Flag].Value > 0)
-                    working['BidRules'] = this.mergeRules(working['BidRules'], bidComp.BidRules);
+                    working['Rules'] = this.mergeRules(working['Rules'], bidComp);
         }
         this.WorkingSet = working;
         this.changeRKCB();
@@ -51,7 +51,7 @@ class Settings {
     // Flip 0314 and 1430
     changeRKCB() {
         var rkcbIdx = []
-        for (let [k, x] of Object.entries(this.WorkingSet.BidRules)) {
+        for (let [k, x] of Object.entries(this.WorkingSet.Rules)) {
             for (let r of x.Bids) {
                 if (r.Convention == 'RKCB' && (r.Bid == '5C' || r.Bid == '5D') &&
                     x.Seq.length > 2 && x.Seq.at(-2) == '4NT' && !rkcbIdx.includes(k)) {
@@ -60,7 +60,7 @@ class Settings {
             }
         }
         for (const i of rkcbIdx) {
-            let r = this.WorkingSet.BidRules[i]
+            let r = this.WorkingSet.Rules[i]
             for (let j = 0; j < r.Bids.length; j++) {
                 if (r.Bids[j].Bid == '5C') {
                     if (this.OptionItems.RKCBFlag.Value == 0)
@@ -81,7 +81,7 @@ class Settings {
     // Replace duplicates
     mergeRules(targetSet, newset) {
         var keys = Object.keys(targetSet);  // cache
-        for (const r of newset) {
+        for (const r of newset.Rules) {
             let k = seqKey(r.Seq);
             if (keys.includes(k)){
                 // case of this rule has been in the existing set already
@@ -91,16 +91,19 @@ class Settings {
                         // The current ruleset does not have a same bid, we simply add to the end
                         targetSet[k].Bids.push(JSON.parse(JSON.stringify(b)));
                     else {
-                        // found a bid that's the same.
-                        // decide to replace the current criteria or append
-                        // the only decision factor is whether it was Drury or not
-                        let findDrury = (e) => {return e.Meta && e.Meta.Convention == 'Reverse Drury';};
-                        let druryIdx = targetSet[k].Bids[idx].Criteria.findIndex(findDrury);
-                        if (druryIdx < 0)
-                            druryIdx = b.Criteria.findIndex(findDrury);
-                        if (druryIdx >= 0) 
-                            b.Criteria.forEach((c) => {targetSet[k].Bids[idx].Criteria.push(JSON.parse(JSON.stringify(c)));});
-                        else
+                        let dup = false;
+                        targetSet[k].Bids[idx].Criteria.forEach((c) => {
+                            dup = dup || (c.Meta != undefined && c.Meta.AllowDup != undefined && c.Meta.AllowDup);
+                        });
+                        if (newset.AllowDup || dup) {
+                            b.Criteria.forEach((c) => {
+                                targetSet[k].Bids[idx].Criteria.push(JSON.parse(JSON.stringify(c)));
+                                let lastIdx = targetSet[k].Bids[idx].Criteria.length - 1;
+                                if (!targetSet[k].Bids[idx].Criteria[lastIdx].Meta)
+                                    targetSet[k].Bids[idx].Criteria[lastIdx]['Meta'] = {};
+                                targetSet[k].Bids[idx].Criteria[lastIdx].Meta['AllowDup'] = true;
+                            });
+                        } else
                             for (const [x,v] of Object.entries(b))
                                 targetSet[k].Bids[idx][x] = JSON.parse(JSON.stringify(v));
                     }
@@ -176,7 +179,7 @@ class Settings {
             if ('BuildIn' in bidComp)
                 continue;
             let conv = []
-            bidComp.BidRules.forEach((r) => {
+            bidComp.Rules.forEach((r) => {
                 r.Bids.forEach((b) => {
                     if ('Criteria' in b)
                         b.Criteria.forEach((c) => {
@@ -422,7 +425,7 @@ class Settings {
         var vIdx = 1;
         var bIdx = 1;
         var row = 1;
-        for (const data of Object.values(this.WorkingSet.BidRules)) {
+        for (const data of Object.values(this.WorkingSet.Rules)) {
             h = gridElement(gridDiv, '', 1, row);
             h.setAttribute('class', this.Heading);
             h.style['align-self'] = 'top';

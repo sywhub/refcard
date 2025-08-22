@@ -109,7 +109,7 @@ function About(d) {
     right.insertAdjacentHTML('beforeend', `<h3>${trEnZh('Coded Conventions')}</h3>`);
     let conv = [];
     for (const comp of BidComponents) {
-        for (const r of comp.BidRules) {
+        for (const r of comp.Rules) {
             for (const b of r.Bids) {
                 b.Criteria.forEach((c) => {
                     if ('Meta' in c && 'Convention' in c.Meta && !conv.includes(c.Meta.Convention))
