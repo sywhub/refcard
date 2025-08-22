@@ -80,6 +80,14 @@ class Settings {
     // Deep copy source into the working set
     // Replace duplicates
     mergeRules(targetSet, newset) {
+        function dupFlag(f, b) {
+            if (f != undefined && f)
+                b.Criteria.forEach(c => {
+                    if (c.Meta == undefined)
+                        c['Meta'] = {}
+                    c.Meta['AllowDup'] = true;
+                });
+        }
         var keys = Object.keys(targetSet);  // cache
         for (const r of newset.Rules) {
             let k = seqKey(r.Seq);
@@ -90,14 +98,8 @@ class Settings {
                     if (idx < 0) {
                         // The current ruleset does not have a same bid, we simply add to the end
                         targetSet[k].Bids.push(JSON.parse(JSON.stringify(b)));
-                        if (newset.AllowDup) {
-                            let lastIdx = targetSet[k].Bids.length - 1;
-                            targetSet[k].Bids[lastIdx].Criteria[lastIdx].forEach((c) => {
-                                if (c.Meta == undefined)
-                                    c['Meta'] = {}
-                                c.Meta['AllowDup'] = true;
-                            });
-                        }
+                        let lastIdx = targetSet[k].Bids.length - 1;
+                        dupFlag(newset.AllowDup, targetSet[k].Bids[lastIdx]);
                     } else {
                         let dup = false;
                         targetSet[k].Bids[idx].Criteria.forEach((c) => {
@@ -106,10 +108,7 @@ class Settings {
                         if (newset.AllowDup || dup) {
                             b.Criteria.forEach((c) => {
                                 targetSet[k].Bids[idx].Criteria.push(JSON.parse(JSON.stringify(c)));
-                                let lastIdx = targetSet[k].Bids[idx].Criteria.length - 1;
-                                if (!targetSet[k].Bids[idx].Criteria[lastIdx].Meta)
-                                    targetSet[k].Bids[idx].Criteria[lastIdx]['Meta'] = {};
-                                targetSet[k].Bids[idx].Criteria[lastIdx].Meta['AllowDup'] = true;
+                                dupFlag(true, targetSet[k].Bids[idx]);
                             });
                         } else
                             for (const [x,v] of Object.entries(b))
@@ -120,14 +119,7 @@ class Settings {
                 // wholesale copy
                 targetSet[k] = {'Seq': r.Seq};
                 targetSet[k]['Bids'] = JSON.parse(JSON.stringify(r.Bids));
-                if (newset.AllowDup)
-                    targetSet[k].Bids.forEach((b)=> {
-                        b.Criteria.forEach((c) => {
-                            if (c.Meta == undefined)
-                                c['Meta'] = {}
-                            c.Meta['AllowDup'] = true;
-                        });
-                    });
+                targetSet[k].Bids.forEach((b)=> {dupFlag(newset.AllowDup, b); });
                 keys.push(k);   // don't make a dup next time
             }
         }
