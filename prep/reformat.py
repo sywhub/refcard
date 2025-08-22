@@ -7,7 +7,7 @@ import pprint
 
 # Reformat previous version bidding rules for new version
 class ReformatRules:
-    BuildIns = ['Base SAYC', 'D0P1', 'R0P1', 'Take-Out Rebid', 'Preemptive Overcall', \
+    BuildIns = ['Base SAYC', 'D0P1', 'R0P1', 'Open Rebid', 'Preemptive Overcall', \
             'New Minor Forcing', 'Responsive DBL'];
     def __init__(self, fname='baseSAYC.json'):
         os.chdir(os.path.dirname(os.path.abspath(__file__)))

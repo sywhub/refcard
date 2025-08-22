@@ -131,5 +131,5 @@ BidComponents.push({ 'BidRules': [ { 'Bids': [ {'Bid': '2H', 'Criteria': [{'HCP'
                             {'Bid': '2NT', 'Criteria': [{'HCP': [10, 16], 'Shape': 'Balanced'}]}],
                   'Seq': ['1S', '-', '2C', '-']}],
   'BuildIn': true,
-  'Flag': 'TakeOutRebid',
-  'Name': 'Take-Out Rebid'});
+  'Flag': 'OpenRebid',
+  'Name': 'Open Rebid'});

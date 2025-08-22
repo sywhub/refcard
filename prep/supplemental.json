@@ -513,7 +513,7 @@ var R0P1 = {
 {"BidSeq":["1NT","2D","2H","-","3S","-","4NT","X"],"Bid":"5D","Criteria":{"KeyCard":2,"TrumpQ":true},"GName":"R0P1","Convention":"R0P1","ObjId":"R0P1-110"}],
 "NumRules": 110};
 var Open1XRebid = {
-"System Name": "Take-Out Rebid",
+"System Name": "Open Rebid",
 "Generated": "Mar 31, 2025", "Generate Time": "11:24:32 AM",
 "BidRules": [
 {"BidSeq":["1C","-","1S","-"],"Bid":"2H","Criteria":{"HCP":[17,21],"SuitLen":4},"Description":"Reverse","Forcing":true,"GName":"Standard Rebid","ObjId":"Open1XRebid-1"},
