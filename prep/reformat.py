@@ -7,7 +7,7 @@ import pprint
 
 # Reformat previous version bidding rules for new version
 class ReformatRules:
-    BuildIns = ['Base SAYC', 'D0P1', 'R0P1', 'Open Rebid', 'Preemptive Overcall', \
+    BuildIns = ['Base SAYC', 'DONT', 'D0P1', 'R0P1', 'Open Rebid', 'Preemptive Overcall', \
             'New Minor Forcing', 'Responsive DBL'];
     def __init__(self, fname='baseSAYC.json'):
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -148,10 +148,10 @@ class ReformatRules:
 if __name__ == "__main__":
     # Example usage
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--file', type=str, default='baseSAYC.json')
+    parser.add_argument('-f', '--file', type=str, default='base.json')
     parser.add_argument('-a', '--all', action='store_true')
     args = parser.parse_args()
-    allFiles = ['baseSAYC.json', 'gib2o1.json', 'lebensohl.json', 'nmf.json', 'supplemental.json', 'thurston.json']
+    allFiles = ['base.json', 'dont.json', 'gib2o1.json', 'lebensohl.json', 'nmf.json', 'supplemental.json', 'thurston.json']
 
     if not args.all:
         allFiles = [args.file]
