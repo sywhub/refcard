@@ -73,14 +73,15 @@ class QReference {
         // Two local functions
         var linkFunc = (pDiv, s, col, html) => {
             let refKey = seqKey(s);
+            let elem = gridElement(pDiv, '', col, row);
             if (Config.WorkingSet.BidRules[refKey] != undefined) {
-                let elem = gridElement(pDiv, '', col, row);
                 let link = document.createElement('a');
                 link.setAttribute('href', '#');
                 link.addEventListener('click', (e) => {this.run(s);});
                 link.innerHTML = trEnZh(html);
                 elem.appendChild(link);
-            }
+            } else
+                elem.innerHTML = '&nbsp;'
         };
         var forceFlag = (rowDiv, row, c, flag, txt, elem) => {
             if ('Meta' in c && c.Meta[flag]) {
@@ -100,27 +101,35 @@ class QReference {
             // Package all row info into a container div
             let rowDiv = document.createElement('div');
             rowDiv.style['display'] = 'contents';
-            rowDiv.setAttribute('class', 'GridList');
+            rowDiv.setAttribute('class', `GridList${row%2}`);
             gridElement(rowDiv, this.htmlBid(c.Bid), 1, row);
             gridElement(rowDiv, this.criteriaString(c.Criteria[0], c.Bid), 2, row);
             let flagElem = null;
             flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'Convention', '', flagElem);
             flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'Forcing', '1RF', flagElem);
             flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'GF', 'GF', flagElem);
+            if (flagElem == null)
+                gridElement(rowDiv, '&nbsp;', 5, row);
             e.appendChild(rowDiv);
             // Link up  follow-ups
             linkFunc(rowDiv, [...seq, c.Bid], 3, "Compete")
             linkFunc(rowDiv, [...seq, c.Bid, '-'], 4, "Reply")
             // Do we have more than one criteria for this bid?
             for (let i = 1; i < c.Criteria.length; ++i) {
+                ++row;
                 rowDiv = document.createElement('div');
+                gridElement(rowDiv, '&nbsp;', 1, row);
                 rowDiv.style['display'] = 'contents';
-                rowDiv.setAttribute('class', 'GridList');
-                gridElement(rowDiv, this.criteriaString(c.Criteria[i], c.Bid), 2, ++row);
+                rowDiv.setAttribute('class', `GridList${row%2}`);
+                gridElement(rowDiv, this.criteriaString(c.Criteria[i], c.Bid), 2, row);
+                gridElement(rowDiv, '&nbsp;', 3, row);
+                gridElement(rowDiv, '&nbsp;', 4, row);
                 flagElem = null;
                 flagElem = forceFlag(rowDiv, row, c.Criteria[i], 'Convention', '', flagElem);
                 flagElem = forceFlag(rowDiv, row, c.Criteria[i], 'Forcing', '1RF', flagElem);
                 flagElem = forceFlag(rowDiv, row, c.Criteria[i], 'GF', 'GF', flagElem);
+                if (flagElem == null)
+                    gridElement(rowDiv, '&nbsp;', 5, row);
                 e.appendChild(rowDiv);
             }
             

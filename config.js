@@ -246,6 +246,16 @@ class Settings {
         btn.addEventListener('click', (e) => this.switchLang(e));
         subd.appendChild(btn);
         subd.insertAdjacentHTML('beforeend', '<br>')
+
+        /*
+        btn = document.createElement('input');
+        btn.setAttribute('type', 'button');
+        btn.setAttribute('class', this.UIClass);
+        btn.setAttribute('value', trEnZh('Dump Rules'));
+        btn.addEventListener('click', () => this.dumprules());
+        subd.appendChild(btn);
+        subd.insertAdjacentHTML('beforeend', '<br>')
+        */
     }
 
     mkToggles(gridDiv, row) {
@@ -364,7 +374,7 @@ class Settings {
                         v['Value'] = thisIdx;
                     } else { 
                         // Otherwise, reset to the first item.
-                        let thisItem = document.getElementById(v.IDs[0]);
+                        let thisItem = document.getElem
                         thisItem.checked = true; // reset to first item
                         v['Value'] = 0;
                     }
@@ -401,7 +411,31 @@ class Settings {
         this.resetTopControls();
     }
 
-
+    dumprules() {
+        var rulestring = JSON.stringify(this.WorkingSet)
+        clearContents(this.disp);
+        var gridDiv = document.createElement('div');
+        gridDiv.setAttribute('class', 'ConfigDisplay');
+        this.disp.appendChild(gridDiv);
+        var h;
+        var e;
+        var vIdx = 1;
+        var bIdx = 1;
+        var row = 1;
+        for (const data of Object.values(this.WorkingSet.BidRules)) {
+            h = gridElement(gridDiv, '', 1, row);
+            h.setAttribute('class', this.Heading);
+            h.style['align-self'] = 'top';
+            e = gridElement(gridDiv, '', 2, row);
+            h.insertAdjacentHTML('beforeend',`${vIdx++}: ${JSON.stringify(data.Seq)}`)
+            for (const b of data.Bids) {
+                e.insertAdjacentHTML('beforeend',`${bIdx++}: <b>${b.Bid}</b><br>`)
+                for (const c of b.Criteria)
+                    e.insertAdjacentHTML('beforeend',`<span>&nbsp;&nbsp;</span>${JSON.stringify(c)}<br>`)
+            }
+            row++;
+        }
+    }
 }
 
 // OnClick handler for the config button
