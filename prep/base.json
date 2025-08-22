@@ -8,6 +8,8 @@ var BaseSAYC = {
 {"BidSeq":[],"Bid":"2C","Criteria":{"TP":22,"LTC":[0,5]},"GIdx":1,"GName":"Strong Hand","ObjId":"SAYCOpens-3"},
 {"BidSeq":[],"Bid":"1S","Criteria":{"SuitLen":5,"HCP":[12,22]},"GIdx":2,"GName":"Open Major Suit","ObjId":"SAYCOpens-4"},
 {"BidSeq":[],"Bid":"1H","Criteria":{"SuitLen":5,"HCP":[12,22]},"GIdx":2,"GName":"Open Major Suit","ObjId":"SAYCOpens-5"},
+{"BidSeq":[],"Bid":"1NT","Criteria":{"HCP":[15,17],"Shape":"Balanced"},"Overcall":"DONT","GIdx":3,"GName":"No Trump","ObjId":"SAYCOpens-6"},
+{"BidSeq":[],"Bid":"1NT","Criteria":{"HCP":[12,17],"Seat":[3,4],"Shape":"Balanced"},"Overcall":"DONT","GIdx":3,"GName":"No Trump","ObjId":"SAYCOpens-7"},
 {"BidSeq":[],"Bid":"2NT","Criteria":{"HCP":[20,21],"Shape":"Balanced"},"GIdx":3,"GName":"No Trump","ObjId":"SAYCOpens-8"},
 {"BidSeq":[],"Bid":"1D","Criteria":{"SuitLen":3,"HCP":[12,22]},"GIdx":4,"GName":"Open Minor Suit","ObjId":"SAYCOpens-9"},
 {"BidSeq":[],"Bid":"1C","Criteria":{"SuitLen":3,"HCP":[12,22]},"GIdx":4,"GName":"Open Minor Suit","ObjId":"SAYCOpens-10"},

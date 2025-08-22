@@ -1,8 +1,6 @@
 var DONT = {
 "System Name": "DONT",
 "BidRules": [
-{"BidSeq":[],"Bid":"1NT","Criteria":{"HCP":[15,17],"Shape":"Balanced"},"Overcall":"DONT","GIdx":3,"GName":"No Trump","ObjId":"SAYCOpens-6"},
-{"BidSeq":[],"Bid":"1NT","Criteria":{"HCP":[12,17],"Seat":[3,4],"Shape":"Balanced"},"Overcall":"DONT","GIdx":3,"GName":"No Trump","ObjId":"SAYCOpens-7"},
 {"BidSeq":["1NT"],"Bid":"2S","Criteria":{"SuitLen":{"S":6},"HCP":[8,10]},"Convention":"DONT","GIdx":1,"GName":"One 6+ suit or 5-4 two suits","ObjId":"DONT-197"},
 {"BidSeq":["1NT"],"Bid":"X","Criteria":{"AnySuit":{"C":6,"D":6,"H":6,"S":6},"HCP":[8,12]},"Convention":"DONT","GIdx":1,"GName":"One 6+ suit or 5-4 two suits","ObjId":"DONT-198"},
 {"BidSeq":["1NT"],"Bid":"2C","Criteria":{"SuitLen":3,"AnySuit":{"D":4,"H":4,"S":4},"HCP":[8,12],"Shape":"5-4"},"Convention":"DONT","GIdx":1,"GName":"One 6+ suit or 5-4 two suits","ObjId":"DONT-199"},
