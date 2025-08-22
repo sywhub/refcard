@@ -186,3 +186,4 @@ BidComponents.push({ 'BidRules': [ { 'Bids': [ { 'Bid': '3NT',
                   'Seq': ['2S', 'X', '-', '2NT', '-', '3C', '-']}],
   'Flag': 'Lebensohl',
   'Name': 'Lebensohl'});
+

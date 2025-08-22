@@ -69,3 +69,4 @@ BidComponents.push({ 'BidRules': [ { 'Bids': [{'Bid': '2D', 'Criteria': [{'HCP':
   'BuildIn': true,
   'Flag': 'NewMinorForcing',
   'Name': 'New Minor Forcing'});
+

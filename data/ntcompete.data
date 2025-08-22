@@ -65,3 +65,4 @@ BidComponents.push({ 'BidRules': [ { 'Bids': [ {'Bid': '2S', 'Criteria': [{'HCP'
   'BuildIn': true,
   'Flag': 'DONT',
   'Name': 'DONT'});
+

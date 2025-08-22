@@ -103,3 +103,4 @@ BidComponents.push({ 'BidRules': [ { 'Bids': [ { 'Bid': '2H',
                   'Seq': ['1H', '-', '1NT', '-']}],
   'Flag': 'GIB21',
   'Name': 'GIB 2/1'});
+

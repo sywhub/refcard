@@ -126,3 +126,4 @@ BidComponents.push({ 'BidRules': [ { 'Bids': [ {'Bid': '4S', 'Criteria': [{'HCP'
                   'Seq': ['1H', '-', '1NT', '-']}],
   'Flag': 'PThurston21',
   'Name': 'P. Thurston 2/1'});
+

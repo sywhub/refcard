@@ -26,6 +26,7 @@ class ReformatRules:
             v += '}'
             self.data.append(json.loads(v))
         self.bidQue = []
+        self.fname = fname
         return
 
     def AbsObj(self, seq, d, newRules):
@@ -64,6 +65,7 @@ class ReformatRules:
             self.bidQue.append(toAdd)
 
     def loopVars(self):
+        allVars = [];
         for v in self.data:
             r = self.loopQ(v)
             varname = self.makeVarName(v['System Name'])
@@ -71,7 +73,8 @@ class ReformatRules:
             if v['System Name'] in ReformatRules.BuildIns:
                 outObj['BuildIn'] = True
             self.reorderOpens(outObj)
-            self.output(varname, outObj)
+            allVars.append([varname, outObj])
+        self.output(allVars, self.fname)
 
     def loopQ(self, d):
         r = self.seedQue(d)
@@ -135,15 +138,17 @@ class ReformatRules:
         rules['BidRules'][0]['Bids'] = n
         return
         
-    def output(self, fname, rules):
-        f = open(f'../data/{fname}.json', 'w')
-        print(f"BidComponents.push(", end='', file=f)
-        p = pprint.PrettyPrinter(indent=2,width=132)
-        s = p.pformat(rules)
-        s = s.replace('True', 'true')
-        s = s.replace('False', 'false')
-        s += ');'
-        print(s, file=f)
+    def output(self, vars, fname):
+        base, ext = os.path.splitext(fname)
+        f = open(f'../data/{base}.data', 'w')
+        for v in vars:
+            print(f"BidComponents.push(", end='', file=f)
+            p = pprint.PrettyPrinter(indent=2,width=132)
+            s = p.pformat(v[1])
+            s = s.replace('True', 'true')
+            s = s.replace('False', 'false')
+            s += ');\n'
+            print(s, file=f)
 
 if __name__ == "__main__":
     # Example usage
@@ -151,11 +156,10 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--file', type=str, default='base.json')
     parser.add_argument('-a', '--all', action='store_true')
     args = parser.parse_args()
-    allFiles = ['base.json', 'dont.json', 'gib2o1.json', 'lebensohl.json', 'nmf.json', 'supplemental.json', 'thurston.json']
+    allFiles = ['base.json', 'ntcompete.json', 'gib2o1.json', 'lebensohl.json', 'nmf.json', 'supplemental.json', 'thurston.json']
 
     if not args.all:
         allFiles = [args.file]
     for f in allFiles:
         newrule = ReformatRules(f)
         newrule.loopVars()
-
