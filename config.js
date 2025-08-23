@@ -178,7 +178,7 @@ class Settings {
                 `1NT 15-17 HCP, 2NT 20~21 HCP, Gerber, Stayman, Smolen, Jacoby Transfer, Texas Transfer, 2S Minor Transfer, 2NT invitational`,
              'Minor':
                 'Inverted Minor',
-             'Strong 2C': `2C-2D Waiting, 2C-2H Double Negative`,
+             'Strong 2&clubs;': `2&clubs;-2&diams; Waiting, 2&clubs;-2&hearts; Double Negative`,
              'Preemptive': '6+ cards with honor(s), 8-11 HCP',
              'OverCall':
                 "Michaels, Unusual 2NT, DONT",
@@ -322,7 +322,7 @@ class Settings {
             let l = document.createElement('label');
             l.setAttribute('class', this.UIClass);
             l.style['margin-left'] = '10px';
-            l.innerHTML = trEnZh(v['HTML']+': ');
+            l.innerHTML = `${trEnZh(v['HTML'])}:`;
             s.appendChild(l)
             d.appendChild(s)
 
