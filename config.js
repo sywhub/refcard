@@ -310,6 +310,7 @@ class Settings {
         });
         for (const toggle of allToggles) {
             let v = Object.values(toggle)[0];
+            let k = Object.keys(toggle)[0];
             let d = document.createElement('div')
             d.setAttribute('class', 'ConfigToggle');
             d.style['grid-row-start'] = row++;
@@ -329,9 +330,9 @@ class Settings {
                 tLabel.setAttribute('for', tId);
                 tLabel.innerHTML = trEnZh(tId);
                 s.appendChild(tLabel);
-                ck.setAttribute('name', toggle.Flag);
+                ck.setAttribute('name', k);
                 ck.setAttribute('type', 'checkbox');
-                ck.setAttribute('id', tId);
+                ck.setAttribute('id', `${k}.${tId}`);
                 ck.setAttribute('class', this.UIClass);
                 ck.addEventListener('click', (e) => this.doOption(e));
                 ck.checked  = v.IDs[v.Value] == tId;
@@ -392,45 +393,44 @@ class Settings {
     doOption(e) {
         // who was clicked?
         var chk = document.getElementById(e.target.id);
-        var changed = []
-        for (const [k, v] of Object.entries(this.OptionItems)) {
-            // Was it one of the multiple choices?
-            if ('IDs' in v && v.IDs.includes(chk.id)) { 
-                // Which of the multiples was clicked?
-                let thisIdx = v.IDs.indexOf(chk.id);
-                if (v.IDs.length == 2) {    // one of the two.  It is a toggle.
-                    let otherIdx = 1 - thisIdx;
-                    let otherElem = document.getElementById(v.IDs[otherIdx]);
-                    otherElem.checked = !chk.checked;
-                    v['Value'] = chk.checked ? thisIdx : otherIdx;
-                } else {    
-                    // One of the multiple (more than 2).
-                    // If checked yes, then uncheck all others.
-                    if (chk.checked) {
-                        for (let otherIdx = 0; otherIdx < v.IDs.length; otherIdx++) {
-                            if (otherIdx != thisIdx) {
-                                let otherElem = document.getElementById(v.IDs[otherIdx]);
-                                otherElem.checked = false;
-                            }
-                        }
-                        v['Value'] = thisIdx;
-                    } else { 
-                        // Otherwise, reset to the first item.
-                        let thisItem = document.getElem
-                        thisItem.checked = true; // reset to first item
-                        v['Value'] = 0;
-                    }
-                }
-                changed.push(k);
-                break;
-            } else if (k == chk.id) {
-                // The "yes/no" option
-                v['Value'] = chk.checked ? 1 : 0;
-                changed.push(k);
-                break;
-
-            }
+        var optFlag = chk.id;
+        var optId = optFlag;
+        var idx = optFlag.indexOf('.')
+        if (idx > 0) {
+            optId = optFlag.substring(idx+1)
+            optFlag = optFlag.substring(0, idx);
         }
+        let v = this.OptionItems[optFlag];
+        // Was it one of the multiple choices?
+        if ('IDs' in this.OptionItems[optFlag]) {
+            // Which of the multiples was clicked?
+            let thisIdx = v.IDs.indexOf(optId);
+            if (v.IDs.length == 2) {    // one of the two.  It is a toggle.
+                let otherIdx = 1 - thisIdx;
+                let otherElem = document.getElementById(`${optFlag}.${v.IDs[otherIdx]}`)
+                otherElem.checked = !chk.checked;
+                v['Value'] = chk.checked ? thisIdx : otherIdx;
+            } else {    
+                // One of the multiple (more than 2).
+                // If checked yes, then uncheck all others.
+                if (chk.checked) {
+                    for (let otherIdx = 0; otherIdx < v.IDs.length; otherIdx++) {
+                        if (otherIdx != thisIdx) {
+                            let otherElem = document.getElementById(`${optFlag}.${v.IDs[otherIdx]}`);
+                            otherElem.checked = false;
+                        }
+                    }
+                    v['Value'] = thisIdx;
+                } else { 
+                    // Otherwise, reset to the first item.
+                    let thisItem = document.getElementById(`${optFlag}.${v.IDs[0]}`);
+                    thisItem.checked = true; // reset to first item
+                    v['Value'] = 0;
+                }
+            }
+        } else 
+            v.Value = chk.checked ? 1 : 0;    
+
         // Persist
         for (const [k, v] of Object.entries(this.OptionItems))
             localStorage.setItem(k, v['Value']);

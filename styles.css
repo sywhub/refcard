@@ -34,6 +34,10 @@ h2, h3 {color: blueviolet;}
     font-weight: bold;
     color: blueviolet;
 }
+.About {
+    display: grid;
+    grid-template-columns: 10vw 45vw;
+}
 .ConfigData { font-style: italic; }
 .BidKeys { display: grid; grid-template-columns: repeat(3, 15vw) 20vw; }
 .ConfigUI, .QRefUI { font-family: inherit; font-size: inherit; margin: 5px;}

@@ -83,24 +83,18 @@ function About(d) {
     var e = document.getElementById(d);
     clearContents(e);
     var divDisp = document.createElement('div');
-    divDisp.style['display'] = 'grid';
-    divDisp.style['grid-template-columns'] = '10vw 45vw';
+    divDisp.setAttribute('id', 'About');
+    divDisp.setAttribute('class', 'About');
     e.appendChild(divDisp);
 
-    var left = document.createElement('div');
+    var left = gridElement(divDisp, '', 1, 1);
     left.style['margin-top'] = '5vh';
-    left.style['grid-column-start'] = 1;
-    left.style['grid-row-start'] = 1;
-    divDisp.appendChild(left);
     var feedback = document.createElement('a');
     feedback.setAttribute('href', 'mailto:syw.cuper+bridge@gmail.com?Subject=Feedback%20for%20Bidding%20Quick%20Reference')
     feedback.innerHTML = trEnZh('Send Feedback');
     left.appendChild(feedback);
 
-    var right = document.createElement('div');
-    right.style['grid-column-start'] = 2;
-    right.style['grid-row-start'] = 1;
-    divDisp.appendChild(right);
+    var right = gridElement(divDisp, '', 2, 1);
     right.innerHTML = Config.OptionItems.Language.IDs[Config.OptionItems.Language.Value] == 'en-US' ? enAboutText : zhAboutText;
     right.insertAdjacentHTML('beforeend', '<h2>Technical Details<h2>');
     right.insertAdjacentHTML('beforeend', `<h3>${trEnZh('Components')}</h3>`);
