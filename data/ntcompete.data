@@ -1,5 +1,4 @@
-BidComponents.push({ 'BuildIn': true,
-  'ChoiceOf': 'NT Compete',
+BidComponents.push({ 'ChoiceOf': 'NT Compete',
   'DefaultOn': true,
   'Flag': 'DONT',
   'Name': 'DONT',
@@ -67,4 +66,3 @@ BidComponents.push({ 'BuildIn': true,
                          {'Bid': '3H', 'Criteria': [{'HCP': [11, 12], 'Meta': {'Convention': 'DONT'}, 'SuitLen': {'S': 4}}]},
                          {'Bid': '3S', 'Criteria': [{'HCP': [11, 12], 'Meta': {'Convention': 'DONT'}, 'SuitLen': {'S': 5}}]}],
                'Seq': ['1NT', '2H', '-', '2NT', '-']}]});
-

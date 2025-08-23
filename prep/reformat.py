@@ -7,7 +7,7 @@ import pprint
 
 # Reformat previous version bidding rules for new version
 class ReformatRules:
-    BuildIns = ['Base SAYC', 'Reverse Drury', 'DONT', 'D0P1', 'R0P1', 'Open Rebid', 'Preemptive Overcall', \
+    BuildIns = ['Base SAYC', 'Reverse Drury', 'D0P1', 'R0P1', 'Open Rebid', 'Preemptive Overcall', \
             'New Minor Forcing', 'Responsive DBL']
     AllowDup = ['Reverse Drury']
     DefaultOn = ['DONT']

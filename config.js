@@ -8,7 +8,7 @@ class Settings {
     UIClass = 'ConfigUI';
     OptionItems = {
         'Language': {HTML: 'Language', Choices: true, IDs: ['en-US', 'zh-TW'], Prompts: ['改用中文','Switch to English']},
-        'RKCBFlag': {HTML: 'RKCB',  IDs: ['0314', '1430']},
+        'RKCBFlag': {HTML: 'RKCB',  Choices: true, IDs: ['0314', '1430']},
         };
 
     constructor(){
@@ -55,17 +55,17 @@ class Settings {
     // Go through each component and merge into base if so chosen
     makeBidRules() {
         // JS copying is shallow
-        var working = {};
-        working['Rules'] = this.mergeRules({}, BidComponents[0]);
-        for (let i = 1; i < BidComponents.length; i++) {
+        var working = {'Rules': []};
+        // base should be the first one
+        for (let i = 0; i < BidComponents.length; i++) {
             let bidComp = BidComponents[i];
             if ('BuildIn' in bidComp)
                 working['Rules'] = this.mergeRules(working['Rules'], bidComp);
-            else if (bidComp.Choices != undefined && bidComp.IDs.includes(bidComp.Name)) {
-                let idx = this.OptionItems[i].Value;
-                if (idx > 0 && bidComp.Name == this.OptionItems[i].IDs[idx]) 
+            else if (bidComp.ChoiceOf != undefined) {
+                let idx = this.OptionItems[bidComp.ChoiceOf].Value;
+                if (idx > 0 && bidComp.Name == this.OptionItems[bidComp.ChoiceOf].IDs[idx]) 
                     working['Rules'] = this.mergeRules(working['Rules'], bidComp);
-            } else if (bidComp.Flag in this.OptionItems && this.OptionItems[bidComp.Flag].Value > 0)
+            } else if (this.OptionItems[bidComp.Flag].Value > 0)
                     working['Rules'] = this.mergeRules(working['Rules'], bidComp);
         }
         this.WorkingSet = working;
@@ -77,7 +77,9 @@ class Settings {
         var rkcbIdx = []
         for (let [k, x] of Object.entries(this.WorkingSet.Rules)) {
             for (let r of x.Bids) {
-                if (r.Convention == 'RKCB' && (r.Bid == '5C' || r.Bid == '5D') &&
+                let isRKCB = false;
+                r.Criteria.forEach((c)=>{isRKCB = isRKCB || (c.Meta && c.Meta.Convention && c.Meta.Convention == 'RKCB');})
+                if (isRKCB && (r.Bid == '5C' || r.Bid == '5D') &&
                     x.Seq.length > 2 && x.Seq.at(-2) == '4NT' && !rkcbIdx.includes(k)) {
                         rkcbIdx.push(k);
                 }
