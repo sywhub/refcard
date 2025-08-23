@@ -25,5 +25,53 @@ BidComponents.push({ 'ChoiceOf': 'NT Compete',
                                            'SuitLen': {'S': 5}}]},
                          { 'Bid': '2NT',
                            'Criteria': [{'HCP': [8, 10], 'Meta': {'Convention': 'Cappelletti'}, 'SuitLen': {'C': 5, 'D': 5}}]}],
-               'Seq': ['1NT']}]});
+               'Seq': ['1NT']},
+               {'Seq': ['1NT', '2C','-'],
+                'Bids': [
+                  {'Bid': '-', 'Criteria': [{'SuitLen': {'C': 6}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2D', 'Criteria': [{'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2H', 'Criteria': [{'SuitLen': 6, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2S', 'Criteria': [{'SuitLen': 6, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2NT', 'Criteria': [{'HCP': 10, 'Meta': {'Convention': 'Cappelletti', 'Forcing': true}}]}]},
+               {'Seq': ['1NT', '2C','-','2D','-'],
+                'Bids': [
+                  {'Bid': '-', 'Criteria': [{'SuitLen': {'C': 6}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2H', 'Criteria': [{'SuitLen': 6, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2S', 'Criteria': [{'SuitLen': 6, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3C', 'Criteria': [{'SuitLen': 6, 'Meta': {'Convention': 'Cappelletti'}}]}]},
+               {'Seq': ['1NT', '2D','-'],
+                'Bids': [
+                  {'Bid': '-', 'Criteria': [{'SuitLen': {'D': 6}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2H', 'Criteria': [{'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2S', 'Criteria': [{'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2NT', 'Criteria': [{'HCP': 10, 'Meta': {'Convention': 'Cappelletti', 'Forcing': true}}]}]},
+               {'Seq': ['1NT', '2H','-'],
+                'Bids': [
+                  {'Bid': '3H', 'Criteria': [{'SuitLen': 3, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '-', 'Criteria': [{'SuitLen': {'H':2},'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2S', 'Criteria': [{'SuitLen': {'S': 6, 'H': [0,2]}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3C', 'Criteria': [{'SuitLen': {'C': 6, "H":[0,2]}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3D', 'Criteria': [{'SuitLen': {'D': 6, "H":[0,2]}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2NT', 'Criteria': [{'SuitLen': {"H":[0,2]}, 'Meta': {'Convention': 'Cappelletti', 'Forcing': true}}]}
+                  ]},
+               {'Seq': ['1NT', '2S','-'],
+                'Bids': [
+                  {'Bid': '3S', 'Criteria': [{'SuitLen': 3, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '-', 'Criteria': [{'SuitLen': {'S':2},'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3C', 'Criteria': [{'SuitLen': {'C': 6, "S":[0,2]}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3D', 'Criteria': [{'SuitLen': {'D': 6, "S":[0,2]}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3H', 'Criteria': [{'SuitLen': {'H': 6, "S":[0,2]}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '2NT', 'Criteria': [{'SuitLen': {"S":[0,2]}, 'Meta': {'Convention': 'Cappelletti', 'Forcing': true}}]}
+                  ]},
+               {'Seq': ['1NT', '2NT','-'],
+                'Bids': [
+                  {'Bid': '3C', 'Criteria': [{'SuitLen': {'C': 2}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3D', 'Criteria': [{'SuitLen': {'D': 2, 'C':[0,2]}, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3H', 'Criteria': [{'SuitLen': {'H': 6, "D":[0,2], "C":[0,2]}, 'Honors': 2, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3S', 'Criteria': [{'SuitLen': {'H': 6, "D":[0,2], "C":[0,2]}, 'Honors': 2, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '4C', 'Criteria': [{'SuitLen': 3, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '4D', 'Criteria': [{'SuitLen': 3, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3NT', 'Criteria': [{'Meta': {'Convention': 'Cappelletti'}}]},
+                  ]},
+]});
 
