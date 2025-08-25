@@ -43,5 +43,11 @@ h2, h3 {color: blueviolet;}
 .ConfigUI, .QRefUI { font-family: inherit; font-size: inherit; margin: 5px;}
 @media screen and (max-width: 981px) {
 body {font-size: 3vw;}
-.ConfigDisplay {grid-template-columns: 45vw 45vw;
+.ConfigDisplay {grid-template-columns: 45vw 45vw;}
+.ListDisplay {
+    margin-left: 0;
+    width: 100vw;
+}
+.About { grid-template-columns: 30vw 70vw; }
+.QRefBidList {grid-template-columns: 9vw 36vw 20vw 20vw 8vw; }
 }
