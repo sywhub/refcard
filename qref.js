@@ -325,7 +325,7 @@ class QReference {
                 }
             }
         }
-        retString.trim();
+        retString = retString.trim();
         if (retString.at(-1) == ',')
             retString=retString.substring(0,retString.length-1);
         return retString;
