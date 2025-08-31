@@ -86,7 +86,7 @@ class QReference {
         var forceFlag = (rowDiv, row, c, flag, txt, elem) => {
             if ('Meta' in c && c.Meta[flag]) {
                 if (txt == '')
-                    txt = c.Meta[flag];
+                    txt = trEnZh(c.Meta[flag]);
                 if (elem == null) {
                     elem = gridElement(rowDiv, trEnZh(txt), 5, row);
                     elem.setAttribute('class', 'BidFlags');
@@ -108,6 +108,7 @@ class QReference {
             flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'Convention', '', flagElem);
             flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'Forcing', '1RF', flagElem);
             flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'GF', 'GF', flagElem);
+            flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'Notes', '', flagElem);
             if (flagElem == null)
                 gridElement(rowDiv, '&nbsp;', 5, row);
             e.appendChild(rowDiv);
