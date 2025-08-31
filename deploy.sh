@@ -14,7 +14,7 @@ echo "====> Packaging..."
 tar -cvf $tartmp index.html ${files[@]}
 echo "Clean up remote"
 ssh u47659892@ftp.nomadicminds.org  << 'SSHEND'
-cd js/`basename $(PWD)`
+cd js/refcard3
 rm -rf *
 SSHEND
 echo "====> Copy package file"
