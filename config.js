@@ -184,7 +184,7 @@ class Settings {
                 "Michaels, Unusual 2NT, DONT",
              'Double':
                 `Take-out up to 3${Card.ltr2html('S')}, Responsive DBL, Support DBL, Negative DBL`,
-             'Others': 'Strong Jump Shift, Splinter, New Minor Forcing (NMF), 4th Suit Forcing (4SF), D0P1, R0P1, Sandwich 1NT, High Reverse',
+             'Others': 'Strong Jump Shift, Splinter, New Minor Forcing, 4th Suit Forcing, D0P1, R0P1, Sandwich 1NT, High Reverse',
             };
         var e = gridElement(gridDiv, trEnZh('Convention Card'), 1, row++);
         e.style['grid-column'] = '1 / span 2'

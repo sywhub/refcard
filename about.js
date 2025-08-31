@@ -156,7 +156,7 @@ function ConventionURL(c) {
         'Sandwich 1NT': 'https://www.bridgebum.com/sandwich_1nt.php',
         'Smolen': 'https://web2.acbl.org/documentLibrary/play/Commonly_Used_Conventions/smolen.pdf',
         'Splinter': '',
-        'Stayman': '',
+        'Stayman': 'https://www.bridgebum.com/stayman.php',
         'Strong 2C': '',
         'Strong Jump Shift': '',
         'Support DBL': '',
