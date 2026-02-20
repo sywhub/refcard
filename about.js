@@ -134,6 +134,7 @@ function ConventionURL(c) {
         '2S Minor Transfer': '', 
         '4SF': 'https://www.bridgebum.com/fourth_suit_forcing.php',
         'Bergen Raise': 'https://www.bridgebum.com/bergen_raises.php',
+        'Cappelletti': 'https://web2.acbl.org/documentLibrary/play/Commonly_Used_Conventions/cappellettipt1.pdf',
         'D0P1': 'https://www.bridgebum.com/double_0_pass_1.php',
         'DONT': 'https://www.bridgebum.com/dont.php',
         'Gerber': '',

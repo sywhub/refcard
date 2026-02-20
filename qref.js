@@ -105,10 +105,8 @@ class QReference {
             gridElement(rowDiv, this.htmlBid(c.Bid), 1, row);
             gridElement(rowDiv, this.criteriaString(c.Criteria[0], c.Bid), 2, row);
             let flagElem = null;
-            flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'Convention', '', flagElem);
-            flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'Forcing', '1RF', flagElem);
-            flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'GF', 'GF', flagElem);
-            flagElem = forceFlag(rowDiv, row, c.Criteria[0], 'Notes', '', flagElem);
+            for (const f of [['Convention', ''], ['Forcing', '1RF'], ['GF', 'GF'], ['Notes', '']])
+                flagElem = forceFlag(rowDiv, row, c.Criteria[0], f[0], f[1], flagElem);
             if (flagElem == null)
                 gridElement(rowDiv, '&nbsp;', 5, row);
             e.appendChild(rowDiv);
