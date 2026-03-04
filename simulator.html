@@ -4,8 +4,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="author" content="Sin-Yaw Wang">
-<meta name="description" content="Bridge Bidding Quick Ref v3">
-<meta name="title" content="Bridge Bidding Quick Ref v3">
+<meta name="description" content="Bridge Bidding Simulator">
+<meta name="title" content="Bridge Bidding Simulator">
 <script>
 "use strict";
 var BidComponents = [];
@@ -15,10 +15,10 @@ var BidComponents = [];
 <script src="tools.js"></script>
 <script src="data/enzh.json"></script>
 <script src="data/deploydate.data"></script>
-<script src="about.js"></script>
+<script src="simabout.js"></script>
 <script src="config.js"></script>
 <script src="bidsystem.js"></script>
-<script src="qref.js"></script>
+<script src="simulate.js"></script>
 <script>
 var Config = new Settings();
 </script>
@@ -40,7 +40,7 @@ document.title=document.querySelector('meta[name="title"]').content
 <div id='HeadMenu' style="padding-bottom: 1vh; border-bottom: 1px solid rgb(202, 199, 199);"></div>
 <div class="ListDisplay" id="ListDisplay" style="clear: both;"></div>
 <script>
-[['About', 'About'], ['Settings', 'Config3'], ['Quick Reference', 'QRef3']].forEach(x => {
+[['About', 'AboutSimulate'], ['Settings', 'Config3'], ['Simulator', 'Simulate'], ['Statistics', 'RunStat']].forEach(x => {
     let divE = document.getElementById('HeadMenu');
     let e = document.createElement('input');
     e.setAttribute('type', 'button');
@@ -53,7 +53,7 @@ document.title=document.querySelector('meta[name="title"]').content
     divE.appendChild(e);
 });
 Config.init(document.getElementById('ListDisplay'))
-document.getElementById('BidQuickReference').click();
+var simModule = new SimStat('HeadMenu');
 showFooter(Card.suitchars(), Config.DisplayDate);
 </script>
 </body>
