@@ -55,7 +55,7 @@ class Settings {
     // Go through each component and merge into base if so chosen
     makeBidRules() {
         // JS copying is shallow
-        var working = {'Rules': []};
+        var working = {'Rules': {}}
         // base should be the first one
         for (let i = 0; i < BidComponents.length; i++) {
             let bidComp = BidComponents[i];
