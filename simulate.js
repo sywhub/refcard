@@ -1,14 +1,20 @@
 class SimStat extends BidSystem {
     constructor(menuId) {
         super()
-        this.makeMenu(menuId);
-        this.initDisplay()
-    }
+        this.SenarioMenu = ['1x', '1NT', '2C', 'Preempt'];
+        this.SimulateMap = {'Name': 'Simulate',
+            '1x': [['1S', '-'],['1H', '-'],['1D', '-'],['1C', '-']],
+            '1NT': [['1NT', '-']], '2C': [['2C', '-']],
+            'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
+        this.StatsMap = {'Name': 'Statistics',
+            '1x': [['1S', '-'],['1H', '-'],['1D', '-'],['1C', '-']],
+            '1NT': [['1NT', '-']],
+            'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
 
-    makeMenu(menuId) {
+        this.initDisplay()
         const e = document.getElementById(menuId);
-        const SecenarioList = ['1x', '1NT', '2C', 'Preempt'];
-        this.makeSelect(e, 'Scenario: ', 'Scenario', SecenarioList);
+        this.makeSelect(e, 'Scenario: ', 'Scenario', this.SenarioMenu);
+        this.board = new Board(new Deck());
     }
 
     initDisplay() {
@@ -44,18 +50,59 @@ class SimStat extends BidSystem {
             });
         }
     }
+
+    work(map) {
+        if (Config.WorkingSet == undefined || Config.WorkingSet == null) {
+            Config.getDefaults();
+            Config.makeBidRules();
+        }
+        var e = document.getElementById('SimStat');
+        clearContents(e)
+        var scenario = simModule.scenario.value;
+        if (scenario in map) {
+            let cases = map[scenario];
+            for (const s of cases) {
+                switch (map.Name) {
+                    case 'Simulate':
+                        this.doSimulate(e, s);
+                        break;
+                    case 'Statistics':
+                        this.doStats(e, s);
+                        break;
+                }
+            }
+        } else 
+            e.insertAdjacentHTML('beforeend', `${map.Name} does not handle ${scenario}<br>`);
+    }
+
+    doStats(e, s) {
+        e.insertAdjacentHTML('beforeend', `Statistics: ${s}<br>`);
+    }
+
+    doSimulate(e, s) {
+        let sKey = seqKey(s);
+        if (!(sKey in Config.WorkingSet.Rules))
+            return;
+
+        let bids = Config.WorkingSet.Rules[sKey];
+        let seqString = this.seqString(bids.Seq);
+        let spread = new Array(bids.Bids.length);
+        for (let i = 0; i < spread.length; i++)
+            spread[i] = {Count: 0, CriterCount: new Array(bids.Bids[i].Criteria.length).fill(0)};
+        var b = null, c = null;
+        do {
+            var bIdx = Math.floor(Math.random() * spread.length);
+            var cIdx = Math.floor(Math.random() * spread[bIdx].CriterCount.length);
+            b = bids.Bids[bIdx];
+            c = b.Criteria[cIdx];
+        } while (!('HCP' in c));
+        e.insertAdjacentHTML('beforeend', `Seq: ${seqString}<br>&nbsp;&nbsp;Responses: `);
+        e.insertAdjacentHTML('beforeend', `${this.htmlBid(b.Bid)},&nbsp;`);
+        e.insertAdjacentHTML('beforeend', `with Criteria: ${this.criteriaString(c, b.Bid)}<br>`);
+        e.insertAdjacentHTML('beforeend', '<br>')
+    }
 }
 
-function Simulate(e) {
-    var e = document.getElementById('SimStat');
-    clearContents(e)
-    var scenario = simModule.scenario.value;
-    e.insertAdjacentHTML('beforeend', `Simulate: ${scenario}<br>`);
-}
-
-function RunStat(e) {
-    var e = document.getElementById('SimStat');
-    clearContents(e)
-    var scenario = simModule.scenario.value;
-    e.insertAdjacentHTML('beforeend', `Run Statistics: ${scenario}<br>`);
-}
+// Click handlers
+function Simulate(e) { simModule.work(simModule.SimulateMap); }
+function RunStat(e) { simModule.work(simModule.StatsMap); }
