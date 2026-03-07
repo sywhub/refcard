@@ -2,6 +2,8 @@ class BidSystem {
     constructor() {
     }
 
+    roundSeat(n) { return n % 4; }
+
     // Turn bid sequence into pretty string
     seqString(sequence) { 
         var seqStr = "";
