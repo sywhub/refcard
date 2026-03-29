@@ -182,10 +182,12 @@ class SimStat extends BidSystem {
         var bIdx = Math.floor(Math.random() * spread.length);
         var b = bids.Bids[bIdx];
         var [seat, options] = this.findSeqMatch(bids.Seq, b.Bid);
-        e.insertAdjacentHTML('beforeend', `Seq: ${seqString} [`);
-        for (const o of options)
-            e.insertAdjacentHTML('beforeend', `${o}, `);
-        e.insertAdjacentHTML('beforeend', ']<br>');
+        if (options.length > 0) {
+            e.insertAdjacentHTML('beforeend', `Seq: ${seqString} [`);
+            for (const o of options)
+                e.insertAdjacentHTML('beforeend', `${o}, `);
+            e.insertAdjacentHTML('beforeend', ']<br>');
+        }
         if (seat != null) {
             e.insertAdjacentHTML('beforeend', `&nbsp;&nbsp;North: ${this.board.seats[seat]}<br>`);
             e.insertAdjacentHTML('beforeend', `&nbsp;&nbsp;South: ${this.board.seats[this.roundSeat(seat+2)]}<br>`);

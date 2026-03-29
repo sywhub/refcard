@@ -26,17 +26,15 @@ class SupportDBL:
                 # First add the RHO interference bids to the rule set
                 # These are relatively standard bids
                 rhoChoices = [x for x in suits if x != s and x != res]
-                rhoBids = [dict(Bid=f'{resLevel if suits.index(x) > suits.index(res) else resLevel + 1}{x}',
-                                Criteria=[dict(HCP=10,SuitLen=5)]) for x in rhoChoices]
-                rules.append(dict(Seq=seq, Bids=rhoBids))
+                rhoChoices = [[resLevel if suits.index(x) > suits.index(res) else resLevel + 1, x] for x in rhoChoices]
+                rules.append(dict(Seq=seq, Bids=[dict(Bid=f'{x[0]}{x[1]}', Criteria=[dict(HCP=10,SuitLen=5)]) for x in rhoChoices]))
                 # then iterate opener's choices
                 for rho in rhoChoices:
-                    rhoLevel = resLevel if suits.index(rho) > suits.index(res) else resLevel + 1
-                    rebidLevel = rhoLevel if suits.index(res) > suits.index(rho) else rhoLevel + 1
-                    newSuit = [x for x in rhoChoices if x != rho][0]
-                    newLevel =  rhoLevel if suits.index(newSuit) > suits.index(rho) else rhoLevel+1
+                    raiseLevel = rho[0] if suits.index(res) > suits.index(rho[1]) else rho[0]+1
+                    newSuit = [x[1] for x in rhoChoices if x[1] != rho[1]][0]
+                    newLevel =  rho[0] if suits.index(newSuit) > suits.index(rho[1]) else rho[0]+1
                     bids = []
-                    for b in ['X', f'{rebidLevel}{res}', f'{newLevel}{newSuit}', f'{rhoLevel+1}{rho}']:
+                    for b in ['X', f'{raiseLevel}{res}', f'{newLevel}{newSuit}', f'{rho[0]+1}{rho[1]}']:
                         if b == 'X':   # direct raise
                             c = dict(SuitLen={})
                             c['SuitLen'][res] = 3
@@ -56,7 +54,7 @@ class SupportDBL:
                         else:   # cuebid
                             c = dict(HCP=17, Meta=dict(GF='true'))
                         bids.append(dict(Bid=b, Criteria=[c]))
-                    rules.append(dict(Seq=seq + [f'{rhoLevel}{rho}'], Bids=bids))
+                    rules.append(dict(Seq=seq + [f'{rho[0]}{rho[1]}'], Bids=bids))
 
                 # Rebid after RHO DBL'ed
                 xSeq = seq + ['X']
