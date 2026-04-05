@@ -41,6 +41,27 @@ Jump usually means extra strength, unless in preemptive.
 <li>Open with higher suit if equal length, otherwise it could be revserse bidding.
 <li>"Reverse bidding" means the partner must choose at 3 level.  No reverse in responding.
 </ol>
+<h3>Open Leads</h3>
+Standard Open Lead practices:
+<ol>
+<li>Low card for partner's suit, unless doubleton
+<li>Against trump contract, singleton or high card of doubleton
+<li>First of the consecutive honors.
+<li>2nd of consesecutive honors with a gap
+<li>Attack against dummy's suit
+<li>4th card in a long suit
+<li>3rd card in a suit
+<li>Avoid underleading from Ace
+<li>Avoid lead against declarer's suits
+</ol>
+<h3>Carding</h3>
+Standard Carding
+<ol>
+<li>High card encourages, low card discourages.
+<li>High/low for even, low-high for odd.
+<li>Discard indicates suit preference.
+<li>Lead for ruff indicate suit preference
+</ol>
 `;
 zhAboutText = `
 <h2>關於本網站</h2>
@@ -77,6 +98,27 @@ zhAboutText = `
 <li>一線開叫必須5張高花或三張低花。
 <li>兩門長度一樣先叫高再低，不然如果同伴必須3線選擇為“倒叫。”
 <li>只有開叫方有倒叫，回答方沒有。
+</ol>
+<h3>首引</h3>
+標準首引
+<ol>
+<li>除非雙張，引同伴花色最小牌
+<li>王牌合約，引單張或雙張大牌
+<li>連續大牌的第一張
+<li>連續大牌有洞的第二張
+<li>穿攻夢家花色
+<li>第四大牌
+<li>第三大牌
+<li>如果有Ace，避免從那花色引小
+<li>避免引莊家花色
+</ol>
+<h3>信號</h3>
+標準信號
+<ol>
+<li>大牌鼓勵繼續，小牌不鼓勵。
+<li>先高後低為偶數，先低後高為奇數
+<li>墊牌指示花色
+<li>引給同伴王吃指示回打花色
 </ol>
 `;
 function About(d) {

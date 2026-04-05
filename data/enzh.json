@@ -153,6 +153,7 @@ var enzh = {
 	'Preempt, Overcall Advance': '弱開叫後插叫之答叫',
 	'Preempt, Overcall': '弱開叫後插叫',
 	'Preempt, Responses': '弱開叫之答叫',
+	'Preempt TakeOut': '弱開叫後迫伴之答叫',
 	'Preempt, Take-out Advance': '弱開叫後迫伴之答叫',
 	'Preemptive Overcall': '弱搶叫插叫',
 	'Preemptive': '弱搶叫',
