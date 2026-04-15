@@ -1,18 +1,28 @@
 class SimStat extends BidSystem {
     constructor(menuId) {
         super()
-        this.SenarioMenu = ['1M', '1m','1NT', '2C', 'Preempt'];
+        this.SenarioMenu = [];
         this.SimulateMap = {'Name': 'Simulate',
             '1M': [['1S', '-'],['1H', '-']],
             '1m': [['1D', '-'],['1C', '-']],
             '1NT': [['1NT', '-']], '2C': [['2C', '-']],
             'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
         this.StatsMap = {'Name': 'Statistics',
-            '1x': [['1S', '-'],['1H', '-'],['1D', '-'],['1C', '-']],
+            '5M-6m': ['5M-6m'],
             '1NT': [['1NT', '-']],
             'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
 
         this.initDisplay()
+        let menuSet = new Set();
+        for (const s of Object.keys(this.SimulateMap)) {
+            if (s != 'Name')
+                menuSet.add(s);
+        }
+        for (const s of Object.keys(this.StatsMap)) {
+            if (s != 'Name')
+                menuSet.add(s);
+        }
+        this.SenarioMenu = Array.from(menuSet).sort();
         const e = document.getElementById(menuId);
         this.makeSelect(e, 'Scenario: ', 'Scenario', this.SenarioMenu);
         this.board = new Board(new Deck());
@@ -157,16 +167,73 @@ class SimStat extends BidSystem {
         return metCount > 0 && met;
     }
     doStats(e, s) {
-        e.insertAdjacentHTML('beforeend', `Statistics: ${s}<br>`);
-        var criteriaKeys = [];
-        for (let r of Object.keys(Config.WorkingSet.Rules))
-            for (let b of Config.WorkingSet.Rules[r].Bids)
-                for (let c of b.Criteria)
-                    for (let k of Object.keys(c))
-                        if (!criteriaKeys.includes(k))
-                            criteriaKeys.push(k);
-        criteriaKeys.sort();
-        e.insertAdjacentHTML('beforeend', `Criteria: ${criteriaKeys.join(', ')}<br>`);
+        switch (s) {
+            case '5M-6m':
+                const statCriteria = [
+                    {HCP: 12, SuitLen: {'S': 5, 'D': 6}},
+                    {HCP: 12, SuitLen: {'S': 5, 'C': 6}},
+                    {HCP: 12, SuitLen: {'H': 5, 'D': 6}},
+                    {HCP: 12, SuitLen: {'H': 5, 'C': 6}}];
+                let c = null;
+                let foundCount = 0;
+                let dealCount = 0;
+                let boardValues = {};
+                let stats = {'Maj Game': 0, 'Min Game': 0, 'HCP Slam': 0, 'TP Slam': 0, 'LTC Slam': 0};
+                while (dealCount < 1000000) {
+                    let found = false
+                    let seat = 0;
+                    while (!found) {
+                        ++dealCount;
+                        this.board.deal();
+                        for (c of statCriteria) {
+                            for (seat = 0; seat < 4 && !found; seat++)
+                                found = this.matchCriteria(this.board.seats[seat], null, c);
+                            if (found)
+                                break;
+                        }
+                    }
+                    --seat;
+                    boardValues['HCP'] = this.board.seats[seat].HCP + this.board.seats[this.roundSeat(seat+2)].HCP;
+                    boardValues['TP'] = this.board.seats[seat].TP + this.board.seats[this.roundSeat(seat+2)].TP;
+                    boardValues['LTC'] = this.board.seats[seat].LTC + this.board.seats[this.roundSeat(seat+2)].LTC;
+                    for (const k of Object.keys(c.SuitLen)) {
+                        let key = ['S', 'H'].includes(k) ? 'Major' : 'Minor';
+                        let suitCode = Card.ltr2code(k) - Card.Club();
+                        boardValues[key] = 
+                            this.board.seats[seat].Suits[suitCode] + this.board.seats[this.roundSeat(seat+2)].Suits[suitCode];
+                    }
+                    if (boardValues.Major > 8 && boardValues.HCP > 26) {
+                        ++stats['Maj Game'];
+                        if (boardValues.HCP > 31)
+                            ++stats['HCP Slam'];
+                        if (boardValues.TP > 31)
+                            ++stats['TP Slam'];
+                        if (boardValues.LTC < 13)
+                            ++stats['LTC Slam'];
+                    }
+                    if ((boardValues.Minor == 8 && boardValues.HCP > 27)) {
+                        ++stats['Min Game'];
+                        if (boardValues.HCP > 31)
+                            ++stats['HCP Slam'];
+                        if (boardValues.TP > 31)
+                            ++stats['TP Slam'];
+                        if (boardValues.LTC < 13)
+                            ++stats['LTC Slam'];
+                    }
+                    ++foundCount;
+                }
+                e.insertAdjacentHTML('beforeend', `${dealCount} dealt<br>`);
+                e.insertAdjacentHTML('beforeend', `${foundCount} were 6m-5M ${(foundCount/dealCount*100).toFixed(2)}%<br>`);
+                e.insertAdjacentHTML('beforeend', `${stats["Maj Game"]} Major game achievable ${(stats["Maj Game"]/foundCount*100).toFixed(2)}%<br>`);
+                e.insertAdjacentHTML('beforeend', `${stats["Min Game"]} Minor Achievable ${(stats["Min Game"]/foundCount*100).toFixed(2)}%<br>`);
+                e.insertAdjacentHTML('beforeend', `${stats["HCP Slam"]} Slam Achievable via HCP ${(stats["HCP Slam"]/foundCount*100).toFixed(2)}%<br>`);
+                e.insertAdjacentHTML('beforeend', `${stats["TP Slam"]} Slam Achievable via TP ${(stats["TP Slam"]/foundCount*100).toFixed(2)}%<br>`);
+                e.insertAdjacentHTML('beforeend', `${stats["LTC Slam"]} Slam Achievable via LTC ${(stats["LTC Slam"]/foundCount*100).toFixed(2)}%<br>`);
+                break;
+            default:
+                e.insertAdjacentHTML('beforeend', `${s} Not implemented yet<br>`);
+                return;
+        }
     }
 
     doSimulate(e, s) {
