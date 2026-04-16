@@ -185,58 +185,65 @@ class SimStat extends BidSystem {
             {HCP: 11, SuitLen: {'S': 5, 'C': 6}},
             {HCP: 11, SuitLen: {'H': 5, 'D': 6}},
             {HCP: 11, SuitLen: {'H': 5, 'C': 6}}];
-        let c = null;
         let dealCount = 0;
-        let boardValues = {};
-        let stats = {'Maj Game': 0, 'Min Game': 0, 'Maj TP Slam': 0, 'Open': 0,  'Maj LTC 12': 0, 'Min LTC 12': 0, 'Min TP Slam': 0};
+        let boardEval = {};
+        let colHdrs = ['Dealt', 'Open', 'Major Game', 'Major TP Slam', 'Major LTC 12', 'Minor Game', 'Minor TP Slam', 'Minor LTC 12'];
+        let stats = {};
+        for (const k of colHdrs)
+            stats[k] = 0;
         while (dealCount < 1000000) {
             let found = false
             let seat = 0;
-            while (!found) {
+            let c = 0
+            do {
                 ++dealCount;
                 this.board.deal();
-                for (c of statCriteria) {
-                    for (seat = 0; seat < 4 && !found; seat++)
-                        found = this.matchCriteria(this.board.seats[seat], null, c);
-                    if (found)
-                        break;
-                }
-            }
+                for (seat = 0; seat < 4 && !found; ++seat)
+                    for (c = 0; c < statCriteria.length && !found; ++c)
+                        found = this.matchCriteria(this.board.seats[seat], null, statCriteria[c]);
+            } while (!found);
             stats['Open']++;
             --seat;
-            boardValues['HCP'] = this.board.seats[seat].HCP + this.board.seats[this.roundSeat(seat+2)].HCP;
-            boardValues['TP'] = this.board.seats[seat].TP + this.board.seats[this.roundSeat(seat+2)].TP;
-            boardValues['LTC'] = this.board.seats[seat].LTC + this.board.seats[this.roundSeat(seat+2)].LTC;
-            for (const k of Object.keys(c.SuitLen)) {
+            --c
+            let pSeat = this.roundSeat(seat+2);
+            boardEval['HCP'] = this.board.seats[seat].HCP + this.board.seats[pSeat].HCP;
+            boardEval['TP'] = this.board.seats[seat].TP + this.board.seats[pSeat].TP;
+            boardEval['LTC'] = this.board.seats[seat].LTC + this.board.seats[pSeat].LTC;
+            for (const k of Object.keys(statCriteria[c].SuitLen)) {
                 let key = ['S', 'H'].includes(k) ? 'Major' : 'Minor';
                 let suitCode = Card.ltr2code(k) - Card.Club();
-                boardValues[key] = 
-                    this.board.seats[seat].Suits[suitCode] + this.board.seats[this.roundSeat(seat+2)].Suits[suitCode];
+                boardEval[key] = 
+                    this.board.seats[seat].Suits[suitCode] + this.board.seats[pSeat].Suits[suitCode];
             }
-            if (boardValues.Major > 8) {
-                if (boardValues.TP > 26)
-                    ++stats['Maj Game'];
-                if (boardValues.TP > 30)
-                    ++stats['Maj TP Slam'];
-                if (boardValues.LTC < 13)
-                    ++stats['Maj LTC 12'];
-            } else if (boardValues.Minor > 8) {
-                if (boardValues.TP > 28)
-                    ++stats['Min Game'];
-                if (boardValues.TP > 30)
-                    ++stats['Min TP Slam'];
-                if (boardValues.LTC < 13)
-                    ++stats['Min LTC 12'];
+            // Game is achievable if 26+/28+ TP and 8 trump cards combined. 
+            // Slam is achievable only if it was game-able and either 30+ TP or 12 or less LTC.
+            if (boardEval.Major > 8) {
+                if (boardEval.TP > 26)
+                    ++stats['Major Game'];
+                if (boardEval.TP > 30)
+                    ++stats['Major TP Slam'];
+                if (boardEval.LTC < 13)
+                    ++stats['Major LTC 12'];
+            } else if (boardEval.Minor > 8) {
+                if (boardEval.TP > 28)
+                    ++stats['Minor Game'];
+                if (boardEval.TP > 30)
+                    ++stats['Minor TP Slam'];
+                if (boardEval.LTC < 13)
+                    ++stats['Minor LTC 12'];
             }
         }
-        e.insertAdjacentHTML('beforeend', `${dealCount} dealt<br>`);
-        e.insertAdjacentHTML('beforeend', `${stats["Open"]} were 6m-5M ${(stats["Open"]/dealCount*100).toFixed(2)}%<br>`);
-        e.insertAdjacentHTML('beforeend', `${stats["Maj Game"]} Major game achievable ${(stats["Maj Game"]/stats["Open"]*100).toFixed(2)}%<br>`);
-        e.insertAdjacentHTML('beforeend', `&nbsp;&nbsp;${stats["Maj TP Slam"]} Major Slam Achievable via TP ${(stats["Maj TP Slam"]/stats["Maj Game"]*100).toFixed(2)}%<br>`);
-        e.insertAdjacentHTML('beforeend', `&nbsp;&nbsp;${stats["Maj LTC 12"]} Major Slam Achievable via LTC ${(stats["Maj LTC 12"]/stats["Maj Game"]*100).toFixed(2)}%<br>`);
-        e.insertAdjacentHTML('beforeend', `${stats["Min Game"]} Minor Achievable ${(stats["Min Game"]/stats["Open"]*100).toFixed(2)}%<br>`);
-        e.insertAdjacentHTML('beforeend', `&nbsp;&nbsp;${stats["Min TP Slam"]} Minor Slam Achievable via TP ${(stats["Min TP Slam"]/stats["Min Game"]*100).toFixed(2)}%<br>`);
-        e.insertAdjacentHTML('beforeend', `&nbsp;&nbsp;${stats["Min LTC 12"]} Minor Slam Achievable via LTC ${(stats["Min LTC 12"]/stats["Min Game"]*100).toFixed(2)}%<br>`);
+        e.setAttribute('style', `display: grid; grid-template-columns: repeat(${Object.keys(stats).length + 1}, auto); gap: 10px;`);
+        let i = 0;
+        for (const k of colHdrs)
+            e.insertAdjacentHTML('beforeend', `<div style="font-weight: bold; grid-column: ${++i}; grid-row: 1; justify-self: center;">${k}</div>`);
+            
+        e.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: 2; justify-self: center;">${dealCount}</div>`);
+        for (i = 1; i < colHdrs.length; ++i)
+            e.insertAdjacentHTML('beforeend', `<div style="grid-column: ${i+1}; grid-row: 2; justify-self: center;">${stats[colHdrs[i]]}</div>`);
+        e.insertAdjacentHTML('beforeend', `<div style="grid-column: 2; grid-row: 3; justify-self: center;">${(stats["Open"]/dealCount*100).toFixed(2)}%</div>`);
+        for (i = 2; i < colHdrs.length; ++i)
+            e.insertAdjacentHTML('beforeend', `<div style="grid-column: ${i+1}; grid-row: 3; justify-self: center;">${(stats[colHdrs[i]]/stats["Open"]*100).toFixed(2)}%</div>`);
     }
 
     doSimulate(e, s) {
