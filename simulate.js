@@ -185,27 +185,26 @@ class SimStat extends BidSystem {
             {HCP: 11, SuitLen: {'S': 5, 'C': 6}},
             {HCP: 11, SuitLen: {'H': 5, 'D': 6}},
             {HCP: 11, SuitLen: {'H': 5, 'C': 6}}];
-        let dealCount = 0;
-        let boardEval = {};
         let colHdrs = ['Dealt', 'Open', 'Major Game', 'Major TP Slam', 'Major LTC 12', 'Minor Game', 'Minor TP Slam', 'Minor LTC 12'];
         let stats = {};
         for (const k of colHdrs)
             stats[k] = 0;
-        while (dealCount < 1000000) {
+        while (stats['Dealt'] < 1000000) {
             let found = false
             let seat = 0;
             let c = 0
             do {
-                ++dealCount;
+                ++stats['Dealt']
                 this.board.deal();
                 for (seat = 0; seat < 4 && !found; ++seat)
                     for (c = 0; c < statCriteria.length && !found; ++c)
                         found = this.matchCriteria(this.board.seats[seat], null, statCriteria[c]);
             } while (!found);
-            stats['Open']++;
+            ++stats['Open'];
             --seat;
             --c
             let pSeat = this.roundSeat(seat+2);
+            let boardEval = {};
             boardEval['HCP'] = this.board.seats[seat].HCP + this.board.seats[pSeat].HCP;
             boardEval['TP'] = this.board.seats[seat].TP + this.board.seats[pSeat].TP;
             boardEval['LTC'] = this.board.seats[seat].LTC + this.board.seats[pSeat].LTC;
@@ -233,17 +232,20 @@ class SimStat extends BidSystem {
                     ++stats['Minor LTC 12'];
             }
         }
-        e.setAttribute('style', `display: grid; grid-template-columns: repeat(${Object.keys(stats).length + 1}, auto); gap: 10px;`);
+        e.insertAdjacentHTML('beforeend', `<p>Stats for 6-card minor and 5-card major hands with 12+ HCP. For each hand, check if game or slam is achievable.<br>`);
+        let tblDiv = document.createElement('div');
+        e.appendChild(tblDiv);
+        tblDiv.setAttribute('style', `display: grid; grid-template-columns: repeat(${Object.keys(stats).length + 1}, auto); gap: 1vw;`);
         let i = 0;
         for (const k of colHdrs)
-            e.insertAdjacentHTML('beforeend', `<div style="font-weight: bold; grid-column: ${++i}; grid-row: 1; justify-self: center;">${k}</div>`);
+            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblHeader" style="grid-column: ${++i}; grid-row: 1;">${k}</div>`);
             
-        e.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: 2; justify-self: center;">${dealCount}</div>`);
+        tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: 1; grid-row: 2;">${stats['Dealt']}</div>`);
         for (i = 1; i < colHdrs.length; ++i)
-            e.insertAdjacentHTML('beforeend', `<div style="grid-column: ${i+1}; grid-row: 2; justify-self: center;">${stats[colHdrs[i]]}</div>`);
-        e.insertAdjacentHTML('beforeend', `<div style="grid-column: 2; grid-row: 3; justify-self: center;">${(stats["Open"]/dealCount*100).toFixed(2)}%</div>`);
+            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 2;">${stats[colHdrs[i]]}</div>`);
+        tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: 2; grid-row: 3;">${(stats["Open"]/stats["Dealt"]*100).toFixed(2)}%</div>`);
         for (i = 2; i < colHdrs.length; ++i)
-            e.insertAdjacentHTML('beforeend', `<div style="grid-column: ${i+1}; grid-row: 3; justify-self: center;">${(stats[colHdrs[i]]/stats["Open"]*100).toFixed(2)}%</div>`);
+            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 3;">${(stats[colHdrs[i]]/stats["Open"]*100).toFixed(2)}%</div>`);
     }
 
     doSimulate(e, s) {

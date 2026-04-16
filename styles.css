@@ -51,3 +51,5 @@ body {font-size: 3vw;}
 .About { grid-template-columns: 30vw 70vw; }
 .QRefBidList {grid-template-columns: 9vw 36vw 20vw 20vw 8vw; }
 }
+.TblHeader {font-weight: bold; justify-self: center;}
+.TblCell {justify-self: center;}
