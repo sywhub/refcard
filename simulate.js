@@ -185,82 +185,103 @@ class SimStat extends BidSystem {
             {HCP: 11, SuitLen: {'S': 5, 'C': 6}},
             {HCP: 11, SuitLen: {'H': 5, 'D': 6}},
             {HCP: 11, SuitLen: {'H': 5, 'C': 6}}];
+        const epsilon = 0.001;
         let colHdrs = ['Dealt', 'Open', 'Major Game', 'Major TP Slam', 'Major LTC 12', 'Minor Game', 'Minor TP Slam', 'Minor LTC 12'];
+
         let samples = [];
         const sampleSize = 10;
-        let stats = {};
+        let rawCount = {};
+        let dblBuf = [{}, {}]
+        for (const k of colHdrs) {
+            rawCount[k] = 0;
+            dblBuf[0][k] = 0.0;
+            dblBuf[1][k] = 0.0;
+        }
+
+        e.insertAdjacentHTML('beforeend', `<p>Stats for 6-card minor and 5-card major hands with 12+ HCP. For each hand, check if game or slam is achievable.<br>`);
+        let tblDiv = document.createElement('div');
+        e.appendChild(tblDiv);
+        tblDiv.setAttribute('style', `display: grid; grid-template-columns: repeat(${Object.keys(rawCount).length + 1}, auto); gap: 1vw;`);
+        let i = 0;
         for (const k of colHdrs)
-            stats[k] = 0;
-        while (stats['Dealt'] < 1000000) {
-            let found = false
-            let seat = 0;
-            let c = 0
-            do {
-                ++stats['Dealt']
-                this.board.deal();
-                for (seat = 0; seat < 4 && !found; ++seat)
-                    for (c = 0; c < statCriteria.length && !found; ++c)
-                        found = this.matchCriteria(this.board.seats[seat], null, statCriteria[c]);
-            } while (!found);
-            ++stats['Open'];
-            --seat;
-            --c
-            let pSeat = this.roundSeat(seat+2);
-            let boardEval = {};
-            boardEval['HCP'] = this.board.seats[seat].HCP + this.board.seats[pSeat].HCP;
-            boardEval['TP'] = this.board.seats[seat].TP + this.board.seats[pSeat].TP;
-            boardEval['LTC'] = this.board.seats[seat].LTC + this.board.seats[pSeat].LTC;
-            for (const k of Object.keys(statCriteria[c].SuitLen)) {
-                let key = ['S', 'H'].includes(k) ? 'Major' : 'Minor';
-                let suitCode = Card.ltr2code(k) - Card.Club();
-                boardEval[key] = 
-                    this.board.seats[seat].Suits[suitCode] + this.board.seats[pSeat].Suits[suitCode];
-            }
-            // Game is achievable if 26+/28+ TP and 8 trump cards combined. 
-            // Slam is achievable only if it was game-able and either 30+ TP or 12 or less LTC.
-            if (boardEval.Major > 8) {
-                if (boardEval.TP > 26)
-                    ++stats['Major Game'];
-                if (boardEval.TP > 30)
-                    ++stats['Major TP Slam'];
-                if (boardEval.LTC < 13)
-                    ++stats['Major LTC 12'];
-                if (Math.random() < 0.5 && samples.length < sampleSize)
-                    samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
-            } else if (boardEval.Minor > 8) {
-                if (boardEval.TP > 28)
-                    ++stats['Minor Game'];
-                if (boardEval.TP > 30)
-                    ++stats['Minor TP Slam'];
-                if (boardEval.LTC < 13)
-                    ++stats['Minor LTC 12'];
+            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblHeader" style="grid-column: ${++i}; grid-row: 1;">${k}</div>`);
+        let stabilized = false;
+        let dblIdx = 0;
+        while (!stabilized) {
+            let round = 1000;
+            while (round-- > 0) {
+                let found = false
+                let seat = 0;
+                let c = 0
+                do {
+                    ++rawCount['Dealt']
+                    this.board.deal();
+                    for (seat = 0; seat < 4 && !found; ++seat)
+                        for (c = 0; c < statCriteria.length && !found; ++c)
+                            found = this.matchCriteria(this.board.seats[seat], null, statCriteria[c]);
+                } while (!found);
+                ++rawCount['Open'];
+                --seat;
+                --c
+                let pSeat = this.roundSeat(seat+2);
+                let boardEval = {};
+                boardEval['HCP'] = this.board.seats[seat].HCP + this.board.seats[pSeat].HCP;
+                boardEval['TP'] = this.board.seats[seat].TP + this.board.seats[pSeat].TP;
+                boardEval['LTC'] = this.board.seats[seat].LTC + this.board.seats[pSeat].LTC;
+                for (const k of Object.keys(statCriteria[c].SuitLen)) {
+                    let key = ['S', 'H'].includes(k) ? 'Major' : 'Minor';
+                    let suitCode = Card.ltr2code(k) - Card.Club();
+                    boardEval[key] = 
+                        this.board.seats[seat].Suits[suitCode] + this.board.seats[pSeat].Suits[suitCode];
+                }
+                // Game is achievable if 26+/28+ TP and 8 trump cards combined. 
+                // Slam is achievable only if it was game-able and either 30+ TP or 12 or less LTC.
+                if (boardEval.Major > 8) {
+                    if (boardEval.TP > 26)
+                        ++rawCount['Major Game'];
+                    if (boardEval.TP > 30)
+                        ++rawCount['Major TP Slam'];
+                    if (boardEval.LTC < 13)
+                        ++rawCount['Major LTC 12'];
+                    if (Math.random() < 0.5 && samples.length < sampleSize)
+                        samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
+                } else if (boardEval.Minor > 8) {
+                    if (boardEval.TP > 28)
+                        ++rawCount['Minor Game'];
+                    if (boardEval.TP > 30)
+                        ++rawCount['Minor TP Slam'];
+                    if (boardEval.LTC < 13)
+                        ++rawCount['Minor LTC 12'];
                 if (Math.random() < 0.5 && samples.length < sampleSize)
                     samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
             } else if (Math.random() < 0.2 && samples.length < sampleSize)
                 samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
+            }
+            dblBuf[dblIdx]['Open'] = rawCount['Open']/rawCount['Dealt'];
+            dblBuf[dblIdx]['Major Game'] = rawCount['Major Game']/rawCount['Open'];
+            dblBuf[dblIdx]['Major TP Slam'] = rawCount['Major TP Slam']/rawCount['Major Game'];
+            dblBuf[dblIdx]['Major LTC 12'] = rawCount['Major LTC 12']/rawCount['Major Game'];
+            dblBuf[dblIdx]['Minor Game'] = rawCount['Minor Game']/rawCount['Open'];
+            dblBuf[dblIdx]['Minor TP Slam'] = rawCount['Minor TP Slam']/rawCount['Minor Game'];
+            dblBuf[dblIdx]['Minor LTC 12'] = rawCount['Minor LTC 12']/rawCount['Minor Game'];
+            stabilized = Math.abs(dblBuf[dblIdx]['Major Game'] - dblBuf[1-dblIdx]['Major Game']) < epsilon &&
+                         Math.abs(dblBuf[dblIdx]['Minor Game'] - dblBuf[1-dblIdx]['Minor Game']) < epsilon;
+            dblIdx = 1 - dblIdx;
         }
-        e.insertAdjacentHTML('beforeend', `<p>Stats for 6-card minor and 5-card major hands with 12+ HCP. For each hand, check if game or slam is achievable.<br>`);
-        let tblDiv = document.createElement('div');
-        e.appendChild(tblDiv);
-        tblDiv.setAttribute('style', `display: grid; grid-template-columns: repeat(${Object.keys(stats).length + 1}, auto); gap: 1vw;`);
-        let i = 0;
-        for (const k of colHdrs)
-            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblHeader" style="grid-column: ${++i}; grid-row: 1;">${k}</div>`);
             
-        tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: 1; grid-row: 2;">${stats['Dealt']}</div>`);
+        tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: 1; grid-row: 2;">${rawCount['Dealt']}</div>`);
         for (i = 1; i < colHdrs.length; ++i)
-            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 2;">${stats[colHdrs[i]]}</div>`);
-        tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: 2; grid-row: 3;">${(stats["Open"]/stats["Dealt"]*100).toFixed(2)}%</div>`);
-        for (i = 2; i < colHdrs.length; ++i)
-            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 3;">${(stats[colHdrs[i]]/stats["Open"]*100).toFixed(2)}%</div>`);
-        let row = 4
+            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 2;">${rawCount[colHdrs[i]]}</div>`);
+        for (i = 1; i < colHdrs.length; ++i)
+            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 3;">${(100*dblBuf[dblIdx][colHdrs[i]]).toFixed(2)}%</div>`);
+        let row = 1
         e.insertAdjacentHTML('beforeend', '<p>Sample Hands:<br>');
         let sampleDiv = document.createElement('div');
         e.appendChild(sampleDiv);
         sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 3vw 15vw 15vw; gap: 1vw;`);
         for (const s of samples) {
             let col = 1;
-            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${row-3}</div>`);
+            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${row}</div>`);
             for (const h of s) {
                 let hObj = new Hand(h);
                 let hStr = hObj.toString();
