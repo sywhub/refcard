@@ -4,13 +4,13 @@ class SimStat extends BidSystem {
         this.SenarioMenu = [];
         this.SimulateMap = {'Name': 'Simulate',
             '1M': [['1S', '-'],['1H', '-']],
+            '1NT Interfere': [['1NT']],
             '1m': [['1D', '-'],['1C', '-']],
             '1NT': [['1NT', '-']], '2C': [['2C', '-']],
             'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
         this.StatsMap = {'Name': 'Statistics',
-            '5M-6m': ['5M-6m'],
-            '1NT': [['1NT', '-']],
-            'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
+            '5M-6m': ['5M-6m']};
+        this.epsilon = 0.0005;
 
         this.initDisplay()
         let menuSet = new Set();
@@ -168,9 +168,76 @@ class SimStat extends BidSystem {
     }
 
     doStats(e, s) {
+        var statObj = {}
         switch (s) {
+            case '5-5':
+                statObj.statCriteria = [
+                    {HCP: 11, Shape: '5-5'},
+                    {HCP: 16, Shape: '5-5'}
+                ];
+                statObj.colHdrs = ['Dealt', 'Open', 'Normal', 'Strong'];
+                this.doStats55(e, s, statObj);
+                break;
             case '5M-6m':
-                this.doStats5M6m(e, s);
+                statObj.statCriteria = [
+                    {HCP: 11, SuitLen: {'S': 5, 'D': 6}},
+                    {HCP: 11, SuitLen: {'S': 5, 'C': 6}},
+                    {HCP: 11, SuitLen: {'H': 5, 'D': 6}},
+                    {HCP: 11, SuitLen: {'H': 5, 'C': 6}}];
+                statObj.colHdrs = ['Dealt', 'Open', 'Major Game', 'Major TP Slam', 'Major LTC 12', 'Minor Game', 'Minor TP Slam', 'Minor LTC 12'];
+                statObj.msg = 'Stats for 6-card minor and 5-card major hands with 12+ HCP. For each hand, check if game or slam is achievable.';
+                statObj.evalFunc = (seat, cIdx, board) => {
+                    var boardEval = {};
+                    let pSeat = this.roundSeat(seat+2); // partner
+                    boardEval['HCP'] = board.seats[seat].HCP + board.seats[pSeat].HCP;
+                    boardEval['TP'] = board.seats[seat].TP + board.seats[pSeat].TP;
+                    boardEval['LTC'] = board.seats[seat].LTC + board.seats[pSeat].LTC;
+                    for (const k of Object.keys(statObj.statCriteria[cIdx].SuitLen)) {
+                        let key = ['S', 'H'].includes(k) ? 'Major' : 'Minor';
+                        let suitCode = Card.ltr2code(k) - Card.Club();
+                        boardEval[key] = 
+                            board.seats[seat].Suits[suitCode] + board.seats[pSeat].Suits[suitCode];
+                    }
+                    return boardEval;
+                };
+                statObj.countFunc = (boardEval, rawCount, samples, sampleSize, seat) => {
+                    // Game is achievable if 26+/28+ TP and 8 trump cards combined. 
+                    // Slam is achievable only if it was game-able and either 30+ TP or 12 or less LTC.
+                    let pSeat = this.roundSeat(seat+2); // partner
+                    if (boardEval.Major > 8) {
+                        if (boardEval.TP > 26)
+                            ++rawCount['Major Game'];
+                        if (boardEval.TP > 30)
+                            ++rawCount['Major TP Slam'];
+                        if (boardEval.LTC < 13)
+                            ++rawCount['Major LTC 12'];
+                        if (Math.random() < 0.5 && samples.length < sampleSize)
+                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
+                    } else if (boardEval.Minor > 8) {
+                        if (boardEval.TP > 28)
+                            ++rawCount['Minor Game'];
+                        if (boardEval.TP > 30)
+                            ++rawCount['Minor TP Slam'];
+                        if (boardEval.LTC < 13)
+                            ++rawCount['Minor LTC 12'];
+                    if (Math.random() < 0.5 && samples.length < sampleSize)
+                        samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
+                    } else if (Math.random() < 0.2 && samples.length < sampleSize)
+                        samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
+                };
+                statObj.calcDblBuf = (dblBuf, dblIdx, rawCount) => {
+                    dblBuf[dblIdx]['Open'] = rawCount['Open']/rawCount['Dealt'];
+                    dblBuf[dblIdx]['Major Game'] = rawCount['Major Game']/rawCount['Open'];
+                    dblBuf[dblIdx]['Major TP Slam'] = rawCount['Major TP Slam']/rawCount['Major Game'];
+                    dblBuf[dblIdx]['Major LTC 12'] = rawCount['Major LTC 12']/rawCount['Major Game'];
+                    dblBuf[dblIdx]['Minor Game'] = rawCount['Minor Game']/rawCount['Open'];
+                    dblBuf[dblIdx]['Minor TP Slam'] = rawCount['Minor TP Slam']/rawCount['Minor Game'];
+                    dblBuf[dblIdx]['Minor LTC 12'] = rawCount['Minor LTC 12']/rawCount['Minor Game'];
+                    // Are we stablized?
+                    return Math.abs(dblBuf[dblIdx]['Major Game'] - dblBuf[1-dblIdx]['Major Game']) < this.epsilon &&
+                            Math.abs(dblBuf[dblIdx]['Minor Game'] - dblBuf[1-dblIdx]['Minor Game']) < this.epsilon;
+                }
+                this.workStats(e, s, statObj);
                 break;
             default:
                 e.insertAdjacentHTML('beforeend', `${s} Not implemented yet<br>`);
@@ -178,117 +245,104 @@ class SimStat extends BidSystem {
         }
     }
 
-    // Statis for 6-card minor and 5-card major hands with 12+ HCP. For each hand, check if game or slam is achievable.
-    doStats5M6m(e, s) {
-        const statCriteria = [
-            {HCP: 11, SuitLen: {'S': 5, 'D': 6}},
-            {HCP: 11, SuitLen: {'S': 5, 'C': 6}},
-            {HCP: 11, SuitLen: {'H': 5, 'D': 6}},
-            {HCP: 11, SuitLen: {'H': 5, 'C': 6}}];
-        const epsilon = 0.001;
-        let colHdrs = ['Dealt', 'Open', 'Major Game', 'Major TP Slam', 'Major LTC 12', 'Minor Game', 'Minor TP Slam', 'Minor LTC 12'];
+    doStats55(e, s, statObj) {}
+    
 
+
+    /*
+     * This is the main workhorse for running stats. It runs a loop of
+     * dealing random hands and checking if they match the criteria. If they
+     * do, it evaluates the hand and updates the counts. It uses a double
+     * buffer to check for stabilization of the results and stops when
+     * stabilized. If a displayFunc is provided in statObj, it calls that to
+     * display the results, otherwise it just shows the raw counts and
+     * percentages.
+     */
+    workStats(e, s, statObj) {
         let samples = [];
         const sampleSize = 10;
         let rawCount = {};
         let dblBuf = [{}, {}]
-        for (const k of colHdrs) {
+        for (const k of statObj.colHdrs) {
             rawCount[k] = 0;
             dblBuf[0][k] = 0.0;
             dblBuf[1][k] = 0.0;
         }
 
-        e.insertAdjacentHTML('beforeend', `<p>Stats for 6-card minor and 5-card major hands with 12+ HCP. For each hand, check if game or slam is achievable.<br>`);
+        e.insertAdjacentHTML('beforeend', `<p>${statObj.msg}<br>`);
+        // grid division for stats display
         let tblDiv = document.createElement('div');
         e.appendChild(tblDiv);
-        tblDiv.setAttribute('style', `display: grid; grid-template-columns: repeat(${Object.keys(rawCount).length + 1}, auto); gap: 1vw;`);
+        tblDiv.setAttribute('style', `display: grid; grid-template-columns: repeat(${statObj.colHdrs.length + 1}, auto); gap: 1vw;`);
         let i = 0;
-        for (const k of colHdrs)
+        // column headers, provided by caller
+        for (const k of statObj.colHdrs)
             tblDiv.insertAdjacentHTML('beforeend', `<div class="TblHeader" style="grid-column: ${++i}; grid-row: 1;">${k}</div>`);
+
         let stabilized = false;
         let dblIdx = 0;
-        while (!stabilized) {
-            let round = 1000;
+        let rawElem = null;
+        // Use interval to improve UI.
+        // Interval is async.  Make sure this is the end of the execution.
+        let sid = setInterval(() => {
+            let round = 100;    // not a good constant.
             while (round-- > 0) {
                 let found = false
                 let seat = 0;
                 let c = 0
+                // Keep dealing until we find a hand that matches the criteria.
                 do {
                     ++rawCount['Dealt']
                     this.board.deal();
                     for (seat = 0; seat < 4 && !found; ++seat)
-                        for (c = 0; c < statCriteria.length && !found; ++c)
-                            found = this.matchCriteria(this.board.seats[seat], null, statCriteria[c]);
+                        for (c = 0; c < statObj.statCriteria.length && !found; ++c)
+                            found = this.matchCriteria(this.board.seats[seat], null, statObj.statCriteria[c]);
                 } while (!found);
+                // Found!
+                // Decrement the counter to indext the right element.
                 ++rawCount['Open'];
                 --seat;
                 --c
-                let pSeat = this.roundSeat(seat+2);
-                let boardEval = {};
-                boardEval['HCP'] = this.board.seats[seat].HCP + this.board.seats[pSeat].HCP;
-                boardEval['TP'] = this.board.seats[seat].TP + this.board.seats[pSeat].TP;
-                boardEval['LTC'] = this.board.seats[seat].LTC + this.board.seats[pSeat].LTC;
-                for (const k of Object.keys(statCriteria[c].SuitLen)) {
-                    let key = ['S', 'H'].includes(k) ? 'Major' : 'Minor';
-                    let suitCode = Card.ltr2code(k) - Card.Club();
-                    boardEval[key] = 
-                        this.board.seats[seat].Suits[suitCode] + this.board.seats[pSeat].Suits[suitCode];
+                let boardEval = statObj.evalFunc(seat, c, this.board);
+                statObj.countFunc(boardEval, rawCount, samples, sampleSize, seat);
+            }
+            stabilized = statObj.calcDblBuf(dblBuf, dblIdx, rawCount);
+            dblIdx = 1 - dblIdx;    // flip
+            // The running count.  Hardcoded to be the 1st column, 2nd row.
+            if (rawElem == null) {
+                rawElem = document.createElement('div');
+                rawElem.setAttribute('class', 'TblCell');
+                rawElem.setAttribute('style', 'grid-column: 1; grid-row: 2;');
+                tblDiv.appendChild(rawElem);
+            }
+            rawElem.innerHTML= `${rawCount['Dealt']}`;
+            // Done.  First stop the interval, then display the results.
+            if (stabilized) {
+                clearInterval(sid);
+                if ('displayFunc' in statObj)
+                    statObj.sampleFunc(e, dblBuf);
+                else {
+                    for (i = 1; i < statObj.colHdrs.length; ++i)
+                        tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 2;">${rawCount[statObj.colHdrs[i]]}</div>`);
+                    for (i = 1; i < statObj.colHdrs.length; ++i)
+                        tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 3;">${(100*dblBuf[dblIdx][statObj.colHdrs[i]]).toFixed(2)}%</div>`);
+                    let row = 1
+                    e.insertAdjacentHTML('beforeend', '<p>Sample Hands:<br>');
+                    let sampleDiv = document.createElement('div');
+                    e.appendChild(sampleDiv);
+                    sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 3vw 15vw 15vw; gap: 1vw;`);
+                    for (const s of samples) {
+                        let col = 1;
+                        sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${row}</div>`);
+                        for (const h of s) {
+                            let hObj = new Hand(h);
+                            let hStr = hObj.toString();
+                            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: ${++col}; grid-row: ${row};">${hStr}</div>`);
+                        }
+                        ++row;
+                    }
                 }
-                // Game is achievable if 26+/28+ TP and 8 trump cards combined. 
-                // Slam is achievable only if it was game-able and either 30+ TP or 12 or less LTC.
-                if (boardEval.Major > 8) {
-                    if (boardEval.TP > 26)
-                        ++rawCount['Major Game'];
-                    if (boardEval.TP > 30)
-                        ++rawCount['Major TP Slam'];
-                    if (boardEval.LTC < 13)
-                        ++rawCount['Major LTC 12'];
-                    if (Math.random() < 0.5 && samples.length < sampleSize)
-                        samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
-                } else if (boardEval.Minor > 8) {
-                    if (boardEval.TP > 28)
-                        ++rawCount['Minor Game'];
-                    if (boardEval.TP > 30)
-                        ++rawCount['Minor TP Slam'];
-                    if (boardEval.LTC < 13)
-                        ++rawCount['Minor LTC 12'];
-                if (Math.random() < 0.5 && samples.length < sampleSize)
-                    samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
-            } else if (Math.random() < 0.2 && samples.length < sampleSize)
-                samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
-            }
-            dblBuf[dblIdx]['Open'] = rawCount['Open']/rawCount['Dealt'];
-            dblBuf[dblIdx]['Major Game'] = rawCount['Major Game']/rawCount['Open'];
-            dblBuf[dblIdx]['Major TP Slam'] = rawCount['Major TP Slam']/rawCount['Major Game'];
-            dblBuf[dblIdx]['Major LTC 12'] = rawCount['Major LTC 12']/rawCount['Major Game'];
-            dblBuf[dblIdx]['Minor Game'] = rawCount['Minor Game']/rawCount['Open'];
-            dblBuf[dblIdx]['Minor TP Slam'] = rawCount['Minor TP Slam']/rawCount['Minor Game'];
-            dblBuf[dblIdx]['Minor LTC 12'] = rawCount['Minor LTC 12']/rawCount['Minor Game'];
-            stabilized = Math.abs(dblBuf[dblIdx]['Major Game'] - dblBuf[1-dblIdx]['Major Game']) < epsilon &&
-                         Math.abs(dblBuf[dblIdx]['Minor Game'] - dblBuf[1-dblIdx]['Minor Game']) < epsilon;
-            dblIdx = 1 - dblIdx;
-        }
-            
-        tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: 1; grid-row: 2;">${rawCount['Dealt']}</div>`);
-        for (i = 1; i < colHdrs.length; ++i)
-            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 2;">${rawCount[colHdrs[i]]}</div>`);
-        for (i = 1; i < colHdrs.length; ++i)
-            tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 3;">${(100*dblBuf[dblIdx][colHdrs[i]]).toFixed(2)}%</div>`);
-        let row = 1
-        e.insertAdjacentHTML('beforeend', '<p>Sample Hands:<br>');
-        let sampleDiv = document.createElement('div');
-        e.appendChild(sampleDiv);
-        sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 3vw 15vw 15vw; gap: 1vw;`);
-        for (const s of samples) {
-            let col = 1;
-            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${row}</div>`);
-            for (const h of s) {
-                let hObj = new Hand(h);
-                let hStr = hObj.toString();
-                sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: ${++col}; grid-row: ${row};">${hStr}</div>`);
-            }
-            ++row;
-        }
+            }}, 100);
     }
 
     doSimulate(e, s) {
