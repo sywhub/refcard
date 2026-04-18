@@ -9,6 +9,7 @@ class SimStat extends BidSystem {
             '1NT': [['1NT', '-']], '2C': [['2C', '-']],
             'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
         this.StatsMap = {'Name': 'Statistics',
+            '5-5': ['5-5'],
             '5M-6m': ['5M-6m']};
         this.epsilon = 0.0005;
 
@@ -110,9 +111,18 @@ class SimStat extends BidSystem {
                 case 'AnySuit':
                 case 'Control':
                 case 'Honors':
-                case 'Shape':
                 case 'Stopper':
                     met = true;
+                    break;
+                case 'Shape':
+                    if (v == '5-5')
+                        met = hand.Suits.filter(s => s >= 5).length >= 2;
+                    else if (v == '5-4') {
+                        met = hand.Suits.filter(s => s >= 5).length >= 2;
+                        if (!met)
+                            met = (hand.Suits.filter(s => s >= 5).length == 1 && hand.Suits.filter(s => s == 4).length >= 1)
+                    } else if (v == 'Balanced')
+                        met = hand.Suits.filter(s => s < 2).length == 0 && hand.Suits.filter(s => s == 2).length <= 2;
                     break;
                 case 'SuitLen':
                     let suitCode = Card.ltr2code(bid) - Card.Club();
@@ -172,11 +182,34 @@ class SimStat extends BidSystem {
         switch (s) {
             case '5-5':
                 statObj.statCriteria = [
-                    {HCP: 11, Shape: '5-5'},
-                    {HCP: 16, Shape: '5-5'}
+                    {HCP: 16, Shape: '5-5'},
+                    {HCP: 11, Shape: '5-5'}
                 ];
                 statObj.colHdrs = ['Dealt', 'Open', 'Normal', 'Strong'];
-                this.doStats55(e, s, statObj);
+                statObj.msg = 'Stats for 5-5 hands with 11+ HCP. For each hand, check if it is openable and if so whether it is normal or strong.';
+                statObj.evalFunc = (seat, cIdx, board) => {
+                    let e = {'HCP': board.seats[seat].HCP};
+                    return e;
+                }
+                statObj.countFunc = (boardEval, rawCount, samples, sampleSize, seat) => { 
+                    if (boardEval.HCP < 16) {
+                        rawCount['Normal']++;
+                        if (Math.random() < 0.2 && samples.length < sampleSize)
+                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand))]);
+                    } else {
+                        rawCount['Strong']++;
+                        if (Math.random() < 0.5 && samples.length < sampleSize)
+                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand))]);
+                    }
+                };
+                statObj.calcDblBuf = (dblBuf, dblIdx, rawCount) => {
+                    dblBuf[dblIdx]['Open'] = rawCount['Open']/rawCount['Dealt'];
+                    dblBuf[dblIdx]['Normal'] = rawCount['Normal']/rawCount['Open'];
+                    dblBuf[dblIdx]['Strong'] = rawCount['Strong']/rawCount['Open'];
+                    // Are we stablized?
+                    return Math.abs(dblBuf[dblIdx]['Normal'] - dblBuf[1-dblIdx]['Normal']) < this.epsilon;
+                }
+                this.workStats(e, s, statObj);
                 break;
             case '5M-6m':
                 statObj.statCriteria = [
