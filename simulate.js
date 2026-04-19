@@ -1,34 +1,34 @@
+/*
+ * Sin-Yaw Wang, 2026
+ * This module is for simulating and collecting stats on hands that meet certain
+ * criteria.  It is designed to be flexible and extensible, allowing for different
+ * scenarios and statistics to be defined and collected.
+ */
 class SimStat extends BidSystem {
     constructor(menuId) {
         super()
-        this.SenarioMenu = [];
+        this.epsilon = 0.0005;  // stabilization threshold for stats.  If the percentage change is less than this, we consider it stabilized.
+        // Things we handle.
+        // What we will generate simulated hands that meet the criteria for the bidding sequences.
         this.SimulateMap = {'Name': 'Simulate',
             '1M': [['1S', '-'],['1H', '-']],
             '1NT Interfere': [['1NT']],
             '1m': [['1D', '-'],['1C', '-']],
             '1NT': [['1NT', '-']], '2C': [['2C', '-']],
             'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
+        // Things we will calculate states.
         this.StatsMap = {'Name': 'Statistics',
             '5-5': ['5-5'],
             '5M-6m': ['5M-6m']};
-        this.epsilon = 0.0005;
 
         this.initDisplay()
-        let menuSet = new Set();
-        for (const s of Object.keys(this.SimulateMap)) {
-            if (s != 'Name')
-                menuSet.add(s);
-        }
-        for (const s of Object.keys(this.StatsMap)) {
-            if (s != 'Name')
-                menuSet.add(s);
-        }
-        this.SenarioMenu = Array.from(menuSet).sort();
+        let menuSet = [...Object.keys(this.SimulateMap), '-', ...Object.keys(this.StatsMap)].filter(v => v != 'Name');
         const e = document.getElementById(menuId);
-        this.makeSelect(e, 'Scenario: ', 'Scenario', this.SenarioMenu);
+        this.makeSelect(e, 'Scenario: ', 'Scenario', menuSet);
         this.board = new Board(new Deck());
     }
 
+    // Make a sub div element for displaying the results.  This is to allow us to clear the results without affecting the menu.
     initDisplay() {
         var e = document.getElementById('ListDisplay');
         this.disp = document.createElement('div');
@@ -37,6 +37,7 @@ class SimStat extends BidSystem {
         e.appendChild(this.disp);
     }
 
+    // Make a select element for the menu.  If it already exists, just return it.
     makeSelect(parentDiv, lTxt, selId, optitems) {
         this.scenario = document.getElementById(selId);
         if (this.scenario == null) {
@@ -63,7 +64,10 @@ class SimStat extends BidSystem {
         }
     }
 
-    work(map) {
+    /* Trasition from click handler to class method.
+     * Caller decided which map, we use the selected value to dispatch the work.
+     */
+    action(map) {
         if (Config.WorkingSet == undefined || Config.WorkingSet == null) {
             Config.getDefaults();
             Config.makeBidRules();
@@ -89,6 +93,8 @@ class SimStat extends BidSystem {
             e.insertAdjacentHTML('beforeend', `${map.Name} does not handle ${scenario}<br>`);
     }
 
+    // Check if the hand meets the criteria.
+    // Bid is used only when SuitLen did not spcifiy the suit.
     matchCriteria(hand, bid, c) {
         var met = true;
         var metCount = 0;
@@ -112,6 +118,7 @@ class SimStat extends BidSystem {
                 case 'Control':
                 case 'Honors':
                 case 'Stopper':
+                    // XX: to be implemented.
                     met = true;
                     break;
                 case 'Shape':
@@ -177,11 +184,24 @@ class SimStat extends BidSystem {
         return metCount > 0 && met;
     }
 
+    // Dispatcher for statistics calculations.
+    // Construct the data structure and pass it to the workhorse function.
     doStats(e, s) {
+        /*
+         * state object:
+         * toMeet: list of criteria to meet.
+         * "msg": message to display before the stats table.
+         * round: (optional) number of rounds for each iteration.
+         * colHdrs: column headers for the stats table.  The first column is for the number of shuffles.
+         * evalFunc: function to evaluate the hand and return an object with the values needed for counting.
+         * countFunc: function to update the raw counts based on the evaluated hand.
+         * calcDblBuf: function to calculate the double buffer and check for stabilization.
+         * displayFunc: (optional) function to display the results.
+         */
         var statObj = {}
         switch (s) {
             case '5-5':
-                statObj.statCriteria = [
+                statObj.toMeet = [
                     {HCP: 16, Shape: '5-5'},
                     {HCP: 11, Shape: '5-5'}
                 ];
@@ -212,7 +232,7 @@ class SimStat extends BidSystem {
                 this.workStats(e, s, statObj);
                 break;
             case '5M-6m':
-                statObj.statCriteria = [
+                statObj.toMeet = [
                     {HCP: 11, SuitLen: {'S': 5, 'D': 6}},
                     {HCP: 11, SuitLen: {'S': 5, 'C': 6}},
                     {HCP: 11, SuitLen: {'H': 5, 'D': 6}},
@@ -225,7 +245,7 @@ class SimStat extends BidSystem {
                     boardEval['HCP'] = board.seats[seat].HCP + board.seats[pSeat].HCP;
                     boardEval['TP'] = board.seats[seat].TP + board.seats[pSeat].TP;
                     boardEval['LTC'] = board.seats[seat].LTC + board.seats[pSeat].LTC;
-                    for (const k of Object.keys(statObj.statCriteria[cIdx].SuitLen)) {
+                    for (const k of Object.keys(statObj.toMeet[cIdx].SuitLen)) {
                         let key = ['S', 'H'].includes(k) ? 'Major' : 'Minor';
                         let suitCode = Card.ltr2code(k) - Card.Club();
                         boardEval[key] = 
@@ -278,10 +298,6 @@ class SimStat extends BidSystem {
         }
     }
 
-    doStats55(e, s, statObj) {}
-    
-
-
     /*
      * This is the main workhorse for running stats. It runs a loop of
      * dealing random hands and checking if they match the criteria. If they
@@ -314,11 +330,15 @@ class SimStat extends BidSystem {
 
         let stabilized = false;
         let dblIdx = 0;
-        let rawElem = null;
+        // The running count.  Hardcoded to be the 1st column, 2nd row.
+        let rawElem = rawElem = document.createElement('div');
+        rawElem.setAttribute('class', 'TblCell');
+        rawElem.setAttribute('style', 'grid-column: 1; grid-row: 2;');
+        tblDiv.appendChild(rawElem);
         // Use interval to improve UI.
         // Interval is async.  Make sure this is the end of the execution.
         let sid = setInterval(() => {
-            let round = 100;    // not a good constant.
+            let round = 'round' in statObj ? statObj.round : 100;
             while (round-- > 0) {
                 let found = false
                 let seat = 0;
@@ -328,8 +348,8 @@ class SimStat extends BidSystem {
                     ++rawCount['Dealt']
                     this.board.deal();
                     for (seat = 0; seat < 4 && !found; ++seat)
-                        for (c = 0; c < statObj.statCriteria.length && !found; ++c)
-                            found = this.matchCriteria(this.board.seats[seat], null, statObj.statCriteria[c]);
+                        for (c = 0; c < statObj.toMeet.length && !found; ++c)
+                            found = this.matchCriteria(this.board.seats[seat], null, statObj.toMeet[c]);
                 } while (!found);
                 // Found!
                 // Decrement the counter to indext the right element.
@@ -341,13 +361,6 @@ class SimStat extends BidSystem {
             }
             stabilized = statObj.calcDblBuf(dblBuf, dblIdx, rawCount);
             dblIdx = 1 - dblIdx;    // flip
-            // The running count.  Hardcoded to be the 1st column, 2nd row.
-            if (rawElem == null) {
-                rawElem = document.createElement('div');
-                rawElem.setAttribute('class', 'TblCell');
-                rawElem.setAttribute('style', 'grid-column: 1; grid-row: 2;');
-                tblDiv.appendChild(rawElem);
-            }
             rawElem.innerHTML= `${rawCount['Dealt']}`;
             // Done.  First stop the interval, then display the results.
             if (stabilized) {
@@ -459,5 +472,5 @@ class SimStat extends BidSystem {
 }
 
 // Click handlers
-function Simulate(e) { simModule.work(simModule.SimulateMap); }
-function RunStat(e) { simModule.work(simModule.StatsMap); }
+function Simulate(e) { simModule.action(simModule.SimulateMap); }
+function RunStat(e) { simModule.action(simModule.StatsMap); }

@@ -76,12 +76,9 @@ class BidSystem {
      * AnySuit is an object of [SuitChar Num] pairs
      */
     anySuitString(k, v, dummy) {
-        var str = "Any of ";
-        for (const [sKey, sVal] of Object.entries(v)) {
-            str += sVal + '+';
-            str += Card.ltr2html(sKey);
-            str += ' '
-        }
+        var str = trEnZh("Any of");
+        for (const [sKey, sVal] of Object.entries(v)) 
+            str += `  ${sVal}+${Card.ltr2html(sKey)} `;
         return str.trim();
     }
 
