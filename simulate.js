@@ -7,19 +7,23 @@
 class SimStat extends BidSystem {
     constructor(menuId) {
         super()
-        this.epsilon = 0.0005;  // stabilization threshold for stats.  If the percentage change is less than this, we consider it stabilized.
+        this.epsilon = 0.00005;  // stabilization threshold for stats.  If the percentage change is less than this, we consider it stabilized.
+        this.sampleSize = 10;
         // Things we handle.
         // What we will generate simulated hands that meet the criteria for the bidding sequences.
         this.SimulateMap = {'Name': 'Simulate',
             '1M': [['1S', '-'],['1H', '-']],
-            '1NT Interfere': [['1NT']],
             '1m': [['1D', '-'],['1C', '-']],
-            '1NT': [['1NT', '-']], '2C': [['2C', '-']],
+            '1NT': [['1NT', '-']],
             'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
         // Things we will calculate states.
         this.StatsMap = {'Name': 'Statistics',
-            '5-5': ['5-5'],
-            '5M-6m': ['5M-6m']};
+            '5-4': [{HCP: 16, Shape: '5-4'}, {HCP: 11, Shape: '5-4'}],
+            '5-5': [{HCP: 16, Shape: '5-5'}, {HCP: 11, Shape: '5-5'}],
+            '5M-6m': [{HCP: 11, SuitLen: {'S': 5, 'D': 6}},
+                    {HCP: 11, SuitLen: {'S': 5, 'C': 6}},
+                    {HCP: 11, SuitLen: {'H': 5, 'D': 6}},
+                    {HCP: 11, SuitLen: {'H': 5, 'C': 6}}]};
 
         this.initDisplay()
         let menuSet = [...Object.keys(this.SimulateMap), '-', ...Object.keys(this.StatsMap)].filter(v => v != 'Name');
@@ -79,22 +83,17 @@ class SimStat extends BidSystem {
         var scenario = simModule.scenario.value;
         if (scenario in map) {
             let cases = map[scenario];
-            for (const s of cases) {
-                switch (map.Name) {
-                    case 'Simulate':
-                        this.doSimulate(e, s);
-                        break;
-                    case 'Statistics':
-                        this.doStats(e, s);
-                        break;
-                }
+            if (map.Name == 'Simulate') {
+                this.doSimulate(e, map[scenario]);
+            } else if (map.Name == 'Statistics') {
+                this.doStats(e, scenario);
             }
         } else 
             e.insertAdjacentHTML('beforeend', `${map.Name} does not handle ${scenario}<br>`);
     }
 
     // Check if the hand meets the criteria.
-    // Bid is used only when SuitLen did not spcifiy the suit.
+    // Bid is used only when SuitLen did not spcifiy the suit and "Control".
     matchCriteria(hand, bid, c) {
         var met = true;
         var metCount = 0;
@@ -114,12 +113,29 @@ class SimStat extends BidSystem {
                         met = hand[k] >= v;
                     ++metCount;
                     break;
-                case 'AnySuit':
-                case 'Control':
                 case 'Honors':
-                case 'Stopper':
                     // XX: to be implemented.
                     met = true;
+                    break;
+                case 'Control':
+                case 'Stopper':
+                    let suitList = [v];
+                    if (k == 'Control')
+                        suitList = [bid];
+                    else if (Array.isArray(v))
+                        suitList = [...v];
+                    for (const s of v) {
+                        let suitCode = Card.ltr2code(s);
+                        let suitCards = hand.hand.filter(x => x.suit == suitCode);
+                        met = k == 'Control' && suitCards.length == 0;
+                        if (!met || k == 'Stopper')
+                            met = (suitCards.length > 1 && (suitCards[0].rank == Card.Ace) ||
+                                (suitCards[0].rank == Card.King && suitCards[1].rank == Card.Queen)) ||
+                            (suitCards.length > 2 && suitCards[0].rank == Card.Queen && suitCards[1].rank == Card.Jack) ||
+                            (suitCards.length > 3 && suitCards[0].rank == Card.Jack);
+                        if (!met)
+                            break;
+                    }
                     break;
                 case 'Shape':
                     if (v == '5-5')
@@ -131,6 +147,7 @@ class SimStat extends BidSystem {
                     } else if (v == 'Balanced')
                         met = hand.Suits.filter(s => s < 2).length == 0 && hand.Suits.filter(s => s == 2).length <= 2;
                     break;
+                case 'AnySuit':
                 case 'SuitLen':
                     let suitCode = Card.ltr2code(bid) - Card.Club();
                     if (Array.isArray(v)) {
@@ -152,8 +169,10 @@ class SimStat extends BidSystem {
                                     met = hand.Suits[whichSuit] >= sVal[0] && hand.Suits[whichSuit] <= sVal[1];
                             } else
                                 met = hand.Suits[whichSuit] >= sVal;
-                            if (!met)
-                                break
+                            if (k == 'SuitLen' && !met)
+                                break;
+                            else if (k == 'AnySuit' && met)
+                                break;
                         }
                     } else
                         met = hand.Suits[suitCode] >= v;
@@ -189,7 +208,6 @@ class SimStat extends BidSystem {
     doStats(e, s) {
         /*
          * state object:
-         * toMeet: list of criteria to meet.
          * "msg": message to display before the stats table.
          * round: (optional) number of rounds for each iteration.
          * colHdrs: column headers for the stats table.  The first column is for the number of shuffles.
@@ -200,26 +218,24 @@ class SimStat extends BidSystem {
          */
         var statObj = {}
         switch (s) {
+            case '5-4':
             case '5-5':
-                statObj.toMeet = [
-                    {HCP: 16, Shape: '5-5'},
-                    {HCP: 11, Shape: '5-5'}
-                ];
                 statObj.colHdrs = ['Dealt', 'Open', 'Normal', 'Strong'];
-                statObj.msg = 'Stats for 5-5 hands with 11+ HCP. For each hand, check if it is openable and if so whether it is normal or strong.';
+                statObj.msg = `Stats for ${s} hands with open strength.`;
                 statObj.evalFunc = (seat, cIdx, board) => {
                     let e = {'HCP': board.seats[seat].HCP};
                     return e;
                 }
-                statObj.countFunc = (boardEval, rawCount, samples, sampleSize, seat) => { 
+                statObj.countFunc = (boardEval, rawCount, samples, seat) => { 
+                    let pSeat = this.roundSeat(seat+2); // partner
                     if (boardEval.HCP < 16) {
                         rawCount['Normal']++;
-                        if (Math.random() < 0.2 && samples.length < sampleSize)
-                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand))]);
+                        if (Math.random() < 0.2 && samples.length < this.sampleSize)
+                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
                     } else {
                         rawCount['Strong']++;
-                        if (Math.random() < 0.5 && samples.length < sampleSize)
-                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand))]);
+                        if (Math.random() < 0.5 && samples.length < this.sampleSize)
+                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
                     }
                 };
                 statObj.calcDblBuf = (dblBuf, dblIdx, rawCount) => {
@@ -232,11 +248,6 @@ class SimStat extends BidSystem {
                 this.workStats(e, s, statObj);
                 break;
             case '5M-6m':
-                statObj.toMeet = [
-                    {HCP: 11, SuitLen: {'S': 5, 'D': 6}},
-                    {HCP: 11, SuitLen: {'S': 5, 'C': 6}},
-                    {HCP: 11, SuitLen: {'H': 5, 'D': 6}},
-                    {HCP: 11, SuitLen: {'H': 5, 'C': 6}}];
                 statObj.colHdrs = ['Dealt', 'Open', 'Major Game', 'Major TP Slam', 'Major LTC 12', 'Minor Game', 'Minor TP Slam', 'Minor LTC 12'];
                 statObj.msg = 'Stats for 6-card minor and 5-card major hands with 12+ HCP. For each hand, check if game or slam is achievable.';
                 statObj.evalFunc = (seat, cIdx, board) => {
@@ -245,7 +256,7 @@ class SimStat extends BidSystem {
                     boardEval['HCP'] = board.seats[seat].HCP + board.seats[pSeat].HCP;
                     boardEval['TP'] = board.seats[seat].TP + board.seats[pSeat].TP;
                     boardEval['LTC'] = board.seats[seat].LTC + board.seats[pSeat].LTC;
-                    for (const k of Object.keys(statObj.toMeet[cIdx].SuitLen)) {
+                    for (const k of Object.keys(this.StatsMap[s][cIdx].SuitLen)) {
                         let key = ['S', 'H'].includes(k) ? 'Major' : 'Minor';
                         let suitCode = Card.ltr2code(k) - Card.Club();
                         boardEval[key] = 
@@ -253,7 +264,7 @@ class SimStat extends BidSystem {
                     }
                     return boardEval;
                 };
-                statObj.countFunc = (boardEval, rawCount, samples, sampleSize, seat) => {
+                statObj.countFunc = (boardEval, rawCount, samples, seat) => {
                     // Game is achievable if 26+/28+ TP and 8 trump cards combined. 
                     // Slam is achievable only if it was game-able and either 30+ TP or 12 or less LTC.
                     let pSeat = this.roundSeat(seat+2); // partner
@@ -264,7 +275,7 @@ class SimStat extends BidSystem {
                             ++rawCount['Major TP Slam'];
                         if (boardEval.LTC < 13)
                             ++rawCount['Major LTC 12'];
-                        if (Math.random() < 0.5 && samples.length < sampleSize)
+                        if (Math.random() < 0.5 && samples.length < this.sampleSize)
                             samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
                     } else if (boardEval.Minor > 8) {
                         if (boardEval.TP > 28)
@@ -273,9 +284,9 @@ class SimStat extends BidSystem {
                             ++rawCount['Minor TP Slam'];
                         if (boardEval.LTC < 13)
                             ++rawCount['Minor LTC 12'];
-                    if (Math.random() < 0.5 && samples.length < sampleSize)
+                    if (Math.random() < 0.5 && samples.length < this.sampleSize)
                         samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
-                    } else if (Math.random() < 0.2 && samples.length < sampleSize)
+                    } else if (Math.random() < 0.2 && samples.length < this.sampleSize)
                         samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
                 };
                 statObj.calcDblBuf = (dblBuf, dblIdx, rawCount) => {
@@ -309,7 +320,6 @@ class SimStat extends BidSystem {
      */
     workStats(e, s, statObj) {
         let samples = [];
-        const sampleSize = 10;
         let rawCount = {};
         let dblBuf = [{}, {}]
         for (const k of statObj.colHdrs) {
@@ -331,7 +341,7 @@ class SimStat extends BidSystem {
         let stabilized = false;
         let dblIdx = 0;
         // The running count.  Hardcoded to be the 1st column, 2nd row.
-        let rawElem = rawElem = document.createElement('div');
+        let rawElem = document.createElement('div');
         rawElem.setAttribute('class', 'TblCell');
         rawElem.setAttribute('style', 'grid-column: 1; grid-row: 2;');
         tblDiv.appendChild(rawElem);
@@ -348,8 +358,8 @@ class SimStat extends BidSystem {
                     ++rawCount['Dealt']
                     this.board.deal();
                     for (seat = 0; seat < 4 && !found; ++seat)
-                        for (c = 0; c < statObj.toMeet.length && !found; ++c)
-                            found = this.matchCriteria(this.board.seats[seat], null, statObj.toMeet[c]);
+                        for (c = 0; c < this.StatsMap[s].length && !found; ++c)
+                            found = this.matchCriteria(this.board.seats[seat], null, this.StatsMap[s][c]);
                 } while (!found);
                 // Found!
                 // Decrement the counter to indext the right element.
@@ -357,7 +367,7 @@ class SimStat extends BidSystem {
                 --seat;
                 --c
                 let boardEval = statObj.evalFunc(seat, c, this.board);
-                statObj.countFunc(boardEval, rawCount, samples, sampleSize, seat);
+                statObj.countFunc(boardEval, rawCount, samples, seat);
             }
             stabilized = statObj.calcDblBuf(dblBuf, dblIdx, rawCount);
             dblIdx = 1 - dblIdx;    // flip
@@ -379,7 +389,7 @@ class SimStat extends BidSystem {
                     sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 3vw 15vw 15vw; gap: 1vw;`);
                     for (const s of samples) {
                         let col = 1;
-                        sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${row}</div>`);
+                        sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${row}.</div>`);
                         for (const h of s) {
                             let hObj = new Hand(h);
                             let hStr = hObj.toString();
@@ -391,28 +401,47 @@ class SimStat extends BidSystem {
             }}, 100);
     }
 
-    doSimulate(e, s) {
-        let sKey = seqKey(s);
-        if (!(sKey in Config.WorkingSet.Rules))
-            return;
+    doSimulate(e, cases) {
+        let count = new Array(cases.length).fill(0);
+        let samples = [];
+        while (samples.length < this.sampleSize) {
+            let minCount = Math.min(count);
+            let lessUsed = count.reduce((acc, c, i) => {
+                if (c < minCount) acc.push(i);
+                return acc;
+            }, []);
+            let i = Math.floor(Math.random() * count.length);
+            if (lessUsed.length > 0)                
+                i = lessUsed[Math.floor(Math.random() * lessUsed.length)];
+            count[i]++;
+            let sKey = seqKey(cases[i]);
+            if (!(sKey in Config.WorkingSet.Rules))
+                break;
 
-        let bids = Config.WorkingSet.Rules[sKey];
-        let seqString = this.seqString(bids.Seq);
-        let spread = new Array(bids.Bids.length);
-        for (let i = 0; i < spread.length; i++)
-            spread[i] = {Count: 0, CriterCount: new Array(bids.Bids[i].Criteria.length).fill(0)};
-        var bIdx = Math.floor(Math.random() * spread.length);
-        var b = bids.Bids[bIdx];
-        var [seat, options] = this.findSeqMatch(bids.Seq, b.Bid);
-        if (options.length > 0) {
-            e.insertAdjacentHTML('beforeend', `Seq: ${seqString} [`);
-            for (const o of options)
-                e.insertAdjacentHTML('beforeend', `${o}, `);
-            e.insertAdjacentHTML('beforeend', ']<br>');
+            let bids = Config.WorkingSet.Rules[sKey];
+            // should spread them, instead of just pick a random one.
+            var bIdx = Math.floor(Math.random() * bids.Bids.length);
+            var b = bids.Bids[bIdx];
+            var [seat, options] = this.findSeqMatch(bids.Seq, b.Bid);
+            if (seat != null) {
+                samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)),
+                             JSON.parse(JSON.stringify(this.board.seats[this.roundSeat(seat+2)].hand))]);
+            }
         }
-        if (seat != null) {
-            e.insertAdjacentHTML('beforeend', `&nbsp;&nbsp;North: ${this.board.seats[seat]}<br>`);
-            e.insertAdjacentHTML('beforeend', `&nbsp;&nbsp;South: ${this.board.seats[this.roundSeat(seat+2)]}<br>`);
+        e.insertAdjacentHTML('beforeend', `<p>Sample Hands for ${cases.map(c => this.seqString(c)).join(', ')}:<br>`);
+        let sampleDiv = document.createElement('div');
+        e.appendChild(sampleDiv);
+        sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 3vw 15vw 15vw; gap: 1vw;`);
+        let row = 1;
+        for (const s of samples) {
+            let hObj = new Hand(s[0]);
+            let hStr = hObj.toString();
+            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${row}.</div>`);
+            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 2; grid-row: ${row};">${hStr}</div>`);
+            hObj = new Hand(s[1]);
+            hStr = hObj.toString();
+            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 3; grid-row: ${row};">${hStr}</div>`);
+            row++;
         }
     }
 
