@@ -8,7 +8,7 @@ class SimStat extends BidSystem {
     constructor(menuId) {
         super()
         this.epsilon = 0.00005;  // stabilization threshold for stats.  If the percentage change is less than this, we consider it stabilized.
-        this.sampleSize = 10;
+        this.sampleSize = 16;
         // Things we handle.
         // What we will generate simulated hands that meet the criteria for the bidding sequences.
         this.SimulateMap = {'Name': 'Simulate',
@@ -216,6 +216,14 @@ class SimStat extends BidSystem {
          * calcDblBuf: function to calculate the double buffer and check for stabilization.
          * displayFunc: (optional) function to display the results.
          */
+        let pushSample = (samples, seat) => {
+            let sampleHand = [];
+            for (let i = 0; i < 4; i++) {
+                let sIdx = this.roundSeat(seat+i);
+                sampleHand.push(JSON.parse(JSON.stringify(this.board.seats[sIdx].hand)));
+            }
+            samples.push(sampleHand);
+        };
         var statObj = {}
         switch (s) {
             case '5-4':
@@ -231,11 +239,11 @@ class SimStat extends BidSystem {
                     if (boardEval.HCP < 16) {
                         rawCount['Normal']++;
                         if (Math.random() < 0.2 && samples.length < this.sampleSize)
-                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
+                            pushSample(samples, seat);
                     } else {
                         rawCount['Strong']++;
                         if (Math.random() < 0.5 && samples.length < this.sampleSize)
-                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
+                            pushSample(samples, seat);
                     }
                 };
                 statObj.calcDblBuf = (dblBuf, dblIdx, rawCount) => {
@@ -276,7 +284,7 @@ class SimStat extends BidSystem {
                         if (boardEval.LTC < 13)
                             ++rawCount['Major LTC 12'];
                         if (Math.random() < 0.5 && samples.length < this.sampleSize)
-                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
+                            pushSample(samples, seat);
                     } else if (boardEval.Minor > 8) {
                         if (boardEval.TP > 28)
                             ++rawCount['Minor Game'];
@@ -285,9 +293,9 @@ class SimStat extends BidSystem {
                         if (boardEval.LTC < 13)
                             ++rawCount['Minor LTC 12'];
                     if (Math.random() < 0.5 && samples.length < this.sampleSize)
-                        samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
+                        pushSample(samples, seat);
                     } else if (Math.random() < 0.2 && samples.length < this.sampleSize)
-                        samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)), JSON.parse(JSON.stringify(this.board.seats[pSeat].hand))]);
+                        pushSample(samples, seat);
                 };
                 statObj.calcDblBuf = (dblBuf, dblIdx, rawCount) => {
                     dblBuf[dblIdx]['Open'] = rawCount['Open']/rawCount['Dealt'];
@@ -382,23 +390,57 @@ class SimStat extends BidSystem {
                         tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 2;">${rawCount[statObj.colHdrs[i]]}</div>`);
                     for (i = 1; i < statObj.colHdrs.length; ++i)
                         tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 3;">${(100*dblBuf[dblIdx][statObj.colHdrs[i]]).toFixed(2)}%</div>`);
-                    let row = 1
-                    e.insertAdjacentHTML('beforeend', '<p>Sample Hands:<br>');
-                    let sampleDiv = document.createElement('div');
-                    e.appendChild(sampleDiv);
-                    sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 3vw 15vw 15vw; gap: 1vw;`);
-                    for (const s of samples) {
-                        let col = 1;
-                        sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${row}.</div>`);
-                        for (const h of s) {
-                            let hObj = new Hand(h);
-                            let hStr = hObj.toString();
-                            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: ${++col}; grid-row: ${row};">${hStr}</div>`);
-                        }
-                        ++row;
-                    }
+                    this.showSamples(e, samples);
                 }
             }}, 100);
+    }
+
+    showSamples(e, samples) {
+        let row = 1;
+        let cols = [3, 2, 4, 3];
+        let rowInc = [1, 0, 1, 1]
+        let bIdx = 1;
+        e.insertAdjacentHTML('beforeend', '<p>Sample Hands:<br>');
+        let sampleDiv = document.createElement('div');
+        e.appendChild(sampleDiv);
+        sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 3vw repeat(4, 15vw); gap: 1vw;`);
+        for (const s of samples) {
+            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${bIdx++}.</div>`);
+            let col = 0;
+            for (const h of s) {
+                let hObj = new Hand(h);
+                let hStr = hObj.toString();
+                sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: ${cols[col]}; grid-row: ${row};">${hStr}</div>`);
+                row += rowInc[col];
+                col++;
+            }
+            ++row;
+        }
+        let linDiv = document.createElement('div');
+        e.appendChild(linDiv);
+        linDiv.insertAdjacentHTML('beforeend', '<p>BBO LIN:<br>');
+        bIdx = 1;
+        let vul = ['o', 'n', 'e', 'b'];
+        let bboDiv = document.createElement('div');
+        bboDiv.setAttribute('class', 'BBOLin')
+        linDiv.appendChild(bboDiv);
+        for (const s of samples) {
+            let bbo = `qx|o${bIdx}|st||md|3`;
+            let hString = '';
+            for (const i of [2,3,0]) {
+                let hObj = new Hand(s[i]);
+                hString = hObj.toString();
+                hString = hString.replaceAll('10', 'T');
+                for (const c of ['S', 'H', 'D', 'C']) 
+                    hString = hString.replaceAll(`${Card.cHTML[Card.Codes[c]]}`, c);
+                hString = hString.replaceAll(' ', '');
+                bbo += `${hString},`;
+            }
+            let v = vul[(bIdx-1+Math.floor((bIdx-1)/4))%4];
+            bbo += `|rh||ah|Board ${bIdx}|sv|${v}|pg||`
+            bboDiv.insertAdjacentHTML('beforeend', `${bbo}<br>`);
+            ++bIdx;
+        }
     }
 
     doSimulate(e, cases) {

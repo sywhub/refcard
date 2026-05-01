@@ -39,6 +39,7 @@ h2, h3 {color: blueviolet;}
     grid-template-columns: 10vw 45vw;
 }
 .ConfigData { font-style: italic; }
+.BBOLin { font-family: 'Courier New', Courier, monospace; font-size: 6;}
 .BidKeys { display: grid; grid-template-columns: repeat(3, 15vw) 20vw; }
 .ConfigUI, .QRefUI { font-family: inherit; font-size: inherit; margin: 5px;}
 @media screen and (max-width: 981px) {
