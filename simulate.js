@@ -397,8 +397,6 @@ class SimStat extends BidSystem {
 
     showSamples(e, samples) {
         let row = 1;
-        let cols = [3, 2, 4, 3];
-        let rowInc = [1, 0, 1, 1]
         let bIdx = 1;
         e.insertAdjacentHTML('beforeend', '<p>Sample Hands:<br>');
         let sampleDiv = document.createElement('div');
@@ -406,29 +404,28 @@ class SimStat extends BidSystem {
         sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 3vw repeat(4, 15vw); gap: 1vw;`);
         for (const s of samples) {
             sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${bIdx++}.</div>`);
-            let col = 0;
-            for (const h of s) {
-                let hObj = new Hand(h);
-                let hStr = hObj.toString();
-                sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: ${cols[col]}; grid-row: ${row};">${hStr}</div>`);
-                row += rowInc[col];
-                col++;
-            }
+            let hObj = new Hand(s[0]);
+            let hStr = hObj.toString();
+            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 2; grid-row: ${row};">${hStr}</div>`);
+            hObj = new Hand(s[2]);
+            hStr = hObj.toString();
+            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 3; grid-row: ${row};">${hStr}</div>`);
             ++row;
         }
         let linDiv = document.createElement('div');
         e.appendChild(linDiv);
         linDiv.insertAdjacentHTML('beforeend', '<p>BBO LIN:<br>');
-        bIdx = 1;
+        bIdx = 0;
         let vul = ['o', 'n', 'e', 'b'];
         let bboDiv = document.createElement('div');
         bboDiv.setAttribute('class', 'BBOLin')
         linDiv.appendChild(bboDiv);
         for (const s of samples) {
-            let bbo = `qx|o${bIdx}|st||md|3`;
+            let bbo = `qx|o${bIdx+1}|st||md|${(bIdx+2)%4+1}`;
             let hString = '';
-            for (const i of [2,3,0]) {
-                let hObj = new Hand(s[i]);
+            let hIdx = [2, 0, 0, 2][bIdx%4];
+            for (let i = 0; i < 4; i++) {
+                let hObj = new Hand(s[(hIdx+i)%4]);
                 hString = hObj.toString();
                 hString = hString.replaceAll('10', 'T');
                 for (const c of ['S', 'H', 'D', 'C']) 
@@ -436,7 +433,8 @@ class SimStat extends BidSystem {
                 hString = hString.replaceAll(' ', '');
                 bbo += `${hString},`;
             }
-            let v = vul[(bIdx-1+Math.floor((bIdx-1)/4))%4];
+            let v = vul[(bIdx-1+Math.floor((bIdx)/4))%4];
+            bbo = bbo.slice(0, -1);
             bbo += `|rh||ah|Board ${bIdx}|sv|${v}|pg||`
             bboDiv.insertAdjacentHTML('beforeend', `${bbo}<br>`);
             ++bIdx;
