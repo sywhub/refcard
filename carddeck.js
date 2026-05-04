@@ -41,8 +41,8 @@ class Card {
         return Card.NoSuit();
     }
 	static ltr2html(l) { return Card.cHTML[Card.ltr2code(l)]; }
-    static code2ltr(c) {return Object.keys(Card.Codes).find(k => Card.Codes[k] == c);}
-k
+    static code2ltr(c) {return Object.keys(Card.Codes).find(code => Card.Codes[code] == c);}
+    
     // must construct within valid range
     constructor(s, r) {
         this.suit = s;
@@ -79,12 +79,9 @@ class Deck {
     // initialize as a new deck
     constructor() {
         this.cards = [];
-        var i = 0;
         for (let s = Card.Club(); s <= Card.Spade(); s++)
-            for (let r = 0; r < 13; r++) {
-                this.cards[i] = new Card(s, r);
-                i++;
-            }
+            for (let r = 0; r < 13; r++)
+                this.cards.push(new Card(s, r));
     }
 
     loadcards(predealts) {
@@ -120,6 +117,7 @@ class Deck {
 
 
 function CardUnitTest(containername) {
+    var c = new Card(Card.Heart(), 2);
     var d = new Deck;
     var e = document.getElementById(containername);
     clearContents(e);

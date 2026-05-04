@@ -15,7 +15,8 @@ class SimStat extends BidSystem {
             '1M': [['1S', '-'],['1H', '-']],
             '1m': [['1D', '-'],['1C', '-']],
             '1NT': [['1NT', '-']],
-            'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
+            'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']],
+            'INT Interference': []};
         // Things we will calculate states.
         this.StatsMap = {'Name': 'Statistics',
             '5-4': [{HCP: 16, Shape: '5-4'}, {HCP: 11, Shape: '5-4'}],
@@ -84,7 +85,7 @@ class SimStat extends BidSystem {
         if (scenario in map) {
             let cases = map[scenario];
             if (map.Name == 'Simulate') {
-                this.doSimulate(e, map[scenario]);
+                this.doSimulate(e, scenario);
             } else if (map.Name == 'Statistics') {
                 this.doStats(e, scenario);
             }
@@ -129,10 +130,10 @@ class SimStat extends BidSystem {
                         let suitCards = hand.hand.filter(x => x.suit == suitCode);
                         met = k == 'Control' && suitCards.length == 0;
                         if (!met || k == 'Stopper')
-                            met = (suitCards.length > 1 && (suitCards[0].rank == Card.Ace) ||
-                                (suitCards[0].rank == Card.King && suitCards[1].rank == Card.Queen)) ||
-                            (suitCards.length > 2 && suitCards[0].rank == Card.Queen && suitCards[1].rank == Card.Jack) ||
-                            (suitCards.length > 3 && suitCards[0].rank == Card.Jack);
+                            met = (suitCards.length >= 4 && suitCards[0].rank == Card.Jack) ||
+                                (suitCards.length >= 3 && (suitCards[0].rank == Card.Queen && suitCards[1].rank == Card.Jack)) ||
+                                (suitCards.length >= 2 && (suitCards[0].rank == Card.King && suitCards[1].rank == Card.Queen)) ||
+                                (suitCards.length >= 1 && suitCards[0].rank == Card.Ace);
                         if (!met)
                             break;
                     }
@@ -203,6 +204,18 @@ class SimStat extends BidSystem {
         return metCount > 0 && met;
     }
 
+    pushSample(samples, seat, skipOpponent = false) {
+        let sampleHand = [];
+        let inc = 1;
+        if (skipOpponent) 
+            inc = 2;
+        for (let i = 0; i < 4; i +=inc) {
+            let sIdx = this.roundSeat(seat+i);
+            sampleHand.push(JSON.parse(JSON.stringify(this.board.seats[sIdx].hand)));
+        }
+        samples.push(sampleHand);
+    }
+
     // Dispatcher for statistics calculations.
     // Construct the data structure and pass it to the workhorse function.
     doStats(e, s) {
@@ -216,14 +229,6 @@ class SimStat extends BidSystem {
          * calcDblBuf: function to calculate the double buffer and check for stabilization.
          * displayFunc: (optional) function to display the results.
          */
-        let pushSample = (samples, seat) => {
-            let sampleHand = [];
-            for (let i = 0; i < 4; i++) {
-                let sIdx = this.roundSeat(seat+i);
-                sampleHand.push(JSON.parse(JSON.stringify(this.board.seats[sIdx].hand)));
-            }
-            samples.push(sampleHand);
-        };
         var statObj = {}
         switch (s) {
             case '5-4':
@@ -239,11 +244,11 @@ class SimStat extends BidSystem {
                     if (boardEval.HCP < 16) {
                         rawCount['Normal']++;
                         if (Math.random() < 0.2 && samples.length < this.sampleSize)
-                            pushSample(samples, seat);
+                            this.pushSample(samples, seat);
                     } else {
                         rawCount['Strong']++;
                         if (Math.random() < 0.5 && samples.length < this.sampleSize)
-                            pushSample(samples, seat);
+                            this.pushSample(samples, seat);
                     }
                 };
                 statObj.calcDblBuf = (dblBuf, dblIdx, rawCount) => {
@@ -284,7 +289,7 @@ class SimStat extends BidSystem {
                         if (boardEval.LTC < 13)
                             ++rawCount['Major LTC 12'];
                         if (Math.random() < 0.5 && samples.length < this.sampleSize)
-                            pushSample(samples, seat);
+                            this.pushSample(samples, seat);
                     } else if (boardEval.Minor > 8) {
                         if (boardEval.TP > 28)
                             ++rawCount['Minor Game'];
@@ -293,9 +298,9 @@ class SimStat extends BidSystem {
                         if (boardEval.LTC < 13)
                             ++rawCount['Minor LTC 12'];
                     if (Math.random() < 0.5 && samples.length < this.sampleSize)
-                        pushSample(samples, seat);
+                        this.pushSample(samples, seat);
                     } else if (Math.random() < 0.2 && samples.length < this.sampleSize)
-                        pushSample(samples, seat);
+                        this.pushSample(samples, seat);
                 };
                 statObj.calcDblBuf = (dblBuf, dblIdx, rawCount) => {
                     dblBuf[dblIdx]['Open'] = rawCount['Open']/rawCount['Dealt'];
@@ -390,28 +395,51 @@ class SimStat extends BidSystem {
                         tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 2;">${rawCount[statObj.colHdrs[i]]}</div>`);
                     for (i = 1; i < statObj.colHdrs.length; ++i)
                         tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 3;">${(100*dblBuf[dblIdx][statObj.colHdrs[i]]).toFixed(2)}%</div>`);
-                    this.showSamples(e, samples);
+                    this.showSamples(e, samples, "Samples of hands that meet the criteria.");
                 }
             }}, 100);
     }
 
-    showSamples(e, samples) {
+    // Display the samples
+    // Samples all assumes the 1st seat to open, 3rd being its partner.
+    showSamples(e, samples, description) {
+        // First display on the screen.
+        // Then generate the LIN lines for BBO.
         let row = 1;
         let bIdx = 1;
-        e.insertAdjacentHTML('beforeend', '<p>Sample Hands:<br>');
+        e.insertAdjacentHTML('beforeend', `<p>${description}<br>`);
         let sampleDiv = document.createElement('div');
         e.appendChild(sampleDiv);
         sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 3vw repeat(4, 15vw); gap: 1vw;`);
         for (const s of samples) {
+            // Show only North and South
             sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${bIdx++}.</div>`);
-            let hObj = new Hand(s[0]);
-            let hStr = hObj.toString();
-            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 2; grid-row: ${row};">${hStr}</div>`);
-            hObj = new Hand(s[2]);
-            hStr = hObj.toString();
-            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 3; grid-row: ${row};">${hStr}</div>`);
+            let sNext = [0];
+            if (s.length > 2) 
+                sNext.push(2);
+            else if (s.length > 1) 
+                sNext.push(1);
+            let colIdx = 2;
+            for (const sIdx of sNext) {
+                let hObj = new Hand(s[sIdx]);
+                let hStr = hObj.toString();
+                sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: ${colIdx++}; grid-row: ${row};">${hStr}</div>`);
+            }
             ++row;
         }
+
+        /*
+         * LIN output.
+         * first "qx|o<n>|pn|S,W,N,E|st||md|<dealer>".  Dealer is the nth hand following.
+         *   1 => South, 2 => West, 3 => North, 4 => East.
+         * Then the hand for each seat: <Suit><Cards>, separated by comma.  Suit is S, H, D, C.  Cards are AKQJT98765432.  The 4th
+         * seat can be omitted, BBO will fill in what's left.
+         * Lastly, ends with "sv|<vul>|ah||rh|<description>|pg||".  Vul is o, n, e, b.
+         * "qx|o<n>" must be consecutive.  "Dealer" must be sequential relative to the "o" number.
+         */
+        if (samples.length < 0 || samples[0].length < 4)
+            return;
+
         let linDiv = document.createElement('div');
         e.appendChild(linDiv);
         linDiv.insertAdjacentHTML('beforeend', '<p>BBO LIN:<br>');
@@ -419,11 +447,15 @@ class SimStat extends BidSystem {
         let vul = ['o', 'n', 'e', 'b'];
         let bboDiv = document.createElement('div');
         bboDiv.setAttribute('class', 'BBOLin')
+        bboDiv.setAttribute('id', 'BBOLin')
         linDiv.appendChild(bboDiv);
         for (const s of samples) {
-            let bbo = `qx|o${bIdx+1}|st||md|${(bIdx+2)%4+1}`;
+            let bbo = `qx|o${bIdx+1}|pn|S,W,N,E|st||md|${(bIdx+2)%4+1}`;
             let hString = '';
+            // N or S are always the 1st or 2nd seat.
+            // Arrange the hands so tha they are always the opening hand.
             let hIdx = [2, 0, 0, 2][bIdx%4];
+            // Display all 4 hands.
             for (let i = 0; i < 4; i++) {
                 let hObj = new Hand(s[(hIdx+i)%4]);
                 hString = hObj.toString();
@@ -434,14 +466,19 @@ class SimStat extends BidSystem {
                 bbo += `${hString},`;
             }
             let v = vul[(bIdx-1+Math.floor((bIdx)/4))%4];
-            bbo = bbo.slice(0, -1);
-            bbo += `|rh||ah|Board ${bIdx}|sv|${v}|pg||`
+            bbo = bbo.slice(0, -1); // remove the last comma
+            bbo += `|rh||ah|Board ${bIdx}|sv|${v}|pg||` // the ending
             bboDiv.insertAdjacentHTML('beforeend', `${bbo}<br>`);
             ++bIdx;
         }
     }
 
-    doSimulate(e, cases) {
+    doSimulate(e, scenario) {
+        if (scenario == 'INT Interference') {
+            this.simIntInterference(e);
+            return;
+        }
+        var cases = this.SimulateMap[scenario];
         let count = new Array(cases.length).fill(0);
         let samples = [];
         while (samples.length < this.sampleSize) {
@@ -463,26 +500,44 @@ class SimStat extends BidSystem {
             var bIdx = Math.floor(Math.random() * bids.Bids.length);
             var b = bids.Bids[bIdx];
             var [seat, options] = this.findSeqMatch(bids.Seq, b.Bid);
-            if (seat != null) {
-                samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand)),
-                             JSON.parse(JSON.stringify(this.board.seats[this.roundSeat(seat+2)].hand))]);
+            if (seat != null) 
+                this.pushSample(samples, seat, true);
+        }
+        this.showSamples(e, samples,`Sample Hands for ${cases.map(c => this.seqString(c)).join(', ')}`);
+    }
+
+    // Generate hands for practicing DONT or Cappelletti.
+    simIntInterference(e) {
+        // The hands we are interested.
+        const criteria = [
+                {'HCP': [8, 12], 'SuitLen': {'S': 5}, 'AnySuit': {'D': 4, 'C': 4}},
+                {'HCP': [8, 12], 'SuitLen': {'H': 5}, 'AnySuit': {'D': 4, 'C': 4}},
+                {'HCP': [8, 12], 'SuitLen': {'D': 5, 'C': 5}},
+                {'HCP': [8, 12], 'AnySuit': {'S': 6, 'H': 6, 'D': 6, 'C': 6}},
+                {'HCP': [8, 12], Shape: '5-4', 'SuitLen': {'S': 4, 'H': 4}},
+                {'HCP': [13, 16], 'Shape': 'Balanced'}];
+        let samples = [];
+        let spread = new Array(criteria.length).fill(0);    // Every criteria get a fair share.
+        while (samples.length < this.sampleSize) {
+            this.board.deal();
+            let found = false;
+            for (let seat = 0; seat < 4 && !found; ++seat) {
+                for (let c = 0; c < criteria.length && !found; ++c) {
+                    found = this.matchCriteria(this.board.seats[seat], null, criteria[c]);
+                    if (found) {
+                        let maxSpread = Math.max(...spread);
+                        let nMax = spread.filter(s => s == maxSpread).length;
+                        found = nMax == spread.length || spread[c] < maxSpread;
+                        if (found) {
+                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand))]);
+                            spread[c]++;
+                        }
+                    }
+                }
             }
         }
-        e.insertAdjacentHTML('beforeend', `<p>Sample Hands for ${cases.map(c => this.seqString(c)).join(', ')}:<br>`);
-        let sampleDiv = document.createElement('div');
-        e.appendChild(sampleDiv);
-        sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 3vw 15vw 15vw; gap: 1vw;`);
-        let row = 1;
-        for (const s of samples) {
-            let hObj = new Hand(s[0]);
-            let hStr = hObj.toString();
-            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${row}.</div>`);
-            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 2; grid-row: ${row};">${hStr}</div>`);
-            hObj = new Hand(s[1]);
-            hStr = hObj.toString();
-            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 3; grid-row: ${row};">${hStr}</div>`);
-            row++;
-        }
+        this.showSamples(e, samples, 'Sample hands that meet the criteria for interference after opponent opened 1NT.');
+        return;
     }
 
     findSeqMatch(seq, bid) {
@@ -543,3 +598,20 @@ class SimStat extends BidSystem {
 // Click handlers
 function Simulate(e) { simModule.action(simModule.SimulateMap); }
 function RunStat(e) { simModule.action(simModule.StatsMap); }
+function SaveToFile(e) {
+    var e = document.getElementById('BBOLin');
+    if (e != null) 
+        DownLoadToFile('BBOLin.lin', 'BBOLin', 'BBO LIN Format');
+    else {
+        e = document.getElementById('SimStat');
+        let txt = e.innerText.replaceAll('.\n', '. ');
+        for (const [c,sym] of Object.entries({'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663'})) 
+            txt = txt.replaceAll(`${sym}`, `${c}:`);
+        e = document.createElement('div');
+        e.setAttribute('id', 'SimStatTxt');
+        e.innerText = txt;
+        document.body.appendChild(e);
+        DownLoadToFile('SimulatedHands.txt', 'SimStatTxt', 'Simulated Hands');
+        e.remove();
+    }
+}
