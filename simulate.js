@@ -20,6 +20,7 @@ class SimStat extends BidSystem {
                 {'HCP': [13, 16], 'Shape': 'Balanced'}],
             'Slam Try': [{'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'D': 5}},
                 {'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'C': 5}}],
+            '2/1 Responses to 1NT': [],
             '1M': [['1S', '-'],['1H', '-']],
             '1m': [['1D', '-'],['1C', '-']],
             '1NT': [['1NT', '-']],
@@ -211,11 +212,13 @@ class SimStat extends BidSystem {
         return metCount > 0 && met;
     }
 
-    pushSample(samples, seat, skipOpponent = false) {
+    pushSample(samples, seat, handChoice = 4) {
         let sampleHand = [];
         let inc = 1;
-        if (skipOpponent) 
+        if (handChoice == 2) 
             inc = 2;
+        else if (handChoice == 0)
+            inc = 4;
         for (let i = 0; i < 4; i +=inc) {
             let sIdx = this.roundSeat(seat+i);
             sampleHand.push(JSON.parse(JSON.stringify(this.board.seats[sIdx].hand)));
@@ -488,6 +491,10 @@ class SimStat extends BidSystem {
             sampleText = 'Sample hands that meet the criteria for interference after opponent opened 1NT.';
             samples = this.simIntInterference(e, scenario);
             break;
+        case '2/1 Responses to 1NT':
+            sampleText = 'Sample hands for 2/1 Opener rebid to 1NT response';
+            samples = this.sim21ResponsesTo1NT(e, scenario);
+            break;
         case 'Slam Try':
             sampleText = 'Sample hands for possible slam';
             samples = this.simSlamTry(e, scenario);
@@ -517,41 +524,32 @@ class SimStat extends BidSystem {
                 var b = bids.Bids[bIdx];
                 var [seat, options] = this.findSeqMatch(bids.Seq, b.Bid);
                 if (seat != null) 
-                    this.pushSample(samples, seat, true);
+                    this.pushSample(samples, seat, 2);
             }
             break;
         }
         this.showSamples(e, samples, sampleText);
     }
 
-    // Generate hands for practicing DONT or Cappelletti.
-    simSlamTry(e, caseName) {
-        let criteria = this.SimulateMap[caseName];
+    sim21ResponsesTo1NT(e, caseName) {
+        let thurstonRules = BidComponents
+            .filter(c => c.Flag == 'PThurston21')[0].Rules
+                .filter(r => ['1Sp1NTp', '1Hp1NTp'].includes(seqKey(r.Seq)));
         let samples = [];
-        let spread = new Array(criteria.length).fill(0);    // Every criteria get a fair share.
-        while (samples.length < this.sampleSize) {
-            this.board.deal();
-            let found = false;
-            for (let seat = 0; seat < 4 && !found; ++seat) {
-                for (let c = 0; c < criteria.length && !found; ++c) {
-                    found = this.matchCriteria(this.board.seats[seat], null, criteria[c]);
-                    if (found) {
-                        let maxSpread = Math.max(...spread);
-                        let nMax = spread.filter(s => s == maxSpread).length;
-                        found = (nMax == spread.length || spread[c] < maxSpread) &&
-                            this.board.seats[seat].HCP + this.board.seats[this.roundSeat(seat+2)].HCP >= 30;
-                        if (found) {
-                            this.pushSample(samples, seat);
-                            spread[c]++;
-                        }
-                    }
-                }
-            }
-        }
         return samples;
     }
 
-    simIntInterference(e, caseName) {
+    // Generate hands for practicing DONT or Cappelletti.
+    simSlamTry(e, caseName) {
+        return this.simGeneric(e, caseName, (board, seat) => {
+            let pSeat = this.roundSeat(seat+2);
+            return board.seats[seat].HCP + board.seats[pSeat].HCP >= 26;
+        }, 4);
+    }
+
+    simIntInterference(e, caseName) { return this.simGeneric(e, caseName, null, 0); }
+
+    simGeneric(e, caseName, filterFunc, pushPartner = false) {
         // The hands we are interested.
         let criteria = this.SimulateMap[caseName];
         let samples = [];
@@ -566,8 +564,10 @@ class SimStat extends BidSystem {
                         let maxSpread = Math.max(...spread);
                         let nMax = spread.filter(s => s == maxSpread).length;
                         found = nMax == spread.length || spread[c] < maxSpread;
+                        if (filterFunc != null)
+                            found = found && filterFunc(this.board, seat);
                         if (found) {
-                            samples.push([JSON.parse(JSON.stringify(this.board.seats[seat].hand))]);
+                            this.pushSample(samples, seat, pushPartner);
                             spread[c]++;
                         }
                     }
