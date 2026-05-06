@@ -12,11 +12,18 @@ class SimStat extends BidSystem {
         // Things we handle.
         // What we will generate simulated hands that meet the criteria for the bidding sequences.
         this.SimulateMap = {'Name': 'Simulate',
+            'INT Interference': [{'HCP': [8, 12], 'SuitLen': {'S': 5}, 'AnySuit': {'D': 4, 'C': 4}},
+                {'HCP': [8, 12], 'SuitLen': {'H': 5}, 'AnySuit': {'D': 4, 'C': 4}},
+                {'HCP': [8, 12], 'SuitLen': {'D': 5, 'C': 5}},
+                {'HCP': [8, 12], 'AnySuit': {'S': 6, 'H': 6, 'D': 6, 'C': 6}},
+                {'HCP': [8, 12], Shape: '5-4', 'SuitLen': {'S': 4, 'H': 4}},
+                {'HCP': [13, 16], 'Shape': 'Balanced'}],
+            'Slam Try': [{'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'D': 5}},
+                {'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'C': 5}}],
             '1M': [['1S', '-'],['1H', '-']],
             '1m': [['1D', '-'],['1C', '-']],
             '1NT': [['1NT', '-']],
-            'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']],
-            'INT Interference': []};
+            'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
         // Things we will calculate states.
         this.StatsMap = {'Name': 'Statistics',
             '5-4': [{HCP: 16, Shape: '5-4'}, {HCP: 11, Shape: '5-4'}],
@@ -465,57 +472,88 @@ class SimStat extends BidSystem {
                 hString = hString.replaceAll(' ', '');
                 bbo += `${hString},`;
             }
-            let v = vul[(bIdx-1+Math.floor((bIdx)/4))%4];
+            let v = vul[(bIdx+Math.floor((bIdx)/4))%4];
             bbo = bbo.slice(0, -1); // remove the last comma
-            bbo += `|rh||ah|Board ${bIdx}|sv|${v}|pg||` // the ending
+            bbo += `|rh||ah|Board ${bIdx+1}|sv|${v}|pg||` // the ending
             bboDiv.insertAdjacentHTML('beforeend', `${bbo}<br>`);
             ++bIdx;
         }
     }
 
     doSimulate(e, scenario) {
-        if (scenario == 'INT Interference') {
-            this.simIntInterference(e);
-            return;
-        }
-        var cases = this.SimulateMap[scenario];
-        let count = new Array(cases.length).fill(0);
-        let samples = [];
-        while (samples.length < this.sampleSize) {
-            let minCount = Math.min(count);
-            let lessUsed = count.reduce((acc, c, i) => {
-                if (c < minCount) acc.push(i);
-                return acc;
-            }, []);
-            let i = Math.floor(Math.random() * count.length);
-            if (lessUsed.length > 0)                
-                i = lessUsed[Math.floor(Math.random() * lessUsed.length)];
-            count[i]++;
-            let sKey = seqKey(cases[i]);
-            if (!(sKey in Config.WorkingSet.Rules))
-                break;
+        let sampleText = '';
+        let samples = null;
+        switch (scenario) {
+        case 'INT Interference':
+            sampleText = 'Sample hands that meet the criteria for interference after opponent opened 1NT.';
+            samples = this.simIntInterference(e, scenario);
+            break;
+        case 'Slam Try':
+            sampleText = 'Sample hands for possible slam';
+            samples = this.simSlamTry(e, scenario);
+            break;
+        default:
+            var cases = this.SimulateMap[scenario];
+            samples = [];
+            let count = new Array(cases.length).fill(0);
+            sampleText = `Sample Hands for ${cases.map(c => this.seqString(c)).join(', ')}`;
+            while (samples.length < this.sampleSize) {
+                let minCount = Math.min(count);
+                let lessUsed = count.reduce((acc, c, i) => {
+                    if (c < minCount) acc.push(i);
+                    return acc;
+                }, []);
+                let i = Math.floor(Math.random() * count.length);
+                if (lessUsed.length > 0)                
+                    i = lessUsed[Math.floor(Math.random() * lessUsed.length)];
+                count[i]++;
+                let sKey = seqKey(cases[i]);
+                if (!(sKey in Config.WorkingSet.Rules))
+                    break;
 
-            let bids = Config.WorkingSet.Rules[sKey];
-            // should spread them, instead of just pick a random one.
-            var bIdx = Math.floor(Math.random() * bids.Bids.length);
-            var b = bids.Bids[bIdx];
-            var [seat, options] = this.findSeqMatch(bids.Seq, b.Bid);
-            if (seat != null) 
-                this.pushSample(samples, seat, true);
+                let bids = Config.WorkingSet.Rules[sKey];
+                // should spread them, instead of just pick a random one.
+                var bIdx = Math.floor(Math.random() * bids.Bids.length);
+                var b = bids.Bids[bIdx];
+                var [seat, options] = this.findSeqMatch(bids.Seq, b.Bid);
+                if (seat != null) 
+                    this.pushSample(samples, seat, true);
+            }
+            break;
         }
-        this.showSamples(e, samples,`Sample Hands for ${cases.map(c => this.seqString(c)).join(', ')}`);
+        this.showSamples(e, samples, sampleText);
     }
 
     // Generate hands for practicing DONT or Cappelletti.
-    simIntInterference(e) {
+    simSlamTry(e, caseName) {
+        let criteria = this.SimulateMap[caseName];
+        let samples = [];
+        let spread = new Array(criteria.length).fill(0);    // Every criteria get a fair share.
+        while (samples.length < this.sampleSize) {
+            this.board.deal();
+            let found = false;
+            for (let seat = 0; seat < 4 && !found; ++seat) {
+                for (let c = 0; c < criteria.length && !found; ++c) {
+                    found = this.matchCriteria(this.board.seats[seat], null, criteria[c]);
+                    if (found) {
+                        let maxSpread = Math.max(...spread);
+                        let nMax = spread.filter(s => s == maxSpread).length;
+                        found = (nMax == spread.length || spread[c] < maxSpread) &&
+                            this.board.seats[seat].HCP + this.board.seats[this.roundSeat(seat+2)].HCP >= 30;
+                        if (found) {
+                            this.pushSample(samples, seat);
+                            spread[c]++;
+                        }
+                    }
+                }
+            }
+        }
+        return samples;
+    }
+
+    simIntInterference(e, caseName) {
         // The hands we are interested.
-        const criteria = [
-                {'HCP': [8, 12], 'SuitLen': {'S': 5}, 'AnySuit': {'D': 4, 'C': 4}},
-                {'HCP': [8, 12], 'SuitLen': {'H': 5}, 'AnySuit': {'D': 4, 'C': 4}},
-                {'HCP': [8, 12], 'SuitLen': {'D': 5, 'C': 5}},
-                {'HCP': [8, 12], 'AnySuit': {'S': 6, 'H': 6, 'D': 6, 'C': 6}},
-                {'HCP': [8, 12], Shape: '5-4', 'SuitLen': {'S': 4, 'H': 4}},
-                {'HCP': [13, 16], 'Shape': 'Balanced'}];
+        let criteria = this.SimulateMap[caseName];
         let samples = [];
         let spread = new Array(criteria.length).fill(0);    // Every criteria get a fair share.
         while (samples.length < this.sampleSize) {
@@ -536,8 +574,7 @@ class SimStat extends BidSystem {
                 }
             }
         }
-        this.showSamples(e, samples, 'Sample hands that meet the criteria for interference after opponent opened 1NT.');
-        return;
+        return samples;
     }
 
     findSeqMatch(seq, bid) {
