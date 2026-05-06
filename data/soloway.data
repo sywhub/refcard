@@ -144,8 +144,8 @@ BidComponents.push({ 'Flag': 'Soloway', 'Name': 'Soloway Jump Shift', 'Rules': [
 	   'Seq': ['1S', '-', '3C', '-']},
 		{'Bids': [
 			{'Bid': '4NT', 'Criteria': [{'HCP': [18,19], 'Shape': 'Balanced', 'SuitLen': {'H': 5}}]},
-			{'Bid': '4S', 'Criteria': [{'HCP': [15,19], 'SuitLen': {'S': 4, 'H': 55}}]},
-			{'Bid': '4C', 'Criteria': [{'HCP': [15,19], 'SuitLen': {'C': [0,1], 'S': 4, 'H': 55}}]},
+			{'Bid': '4S', 'Criteria': [{'HCP': [15,19], 'SuitLen': {'S': 4, 'H': 5}}]},
+			{'Bid': '4C', 'Criteria': [{'HCP': [15,19], 'SuitLen': {'C': [0,1], 'S': 4, 'H': 5}}]},
 			{'Bid': '4D', 'Criteria': [{'HCP': [15,19], 'SuitLen': {'D': [0,1], 'S': 4, 'H': 5}}]},
 			{'Bid': '4H', 'Criteria': [{'HCP': [17,19], 'SuitLen': 6, 'Honors': 2}]},
 			],
