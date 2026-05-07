@@ -20,7 +20,7 @@ class SimStat extends BidSystem {
                 {'HCP': [13, 16], 'Shape': 'Balanced'}],
             'Slam Try': [{'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'D': 5}},
                 {'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'C': 5}}],
-            '2/1 Responses to 1NT': [],
+            '2/1 Responses to 1NT': [], // to extract from rules
             '1M': [['1S', '-'],['1H', '-']],
             '1m': [['1D', '-'],['1C', '-']],
             '1NT': [['1NT', '-']],
@@ -489,15 +489,21 @@ class SimStat extends BidSystem {
         switch (scenario) {
         case 'INT Interference':
             sampleText = 'Sample hands that meet the criteria for interference after opponent opened 1NT.';
-            samples = this.simIntInterference(e, scenario);
-            break;
-        case '2/1 Responses to 1NT':
-            sampleText = 'Sample hands for 2/1 Opener rebid to 1NT response';
-            samples = this.sim21ResponsesTo1NT(e, scenario);
+            samples = this.simGeneric(e, caseName, null, 0);
             break;
         case 'Slam Try':
+            // Generate hands for practicing DONT or Cappelletti.
             sampleText = 'Sample hands for possible slam';
-            samples = this.simSlamTry(e, scenario);
+            samples = this.simGeneric(e, caseName,
+                (board, seat) => {
+                    let pSeat = this.roundSeat(seat+2);
+                    return board.seats[seat].HCP + board.seats[pSeat].HCP >= 26;},
+                4);
+            break;
+        case '2/1 Responses to 1NT':
+            sampleText = 'Sample hands for 1M Opener rebid after partner\'s 1NT response';
+            this.simMakeCriteria(e, caseName);
+            samples =this.simGeneric(e, caseName, null, 0);
             break;
         default:
             var cases = this.SimulateMap[scenario];
@@ -505,24 +511,23 @@ class SimStat extends BidSystem {
             let count = new Array(cases.length).fill(0);
             sampleText = `Sample Hands for ${cases.map(c => this.seqString(c)).join(', ')}`;
             while (samples.length < this.sampleSize) {
-                let minCount = Math.min(count);
-                let lessUsed = count.reduce((acc, c, i) => {
-                    if (c < minCount) acc.push(i);
-                    return acc;
-                }, []);
                 let i = Math.floor(Math.random() * count.length);
-                if (lessUsed.length > 0)                
-                    i = lessUsed[Math.floor(Math.random() * lessUsed.length)];
-                count[i]++;
-                let sKey = seqKey(cases[i]);
-                if (!(sKey in Config.WorkingSet.Rules))
-                    break;
+                let caseRules = null
+                if (seqKey(cases[i]) in Config.WorkingSet.Rules)
+                    caseRules = Config.WorkingSet.Rules[seqKey(cases[i])];
+                if (!caseRules || caseRules.Bids.length <= 0)
+                    continue;
 
-                let bids = Config.WorkingSet.Rules[sKey];
-                // should spread them, instead of just pick a random one.
-                var bIdx = Math.floor(Math.random() * bids.Bids.length);
-                var b = bids.Bids[bIdx];
-                var [seat, options] = this.findSeqMatch(bids.Seq, b.Bid);
+                let maxSpread = Math.max(...count);
+                let nMax = count.filter(s => s == maxSpread).length;
+                if (!(nMax == count.length || count[i] < maxSpread))
+                    continue;
+                count[i]++;
+
+                let bids = caseRules.Bids.filter(b => b.Criteria.length > 0);
+                let bIdx = Math.floor(Math.random() * bids.length);
+                let b = bids[bIdx];
+                let [seat, options] = this.findSeqMatch(caseRules.Seq, b.Bid);
                 if (seat != null) 
                     this.pushSample(samples, seat, 2);
             }
@@ -531,24 +536,34 @@ class SimStat extends BidSystem {
         this.showSamples(e, samples, sampleText);
     }
 
-    sim21ResponsesTo1NT(e, caseName) {
-        let thurstonRules = BidComponents
-            .filter(c => c.Flag == 'PThurston21')[0].Rules
-                .filter(r => ['1Sp1NTp', '1Hp1NTp'].includes(seqKey(r.Seq)));
-        let samples = [];
-        return samples;
+    simMakeCriteria(e, caseName) {
+        if (this.SimulateMap[caseName].length <= 0) {
+            let thurstonRules = BidComponents
+                .filter(c => c.Flag == 'PThurston21')[0].Rules
+                    .filter(r => ['1Sp1NTp', '1Hp1NTp'].includes(seqKey(r.Seq)));
+            let criteria = this.SimulateMap[caseName];
+            for (let bids of thurstonRules) {
+                let cKey = bids.Seq[0].at(-1);
+                for (let b of bids.Bids) {
+                    if  (b.Criteria.length > 0) {
+                        let suit = b.Bid.at(-1);
+                        let c = JSON.parse(JSON.stringify(b.Criteria[0]));
+                        if ('SuitLen' in c) {
+                            if (typeof(c.SuitLen) != 'object')
+                                c.SuitLen = {[suit]: c.SuitLen};
+                            if (suit != cKey)
+                                c.SuitLen[cKey] = 5;
+                        } else 
+                            c.SuitLen = {[cKey]: 5};
+                        criteria.push(c);
+                    }
+                }
+            }
+        }
     }
 
-    // Generate hands for practicing DONT or Cappelletti.
-    simSlamTry(e, caseName) {
-        return this.simGeneric(e, caseName, (board, seat) => {
-            let pSeat = this.roundSeat(seat+2);
-            return board.seats[seat].HCP + board.seats[pSeat].HCP >= 26;
-        }, 4);
-    }
 
-    simIntInterference(e, caseName) { return this.simGeneric(e, caseName, null, 0); }
-
+    // Generic Simulation hand generator
     simGeneric(e, caseName, filterFunc, pushPartner = false) {
         // The hands we are interested.
         let criteria = this.SimulateMap[caseName];
