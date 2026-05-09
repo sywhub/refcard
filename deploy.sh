@@ -6,12 +6,14 @@ while IFS= read -r line; do
 done < <(
 	grep -oE '<script[^>]+src="[^"]+"' index.html | sed -E 's/.*src="([^"]+)".*/\1/'
 	grep -oE '<link[^>]+rel="stylesheet"[^>]+href="[^"]+"' index.html | sed -E 's/.*href="([^"]+)".*/\1/'
+	grep -oE '<script[^>]+src="[^"]+"' simulator.html | sed -E 's/.*src="([^"]+)".*/\1/'
+	grep -oE '<link[^>]+rel="stylesheet"[^>]+href="[^"]+"' simulator.html | sed -E 's/.*href="([^"]+)".*/\1/'
 )
-echo ${files[@]}
+all=`echo ${files[@]} | tr ' ' '\n' | sort -u | tr '\n' ' '`
+echo "====> Packaging..."
 tartmp=$(mktemp -p . -t tar)
 sshtmp=$(mktemp -p . -t ssh)
-echo "====> Packaging..."
-tar -cvf $tartmp index.html ${files[@]}
+tar -cvf $tartmp simulator.html index.html ${all[@]}
 echo "Clean up remote"
 ssh u47659892@ftp.nomadicminds.org  << 'SSHEND'
 cd js/refcard3
