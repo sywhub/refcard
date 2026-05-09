@@ -20,6 +20,8 @@ class SimStat extends BidSystem {
                 {'HCP': [13, 16], 'Shape': 'Balanced'}],
             'Slam Try': [{'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'D': 5}},
                 {'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'C': 5}}],
+            '2C with Minor': [{'HCP': 22, 'AnySuit': {'D': 5, 'C': 5}}],
+            'Tragic Partial': [{'HCP': [11, 15], 'Shape': '5-4', 'AnySuit': {'D': 4, 'C': 4}}],
             '2/1 Responses to 1NT': [], // to extract from rules
             '1M': [['1S', '-'],['1H', '-']],
             '1m': [['1D', '-'],['1C', '-']],
@@ -489,21 +491,51 @@ class SimStat extends BidSystem {
         switch (scenario) {
         case 'INT Interference':
             sampleText = 'Sample hands that meet the criteria for interference after opponent opened 1NT.';
-            samples = this.simGeneric(e, caseName, null, 0);
+            samples = this.simGeneric(e, scenario, null, 0);
             break;
-        case 'Slam Try':
-            // Generate hands for practicing DONT or Cappelletti.
-            sampleText = 'Sample hands for possible slam';
-            samples = this.simGeneric(e, caseName,
+        case '2C with Minor':
+            /* Opener has 2C strength and 5+:minor.  Responder has 6~10HCP.
+             * And they have 8+:minor match.
+             * This is usually, but not always, slam worthy.
+             */
+            sampleText = '2C with Minor, partner matches';
+            samples = this.simGeneric(e, scenario,
+                // Filter functio for the partner's hand
                 (board, seat) => {
                     let pSeat = this.roundSeat(seat+2);
-                    return board.seats[seat].HCP + board.seats[pSeat].HCP >= 26;},
+                    return board.seats[pSeat].HCP >= 6 && board.seats[pSeat].HCP <= 10 && 
+                        ((board.seats[seat].Suits[Card.Codes['D']-1] + board.seats[pSeat].Suits[Card.Codes['D']-1] >= 8) ||
+                        (board.seats[seat].Suits[Card.Codes['C']-1] + board.seats[pSeat].Suits[Card.Codes['C']-1] >= 8));},
+                4);
+            break;
+        case 'Slam Try':
+            sampleText = 'Potential Slam with 4:M and 5+:m';
+            samples = this.simGeneric(e, scenario,
+                // Filter function for combined hands to be game worthy.
+                (board, seat) => {
+                    let pSeat = this.roundSeat(seat+2);
+                    return (board.seats[seat].HCP + board.seats[pSeat].HCP >= 26);},
+                4);
+            break;
+        case 'Tragic Partial':
+            sampleText = 'Sample hands for Tragic Partial';
+            samples = this.simGeneric(e, scenario, 
+                (board, seat) => {
+                    let pSeat = this.roundSeat(seat+2);
+                    let totalHCP = board.seats[seat].HCP + board.seats[pSeat].HCP;
+                    // The tragic.
+                    // Enough strength, no fit.
+                    return (totalHCP >= 22 && totalHCP <= 25) &&
+                        ((board.seats[seat].Suits[Card.Codes['S']-1] + board.seats[pSeat].Suits[Card.Codes['S']-1] < 8) &&
+                        (board.seats[seat].Suits[Card.Codes['H']-1] + board.seats[pSeat].Suits[Card.Codes['H']-1] < 8) &&
+                        (board.seats[seat].Suits[Card.Codes['D']-1] + board.seats[pSeat].Suits[Card.Codes['D']-1] < 8) &&
+                        (board.seats[seat].Suits[Card.Codes['C']-1] + board.seats[pSeat].Suits[Card.Codes['C']-1] < 8));},
                 4);
             break;
         case '2/1 Responses to 1NT':
             sampleText = 'Sample hands for 1M Opener rebid after partner\'s 1NT response';
-            this.simMakeCriteria(e, caseName);
-            samples =this.simGeneric(e, caseName, null, 0);
+            this.simMakeCriteria(e, scenario);
+            samples =this.simGeneric(e, scenario, null, 0);
             break;
         default:
             var cases = this.SimulateMap[scenario];
@@ -536,19 +568,23 @@ class SimStat extends BidSystem {
         this.showSamples(e, samples, sampleText);
     }
 
+    // Extract the critreria from the bidding rules.
     simMakeCriteria(e, caseName) {
-        if (this.SimulateMap[caseName].length <= 0) {
+        // Just once
+        if (this.SimulateMap[caseName].length <= 0 && caseName == '2/1 Responses to 1NT') {
+            // Specific rules to extract
             let thurstonRules = BidComponents
                 .filter(c => c.Flag == 'PThurston21')[0].Rules
                     .filter(r => ['1Sp1NTp', '1Hp1NTp'].includes(seqKey(r.Seq)));
-            let criteria = this.SimulateMap[caseName];
+            let criteria = this.SimulateMap[caseName];  // JS is shallow copy. This is a pointer.
             for (let bids of thurstonRules) {
-                let cKey = bids.Seq[0].at(-1);
+                let cKey = bids.Seq[0].at(-1);  // Open suit
                 for (let b of bids.Bids) {
                     if  (b.Criteria.length > 0) {
-                        let suit = b.Bid.at(-1);
-                        let c = JSON.parse(JSON.stringify(b.Criteria[0]));
-                        if ('SuitLen' in c) {
+                        let suit = b.Bid.at(-1);    // Bid suit
+                        let c = JSON.parse(JSON.stringify(b.Criteria[0])); // make copy
+                        // To make criteria generic, add the open suit (a major) to SuitLen
+                        if ('SuitLen' in c) { 
                             if (typeof(c.SuitLen) != 'object')
                                 c.SuitLen = {[suit]: c.SuitLen};
                             if (suit != cKey)
