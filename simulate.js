@@ -1,8 +1,7 @@
 /*
  * Sin-Yaw Wang, 2026
- * This module is for simulating and collecting stats on hands that meet certain
- * criteria.  It is designed to be flexible and extensible, allowing for different
- * scenarios and statistics to be defined and collected.
+ * "Simulate" generates hands that meet certain requirements.
+ * "Statistics" generates large number of boards for certain criteria and analyze their properites.
  */
 class SimStat extends BidSystem {
     constructor(menuId) {
@@ -11,30 +10,56 @@ class SimStat extends BidSystem {
         this.sampleSize = 16;
         // Things we handle.
         // What we will generate simulated hands that meet the criteria for the bidding sequences.
+        // Simulations have other fitlers coded elsewhere.
         this.SimulateMap = {'Name': 'Simulate',
-            'INT Interference': [{'HCP': [8, 12], 'SuitLen': {'S': 5}, 'AnySuit': {'D': 4, 'C': 4}},
+            '1NT Interference': {'PreCheck': [{'HCP': [8, 12], 'SuitLen': {'S': 5}, 'AnySuit': {'D': 4, 'C': 4}},
                 {'HCP': [8, 12], 'SuitLen': {'H': 5}, 'AnySuit': {'D': 4, 'C': 4}},
                 {'HCP': [8, 12], 'SuitLen': {'D': 5, 'C': 5}},
                 {'HCP': [8, 12], 'AnySuit': {'S': 6, 'H': 6, 'D': 6, 'C': 6}},
                 {'HCP': [8, 12], Shape: '5-4', 'SuitLen': {'S': 4, 'H': 4}},
                 {'HCP': [13, 16], 'Shape': 'Balanced'}],
-            'Slam Try': [{'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'D': 5}},
+                'Caption': 'Sample hands that meet the criteria for interference after opponent opened 1NT.',
+                 'PostFilter': null, 'Samples': 0},
+            'Slam Try': {'PreCheck': [{'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'D': 5}},
                 {'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'C': 5}}],
-            '2C with Minor': [{'HCP': 22, 'AnySuit': {'D': 5, 'C': 5}}],
-            'Tragic Partial': [{'HCP': [11, 15], 'Shape': '5-4', 'AnySuit': {'D': 4, 'C': 4}}],
-            '2/1 Responses to 1NT': [], // to extract from rules
-            '1M': [['1S', '-'],['1H', '-']],
-            '1m': [['1D', '-'],['1C', '-']],
-            '1NT': [['1NT', '-']],
-            'Preempt':[['2S', '-'],['2H', '-'],['2D', '-']]};
+                'Caption': 'Potential Slam with 4:M and 5+:m',
+                'PostFilter': (board, seat) => {
+                    let pSeat = this.roundSeat(seat+2);
+                    return (board.seats[seat].HCP + board.seats[pSeat].HCP >= 26);}, 'Samples': 4},
+            '2C with Minor': {'PreCheck': [{'HCP': 22, 'AnySuit': {'D': 5, 'C': 5}}],
+                'Caption': '2C with Minor, partner matches',
+                'PostFilter': (board, seat) => {
+                    let pSeat = this.roundSeat(seat+2);
+                    return board.seats[pSeat].HCP >= 6 && board.seats[pSeat].HCP <= 10 && 
+                        ((board.seats[seat].Suits[Card.Codes['D']-1] + board.seats[pSeat].Suits[Card.Codes['D']-1] >= 8) ||
+                        (board.seats[seat].Suits[Card.Codes['C']-1] + board.seats[pSeat].Suits[Card.Codes['C']-1] >= 8));}, 'Samples': 4},
+            'Tragic Partial': {'PreCheck': [{'HCP': [10, 14], 'AnySuit': {'S': 6, 'H': 6, 'D': 6, 'C': 6}}],
+                 'Caption': 'Sample hands for Tragic Partial',
+                'PostFilter': (board, seat) => {
+                    let pSeat = this.roundSeat(seat+2);
+                    let totalHCP = board.seats[seat].HCP + board.seats[pSeat].HCP;
+                    // The tragic.
+                    // Enough strength, no fit.
+                    return (totalHCP >= 22 && totalHCP <= 25) &&
+                        ((board.seats[seat].Suits[Card.Codes['S']-1] + board.seats[pSeat].Suits[Card.Codes['S']-1] < 8) &&
+                        (board.seats[seat].Suits[Card.Codes['H']-1] + board.seats[pSeat].Suits[Card.Codes['H']-1] < 8) &&
+                        (board.seats[seat].Suits[Card.Codes['D']-1] + board.seats[pSeat].Suits[Card.Codes['D']-1] < 8) &&
+                        (board.seats[seat].Suits[Card.Codes['C']-1] + board.seats[pSeat].Suits[Card.Codes['C']-1] < 8));}, 'Samples': 4},
+            '2/1 Responses to 1NT': {'PreCheck': [], // to extract from rules
+                 'Caption': 'Sample hands for 1M Opener rebid after partner\'s 1NT response',
+                 'PostFilter': null, 'Samples': 0},
+            '1M': {'BidSeq': [['1S', '-'],['1H', '-']]},
+            '1m': {'BidSeq': [['1D', '-'],['1C', '-']]},
+            '1NT': {'BidSeq': [['1NT', '-']]},
+            'Preempt':{'BidSeq': [['2S', '-'],['2H', '-'],['2D', '-']]}};
         // Things we will calculate states.
         this.StatsMap = {'Name': 'Statistics',
-            '5-4': [{HCP: 16, Shape: '5-4'}, {HCP: 11, Shape: '5-4'}],
-            '5-5': [{HCP: 16, Shape: '5-5'}, {HCP: 11, Shape: '5-5'}],
-            '5M-6m': [{HCP: 11, SuitLen: {'S': 5, 'D': 6}},
+            '5-4': {'PreCheck': [{HCP: 16, Shape: '5-4'}, {HCP: 11, Shape: '5-4'}]},
+            '5-5': {'PreCheck': [{HCP: 16, Shape: '5-5'}, {HCP: 11, Shape: '5-5'}]},
+            '5M-6m': {'PreCheck': [{HCP: 11, SuitLen: {'S': 5, 'D': 6}},
                     {HCP: 11, SuitLen: {'S': 5, 'C': 6}},
                     {HCP: 11, SuitLen: {'H': 5, 'D': 6}},
-                    {HCP: 11, SuitLen: {'H': 5, 'C': 6}}]};
+                    {HCP: 11, SuitLen: {'H': 5, 'C': 6}}]}};
 
         this.initDisplay()
         let menuSet = [...Object.keys(this.SimulateMap), '-', ...Object.keys(this.StatsMap)].filter(v => v != 'Name');
@@ -86,6 +111,7 @@ class SimStat extends BidSystem {
         if (Config.WorkingSet == undefined || Config.WorkingSet == null) {
             Config.getDefaults();
             Config.makeBidRules();
+            this.simMakeCriteria(null, '2/1 Responses to 1NT');
         }
         var e = document.getElementById('ListDisplay');
         clearContents(e)
@@ -281,7 +307,7 @@ class SimStat extends BidSystem {
                     boardEval['HCP'] = board.seats[seat].HCP + board.seats[pSeat].HCP;
                     boardEval['TP'] = board.seats[seat].TP + board.seats[pSeat].TP;
                     boardEval['LTC'] = board.seats[seat].LTC + board.seats[pSeat].LTC;
-                    for (const k of Object.keys(this.StatsMap[s][cIdx].SuitLen)) {
+                    for (const k of Object.keys(this.StatsMap[s].PreCheck[cIdx].SuitLen)) {
                         let key = ['S', 'H'].includes(k) ? 'Major' : 'Minor';
                         let suitCode = Card.ltr2code(k) - Card.Club();
                         boardEval[key] = 
@@ -383,8 +409,8 @@ class SimStat extends BidSystem {
                     ++rawCount['Dealt']
                     this.board.deal();
                     for (seat = 0; seat < 4 && !found; ++seat)
-                        for (c = 0; c < this.StatsMap[s].length && !found; ++c)
-                            found = this.matchCriteria(this.board.seats[seat], null, this.StatsMap[s][c]);
+                        for (c = 0; c < this.StatsMap[s].PreCheck.length && !found; ++c)
+                            found = this.matchCriteria(this.board.seats[seat], null, this.StatsMap[s].PreCheck[c]);
                 } while (!found);
                 // Found!
                 // Decrement the counter to indext the right element.
@@ -488,57 +514,11 @@ class SimStat extends BidSystem {
     doSimulate(e, scenario) {
         let sampleText = '';
         let samples = null;
-        switch (scenario) {
-        case 'INT Interference':
-            sampleText = 'Sample hands that meet the criteria for interference after opponent opened 1NT.';
-            samples = this.simGeneric(e, scenario, null, 0);
-            break;
-        case '2C with Minor':
-            /* Opener has 2C strength and 5+:minor.  Responder has 6~10HCP.
-             * And they have 8+:minor match.
-             * This is usually, but not always, slam worthy.
-             */
-            sampleText = '2C with Minor, partner matches';
-            samples = this.simGeneric(e, scenario,
-                // Filter functio for the partner's hand
-                (board, seat) => {
-                    let pSeat = this.roundSeat(seat+2);
-                    return board.seats[pSeat].HCP >= 6 && board.seats[pSeat].HCP <= 10 && 
-                        ((board.seats[seat].Suits[Card.Codes['D']-1] + board.seats[pSeat].Suits[Card.Codes['D']-1] >= 8) ||
-                        (board.seats[seat].Suits[Card.Codes['C']-1] + board.seats[pSeat].Suits[Card.Codes['C']-1] >= 8));},
-                4);
-            break;
-        case 'Slam Try':
-            sampleText = 'Potential Slam with 4:M and 5+:m';
-            samples = this.simGeneric(e, scenario,
-                // Filter function for combined hands to be game worthy.
-                (board, seat) => {
-                    let pSeat = this.roundSeat(seat+2);
-                    return (board.seats[seat].HCP + board.seats[pSeat].HCP >= 26);},
-                4);
-            break;
-        case 'Tragic Partial':
-            sampleText = 'Sample hands for Tragic Partial';
-            samples = this.simGeneric(e, scenario, 
-                (board, seat) => {
-                    let pSeat = this.roundSeat(seat+2);
-                    let totalHCP = board.seats[seat].HCP + board.seats[pSeat].HCP;
-                    // The tragic.
-                    // Enough strength, no fit.
-                    return (totalHCP >= 22 && totalHCP <= 25) &&
-                        ((board.seats[seat].Suits[Card.Codes['S']-1] + board.seats[pSeat].Suits[Card.Codes['S']-1] < 8) &&
-                        (board.seats[seat].Suits[Card.Codes['H']-1] + board.seats[pSeat].Suits[Card.Codes['H']-1] < 8) &&
-                        (board.seats[seat].Suits[Card.Codes['D']-1] + board.seats[pSeat].Suits[Card.Codes['D']-1] < 8) &&
-                        (board.seats[seat].Suits[Card.Codes['C']-1] + board.seats[pSeat].Suits[Card.Codes['C']-1] < 8));},
-                4);
-            break;
-        case '2/1 Responses to 1NT':
-            sampleText = 'Sample hands for 1M Opener rebid after partner\'s 1NT response';
-            this.simMakeCriteria(e, scenario);
-            samples =this.simGeneric(e, scenario, null, 0);
-            break;
-        default:
-            var cases = this.SimulateMap[scenario];
+        if ('PreCheck' in this.SimulateMap[scenario]) {
+                sampleText = this.SimulateMap[scenario].Caption;
+                samples = this.workSimulation(e, scenario, this.SimulateMap[scenario].PostFilter, this.SimulateMap[scenario].Samples);
+        } else if ('BidSeq' in this.SimulateMap[scenario]) {
+            var cases = this.SimulateMap[scenario].BidSeq;
             samples = [];
             let count = new Array(cases.length).fill(0);
             sampleText = `Sample Hands for ${cases.map(c => this.seqString(c)).join(', ')}`;
@@ -554,7 +534,6 @@ class SimStat extends BidSystem {
                 let nMax = count.filter(s => s == maxSpread).length;
                 if (!(nMax == count.length || count[i] < maxSpread))
                     continue;
-                count[i]++;
 
                 let bids = caseRules.Bids.filter(b => b.Criteria.length > 0);
                 let bIdx = Math.floor(Math.random() * bids.length);
@@ -562,8 +541,9 @@ class SimStat extends BidSystem {
                 let [seat, options] = this.findSeqMatch(caseRules.Seq, b.Bid);
                 if (seat != null) 
                     this.pushSample(samples, seat, 2);
+
+                count[i]++;
             }
-            break;
         }
         this.showSamples(e, samples, sampleText);
     }
@@ -571,12 +551,12 @@ class SimStat extends BidSystem {
     // Extract the critreria from the bidding rules.
     simMakeCriteria(e, caseName) {
         // Just once
-        if (this.SimulateMap[caseName].length <= 0 && caseName == '2/1 Responses to 1NT') {
+        if (this.SimulateMap[caseName].PreCheck.length <= 0 && caseName == '2/1 Responses to 1NT') {
             // Specific rules to extract
             let thurstonRules = BidComponents
                 .filter(c => c.Flag == 'PThurston21')[0].Rules
                     .filter(r => ['1Sp1NTp', '1Hp1NTp'].includes(seqKey(r.Seq)));
-            let criteria = this.SimulateMap[caseName];  // JS is shallow copy. This is a pointer.
+            let criteria = this.SimulateMap[caseName].PreCheck;  // JS is shallow copy. This is a pointer.
             for (let bids of thurstonRules) {
                 let cKey = bids.Seq[0].at(-1);  // Open suit
                 for (let b of bids.Bids) {
@@ -600,9 +580,9 @@ class SimStat extends BidSystem {
 
 
     // Generic Simulation hand generator
-    simGeneric(e, caseName, filterFunc, pushPartner = false) {
+    workSimulation(e, caseName, filterFunc, pushPartner = false) {
         // The hands we are interested.
-        let criteria = this.SimulateMap[caseName];
+        let criteria = this.SimulateMap[caseName].PreCheck;
         let samples = [];
         let spread = new Array(criteria.length).fill(0);    // Every criteria get a fair share.
         while (samples.length < this.sampleSize) {
