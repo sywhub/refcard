@@ -151,8 +151,16 @@ class SimStat extends BidSystem {
                     ++metCount;
                     break;
                 case 'Honors':
-                    // XX: to be implemented.
-                    met = true;
+                    let check = {}
+                    if (typeof(v) == 'object') 
+                        check = v;
+                    else
+                        check = {[bid.at(-1)]: v};
+                    for (const [s, h] of Object.entries(check)) { 
+                        met = h <= hand.Honors[Card.ltr2code(s) - Card.Club()];
+                        if (!met)
+                            break;
+                    }
                     break;
                 case 'Control':
                 case 'Stopper':
