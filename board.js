@@ -93,16 +93,14 @@ class Hand {
     }
 
 	countHCP() {
-        this.hand.forEach(x => {
-			if (x.rank >= Card.Jack)
-				this.HCP += x.rank - Card.Jack + 1;
-		});
+        this.HCP = this.hand
+            .map(x => x.rank >= Card.Jack ? x.rank - Card.Jack + 1 : 0)
+            .reduce((a, b) => a + b, 0);
     }
 
 	countHonors() {
-        this.hand.forEach(x => {
-			if (x.rank > Card.Jack)
-                this.Honors[x.suit - 1] += 1; });
+        [Card.Spade(), Card.Heart(), Card.Diam(), Card.Club()].forEach(x => {
+            this.Honors[x - 1] = this.hand.filter(y => y.suit == x && y.rank >= Card.Jack).length; });
 	}
 
 	// add only long-suit distribution points
@@ -111,14 +109,14 @@ class Hand {
 	}
 
 	countDP() {
-		this.DP = 0;
-		this.Suits.forEach(x => {if (x >= 5) this.DP += (x - 4);});
-		this.Suits.forEach(x => {
-			if (x == 0)
+		this.Suits.forEach(b => {
+            if (b >= 5)
+                this.DP += (b - 4)
+			else if (b == 0)
 				this.DP += 5;
-			else if (x == 1)
+			else if (b == 1)
 				this.DP += 3;
-			else if (x == 2)
+			else if (b == 2)
 				this.DP += 1;
 		});
 	}
