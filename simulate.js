@@ -131,125 +131,6 @@ class SimStat extends BidSystem {
             e.insertAdjacentHTML('beforeend', `${map.Name} does not handle ${scenario}<br>`);
     }
 
-    // Check if the hand meets the criteria.
-    // Bid is used only when SuitLen did not spcifiy the suit and "Control".
-    matchCriteria(hand, bid, c) {
-        var met = true;
-        var metCount = 0;
-        for (let [k,v] of Object.entries(c)) {
-            switch (k) {
-                case 'LTC':
-                case 'TP':
-                case 'HCP':
-                    if (Array.isArray(v)) {
-                        if (v[0] == 0)
-                            met = hand[k] <= v[1];
-                        else if (v[0] == v[1])
-                            met = hand[k] == v[1];
-                        else
-                            met = hand[k] >= v[0] && hand[k] <= v[1];
-                    } else
-                        met = hand[k] >= v;
-                    ++metCount;
-                    break;
-                case 'Honors':
-                    let check = {}
-                    if (typeof(v) == 'object') 
-                        check = v;
-                    else
-                        check = {[bid.at(-1)]: v};
-                    for (const [s, h] of Object.entries(check)) { 
-                        met = h <= hand.Honors[Card.ltr2code(s) - Card.Club()];
-                        if (!met)
-                            break;
-                    }
-                    break;
-                case 'Control':
-                case 'Stopper':
-                    let suitList = [v];
-                    if (k == 'Control')
-                        suitList = [bid];
-                    else if (Array.isArray(v))
-                        suitList = [...v];
-                    for (const s of v) {
-                        let suitCode = Card.ltr2code(s);
-                        let suitCards = hand.hand.filter(x => x.suit == suitCode);
-                        met = k == 'Control' && suitCards.length == 0;
-                        if (!met || k == 'Stopper')
-                            met = (suitCards.length >= 4 && suitCards[0].rank == Card.Jack) ||
-                                (suitCards.length >= 3 && (suitCards[0].rank == Card.Queen && suitCards[1].rank == Card.Jack)) ||
-                                (suitCards.length >= 2 && (suitCards[0].rank == Card.King && suitCards[1].rank == Card.Queen)) ||
-                                (suitCards.length >= 1 && suitCards[0].rank == Card.Ace);
-                        if (!met)
-                            break;
-                    }
-                    break;
-                case 'Shape':
-                    if (v == '5-5')
-                        met = hand.Suits.filter(s => s >= 5).length >= 2;
-                    else if (v == '5-4') {
-                        met = hand.Suits.filter(s => s >= 5).length >= 2;
-                        if (!met)
-                            met = (hand.Suits.filter(s => s >= 5).length == 1 && hand.Suits.filter(s => s == 4).length >= 1)
-                    } else if (v == 'Balanced')
-                        met = hand.Suits.filter(s => s < 2).length == 0 && hand.Suits.filter(s => s == 2).length <= 2;
-                    break;
-                case 'AnySuit':
-                case 'SuitLen':
-                    let suitCode = Card.ltr2code(bid) - Card.Club();
-                    if (Array.isArray(v)) {
-                        if (v[0] == 0)
-                            met = hand.Suits[suitCode] <= v[1];
-                        else if (v[0] == v[1])
-                            met = hand.Suits[suitCode] == v[1];
-                        else
-                            met = hand.Suits[suitCode] >= v[0] && hand.Suits[k] <= v[1];
-                    } else if (typeof(v) == 'object') {
-                        for (const [sKey, sVal] of Object.entries(v)) {
-                            let whichSuit = Card.ltr2code(sKey) - Card.Club();
-                            if (Array.isArray(sVal)) {
-                                if (sVal[0] == 0)
-                                    met = hand.Suits[whichSuit] <= sVal[1];
-                                else if (Number(sVal[0]) == Number(sVal[1]))
-                                    met = hand.Suits[whichSuit] == sVal[1];
-                                else
-                                    met = hand.Suits[whichSuit] >= sVal[0] && hand.Suits[whichSuit] <= sVal[1];
-                            } else
-                                met = hand.Suits[whichSuit] >= sVal;
-                            if (k == 'SuitLen' && !met)
-                                break;
-                            else if (k == 'AnySuit' && met)
-                                break;
-                        }
-                    } else
-                        met = hand.Suits[suitCode] >= v;
-                    ++metCount;
-                    break;
-                case 'Seat':
-                    met = false;
-                    ++metCount;
-                    break;
-                case 'Meta':
-                case 'KeyCard':
-                case 'KingCount':
-                case 'SideKing':
-                case 'SingleVoid':
-                case 'AceCount':
-                case 'TrumpQ':
-                    // ignore
-                    met = true;
-                    break;
-                default:
-                    console.log(`Unknown criteria ${k} in ${JSON.stringify(c)}`);
-                    met = false;
-                    break;
-            }
-            if (!met)
-                break;
-        }
-        return metCount > 0 && met;
-    }
-
     pushSample(samples, seat, handChoice, annotation) {
         let sObj = {'Hands': [], 'Annotation': annotation};
         let inc = 1;
@@ -457,6 +338,7 @@ class SimStat extends BidSystem {
         let bIdx = 1;
         e.insertAdjacentHTML('beforeend', `<p>${description}<br>`);
         let sampleDiv = document.createElement('div');
+        sampleDiv.setAttribute('id', 'SamplesContents');
         e.appendChild(sampleDiv);
         if (samples[0].Annotation != null)
             sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 2vw 6vw repeat(4, 15vw); gap: 1vw;`);
@@ -464,19 +346,19 @@ class SimStat extends BidSystem {
             sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 2vw repeat(4, 15vw); gap: 1vw;`);
         for (const s of samples) {
             // Show only North and South
-            sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: 1; grid-row: ${row};">${bIdx++}.</div>`);
+            sampleDiv.insertAdjacentHTML('beforeend', `<div class="Counter" style="grid-column: 1; grid-row: ${row};">${bIdx++}.</div>`);
             let sNext = [0];
-            if (s.length > 2) 
+            if (s.Hands.length > 2) 
                 sNext.push(2);
-            else if (s.length > 1) 
+            else if (s.Hands.length > 1) 
                 sNext.push(1);
             let colIdx = 2;
             if (s.Annotation != null)
-                sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: ${colIdx++}; grid-row: ${row};">${s.Annotation}&nbsp;?</div>`);
+                sampleDiv.insertAdjacentHTML('beforeend', `<div class="Annotation" style="grid-column: ${colIdx++}; grid-row: ${row};">${s.Annotation}&nbsp;?</div>`);
             for (const sIdx of sNext) {
                 let hObj = new Hand(s.Hands[sIdx]);
                 let hStr = hObj.toString();
-                sampleDiv.insertAdjacentHTML('beforeend', `<div style="grid-column: ${colIdx++}; grid-row: ${row};">${hStr}</div>`);
+                sampleDiv.insertAdjacentHTML('beforeend', `<div class="Hand" style="grid-column: ${colIdx++}; grid-row: ${row};">${hStr}</div>`);
             }
             ++row;
         }
@@ -510,7 +392,7 @@ class SimStat extends BidSystem {
             let hIdx = [2, 0, 0, 2][bIdx%4];
             // Display all 4 hands.
             for (let i = 0; i < 4; i++) {
-                let hObj = new Hand(s[(hIdx+i)%4]);
+                let hObj = new Hand(s.Hands[(hIdx+i)%4]);
                 hString = hObj.toString();
                 hString = hString.replaceAll('10', 'T');
                 for (const c of ['S', 'H', 'D', 'C']) 
@@ -718,15 +600,33 @@ function SaveToFile(e) {
     if (e != null) 
         DownLoadToFile('BBOLin.lin', 'BBOLin', 'BBO LIN Format');
     else {
-        e = document.getElementById('SimStat');
-        let txt = e.innerText.replaceAll('.\n', '. ');
-        for (const [c,sym] of Object.entries({'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663'})) 
-            txt = txt.replaceAll(`${sym}`, `${c}:`);
+        e = document.getElementById('SamplesContents');
+        let txt = '';
+        let tmpText = '';
+        for (const c of e.children) {
+            switch (c.className) {
+                case 'Counter':
+                    txt += `${c.innerText} `;
+                    break;
+                case 'Annotation':
+                    tmpText = c.innerText;
+                    for (const [c,sym] of Object.entries({'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663'})) 
+                        tmpText = tmpText.replaceAll(`${sym}`, `${c}`);
+                    txt += tmpText + ' ';
+                    break;
+                case 'Hand':
+                    tmpText = c.innerText;
+                    for (const [c,sym] of Object.entries({'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663'})) 
+                        tmpText = tmpText.replaceAll(`${sym}`, `${c}:`);
+                    txt += tmpText + '\n';
+                    break;
+            }
+        }
         e = document.createElement('div');
         e.setAttribute('id', 'SimStatTxt');
         e.innerText = txt;
         document.body.appendChild(e);
-        DownLoadToFile('SimulatedHands.txt', 'SimStatTxt', 'Simulated Hands');
+        DownLoadToFile('ExericseHands.txt', 'SimStatTxt', 'Simulated Hands');
         e.remove();
     }
 }

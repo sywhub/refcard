@@ -194,5 +194,123 @@ class BidSystem {
             retString=retString.substring(0,retString.length-1);
         return retString;
     }
-}
 
+    // Check if the hand meets the criteria.
+    // Bid is used only when SuitLen did not spcifiy the suit and "Control".
+    matchCriteria(hand, bid, c) {
+        var met = true;
+        var metCount = 0;
+        for (let [k,v] of Object.entries(c)) {
+            switch (k) {
+                case 'LTC':
+                case 'TP':
+                case 'HCP':
+                    if (Array.isArray(v)) {
+                        if (v[0] == 0)
+                            met = hand[k] <= v[1];
+                        else if (v[0] == v[1])
+                            met = hand[k] == v[1];
+                        else
+                            met = hand[k] >= v[0] && hand[k] <= v[1];
+                    } else
+                        met = hand[k] >= v;
+                    ++metCount;
+                    break;
+                case 'Honors':
+                    let check = {}
+                    if (typeof(v) == 'object') 
+                        check = v;
+                    else
+                        check = {[bid.at(-1)]: v};
+                    for (const [s, h] of Object.entries(check)) { 
+                        met = h <= hand.Honors[Card.ltr2code(s) - Card.Club()];
+                        if (!met)
+                            break;
+                    }
+                    break;
+                case 'Control':
+                case 'Stopper':
+                    let suitList = [v];
+                    if (k == 'Control')
+                        suitList = [bid];
+                    else if (Array.isArray(v))
+                        suitList = [...v];
+                    for (const s of v) {
+                        let suitCode = Card.ltr2code(s);
+                        let suitCards = hand.hand.filter(x => x.suit == suitCode);
+                        met = k == 'Control' && suitCards.length == 0;
+                        if (!met || k == 'Stopper')
+                            met = (suitCards.length >= 4 && suitCards[0].rank == Card.Jack) ||
+                                (suitCards.length >= 3 && (suitCards[0].rank == Card.Queen && suitCards[1].rank == Card.Jack)) ||
+                                (suitCards.length >= 2 && (suitCards[0].rank == Card.King && suitCards[1].rank == Card.Queen)) ||
+                                (suitCards.length >= 1 && suitCards[0].rank == Card.Ace);
+                        if (!met)
+                            break;
+                    }
+                    break;
+                case 'Shape':
+                    if (v == '5-5')
+                        met = hand.Suits.filter(s => s >= 5).length >= 2;
+                    else if (v == '5-4') {
+                        met = hand.Suits.filter(s => s >= 5).length >= 2;
+                        if (!met)
+                            met = (hand.Suits.filter(s => s >= 5).length == 1 && hand.Suits.filter(s => s == 4).length >= 1)
+                    } else if (v == 'Balanced')
+                        met = hand.Suits.filter(s => s < 2).length == 0 && hand.Suits.filter(s => s == 2).length <= 2;
+                    break;
+                case 'AnySuit':
+                case 'SuitLen':
+                    let suitCode = Card.ltr2code(bid) - Card.Club();
+                    if (Array.isArray(v)) {
+                        if (v[0] == 0)
+                            met = hand.Suits[suitCode] <= v[1];
+                        else if (v[0] == v[1])
+                            met = hand.Suits[suitCode] == v[1];
+                        else
+                            met = hand.Suits[suitCode] >= v[0] && hand.Suits[k] <= v[1];
+                    } else if (typeof(v) == 'object') {
+                        for (const [sKey, sVal] of Object.entries(v)) {
+                            let whichSuit = Card.ltr2code(sKey) - Card.Club();
+                            if (Array.isArray(sVal)) {
+                                if (sVal[0] == 0)
+                                    met = hand.Suits[whichSuit] <= sVal[1];
+                                else if (Number(sVal[0]) == Number(sVal[1]))
+                                    met = hand.Suits[whichSuit] == sVal[1];
+                                else
+                                    met = hand.Suits[whichSuit] >= sVal[0] && hand.Suits[whichSuit] <= sVal[1];
+                            } else
+                                met = hand.Suits[whichSuit] >= sVal;
+                            if (k == 'SuitLen' && !met)
+                                break;
+                            else if (k == 'AnySuit' && met)
+                                break;
+                        }
+                    } else
+                        met = hand.Suits[suitCode] >= v;
+                    ++metCount;
+                    break;
+                case 'Seat':
+                    met = false;
+                    ++metCount;
+                    break;
+                case 'Meta':
+                case 'KeyCard':
+                case 'KingCount':
+                case 'SideKing':
+                case 'SingleVoid':
+                case 'AceCount':
+                case 'TrumpQ':
+                    // ignore
+                    met = true;
+                    break;
+                default:
+                    console.log(`Unknown criteria ${k} in ${JSON.stringify(c)}`);
+                    met = false;
+                    break;
+            }
+            if (!met)
+                break;
+        }
+        return metCount > 0 && met;
+    }
+}
