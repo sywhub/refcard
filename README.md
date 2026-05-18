@@ -51,4 +51,13 @@ have also followed the sequence above and click the "Reply" link on that
 The "Compete" link is for South to compete with East.  The "Reply" link is
 for West to reply to East, if South passed.
 
+If there is no link following the bid line, this means you are to bid "naturally" to compete or reply.
+
+If you hand does not meet any of the criteria on the page, you are supposed to pass.  Occassionally, you see a bid of "-" (dash), that
+describes the criteria to bid "pass."  It is rarely used.
+
+To read about the convention, try the About page.  At its bottom, there are links to selected few.
+
+
+
 # To author a new system
