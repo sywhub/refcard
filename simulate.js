@@ -48,12 +48,15 @@ class SimStat extends BidSystem {
             '2/1 Responses to 1NT': {'PreCheck': [], // to extract from rules
                  'Caption': 'Sample hands for 1M Opener rebid after partner\'s 1NT response',
                  'PostFilter': null, 'Samples': 0},
-            '1M': {'BidSeq': [['1S', '-'],['1H', '-']]},
-            '1m': {'BidSeq': [['1D', '-'],['1C', '-']]},
-            '1NT': {'BidSeq': [['1NT', '-']]},
-            'Preempt':{'BidSeq': [['2S', '-'],['2H', '-'],['2D', '-']]},
             'Lebensohl 1NT': {'BidSeq': [['1NT', '2D'], ['1NT', '2H'], ['1NT', '2S']]},
-            'Lebensohl 2x': {'BidSeq': [['2D', 'X', '-'], ['2H', 'X', '-'], ['2S', 'X', '-']]}};
+            'Lebensohl 2x': {'BidSeq': [['2D', 'X', '-'], ['2H', 'X', '-'], ['2S', 'X', '-']]},
+            'NMF': {'BidSeq': [
+                        ['1H', '-', '1S', '-', '1NT', '-'],
+                        ['1H', '-', '1S', '-', '2H', '-'],
+                        ['1C', '-', '1H', '-', '1NT', '-'],['1C', '-', '1S', '-', '1NT', '-'],
+                        ['1C', '-', '1H', '-', '2C', '-'],['1C', '-', '1S', '-', '2C', '-'],
+                        ['1D', '-', '1H', '-', '1NT', '-'],['1D', '-', '1S', '-', '1NT', '-'],
+                        ['1D', '-', '1H', '-', '2D', '-'],['1D', '-', '1S', '-', '2D', '-'],]}};
         // Things we will calculate states.
         this.StatsMap = {'Name': 'Statistics',
             '5-4': {'PreCheck': [{HCP: 16, Shape: '5-4'}, {HCP: 11, Shape: '5-4'}]},
@@ -533,63 +536,6 @@ class SimStat extends BidSystem {
         }
         return samples;
     }
-
-    // Find a board that matches the bid sequence given, and the options of the following bids
-    findSeqMatch(seq) {
-        var NSHUFFLES = 500;
-        var found = null
-        var nDealt = 0;
-        do {
-            [found, nDealt] = this.seqMatchOnce(seq);
-            NSHUFFLES -= nDealt;
-        } while (found == null && NSHUFFLES > 0);
-        return found;
-    }
-
-
-    // Faciliate looping above.
-    seqMatchOnce(seq) {
-        const NSHUFFULS = 100;
-        var open = null, matches;
-        var ret = [null, 0];
-        // First try NSHUFFLES times to find a match for the opening bid,
-        // then if found try to find matches for the subsequent bids without shuffling
-        // Last see if the next seat meet the final criteria.
-        for (let i = 0; i < NSHUFFULS && open == null; i++)  {
-            this.board.deal();
-            ++ret[1];
-            let j = 0;
-            while (open == null && j < 4) 
-                [open, matches] = this.matchSeat(seq[0], Config.WorkingSet.Rules[seqKey('Open')], j++);
-        }
-        if (open == null)
-            return ret;
-        var subseqBid = null
-        for (let k = 0; k < seq.length-1; k++) {
-            let nextSeat = this.roundSeat(open+k+1);
-            [subseqBid, matches] = this.matchSeat(seq[k+1], Config.WorkingSet.Rules[seqKey(seq.slice(0,k+1))], nextSeat);
-            if (subseqBid == null)
-                return ret;
-        }
-        ret[0] = open;
-        return ret;
-    }
-
-    matchSeat(expect, rules, seat) {
-        let matches = [];
-        if (rules == null && expect == '-')
-            return [seat, matches];
-
-        for (const b of rules.Bids) 
-            for (const c of b.Criteria) 
-                if (!matches.includes(b.Bid) && this.matchCriteria(this.board.seats[seat], b.Bid, c))
-                    matches.push(b.Bid)
-        if ((expect == '-' && matches.length == 0) || matches.includes(expect))
-            return [seat, matches];
-        return [null, null];   
-    }
-
-
 }
 
 // Click handlers

@@ -313,4 +313,122 @@ class BidSystem {
         }
         return metCount > 0 && met;
     }
+
+    // Find a board that matches the bid sequence given, and the options of the following bids
+    findSeqMatch(seq) {
+        var NSHUFFLES = 500;
+        var found = null
+        var nDealt = 0;
+        do {
+            [found, nDealt] = this.seqMatchOnce(seq);
+            NSHUFFLES -= nDealt;
+        } while (found == null && NSHUFFLES > 0);
+        return found;
+    }
+
+
+    // Faciliate looping above.
+    seqMatchOnce(seq) {
+        const NSHUFFULS = 100;
+        var open = null, matches;
+        var ret = [null, 0];
+        // First try NSHUFFLES times to find a match for the opening bid,
+        // then if found try to find matches for the subsequent bids without shuffling
+        // Last see if the next seat meet the final criteria.
+        for (let i = 0; i < NSHUFFULS && open == null; i++)  {
+            this.board.deal();
+            ++ret[1];
+            let j = 0;
+            while (open == null && j < 4) 
+                [open, matches] = this.matchSeat(seq[0], Config.WorkingSet.Rules[seqKey('Open')], j++);
+        }
+        if (open == null)
+            return ret;
+        var subseqBid = null
+        for (let k = 0; k < seq.length-1; k++) {
+            let nextSeat = this.roundSeat(open+k+1);
+            [subseqBid, matches] = this.matchSeat(seq[k+1], Config.WorkingSet.Rules[seqKey(seq.slice(0,k+1))], nextSeat, k);
+            if (subseqBid == null)
+                return ret;
+        }
+        ret[0] = open;
+        return ret;
+    }
+
+    matchSeat(expect, rules, seat, seqIndex = 0) {
+        let matches = [];
+        let chosen = [];
+        if (rules == null && expect == '-')
+            return [seat, matches];
+
+        for (const b of rules.Bids) 
+            for (const c of b.Criteria) 
+                if (matches.filter(x => x[0] === b.Bid).length == 0 && this.matchCriteria(this.board.seats[seat], b.Bid, c))
+                    matches.push([b.Bid, c])
+        if (matches.length > 1)
+            chosen = this.bestBid(this.board.seats[seat], matches, seqIndex);
+        if ((expect == '-' && chosen.length == 0) || chosen.includes(expect))
+            return [seat, chosen];
+        return [null, null];   
+    }
+
+    bestBid(hand, matches, seqIndex) {
+        var subMatches = [];
+        var o = null
+        matches.forEach(x => {
+            o = {'Bid': x[0]};
+            if ('HCP' in x[1])
+                o['Strength'] = Array.isArray(x[1].HCP) ? x[1].HCP[0] : x[1].HCP;
+            else if ('TP' in x[1])
+                o['Strength'] = Array.isArray(x[1].TP) ? x[1].TP[0] : x[1].TP;
+            if ('SuitLen' in x[1]) {
+                let bidSuit = x[0].slice(-1);
+                let sl = x[1].SuitLen;
+                o['Length'] = {}
+                if (Array.isArray(sl)) {
+                    if (sl[0] != 0)
+                        o['Length'][bidSuit] = sl[0];
+                } else if (typeof(sl) == 'object') {
+                    for (const [sKey, sVal] of Object.entries(sl)) {
+                        if (Array.isArray(sVal)) {
+                            if (sl[0] != 0)
+                                o['Length'][sKey] = sVal[0];
+                        } else 
+                            o['Length'][sKey] = sVal
+                    }
+                 } else {
+                    o['Length'][bidSuit] = sl;
+                }
+            }
+            subMatches.push(o);
+        });
+        let filterKey = (k, arr) => {
+            let subset = arr.filter(x => k in x);
+            subset.sort((a, b) => b[k] - a[k] );
+            return subset.filter(x => x[k] >= subset[0][k]);
+        };
+        let filtered = filterKey('Strength', subMatches);
+        if (filtered.length == 1)
+            return [filtered[0].Bid];
+        filtered = filterKey('Length', subMatches);
+        if (filtered.length == 1)
+            return [filtered[0].Bid];
+        filtered.forEach(x => {
+            x.LongSuit = 0;
+            for (const s of Object.keys(x.Length)) {
+                let long = hand.Suits[Card.ltr2code(s) - Card.Club()];
+                if (long > x.LongSuit)
+                    x.LongSuit = long;
+            }
+        });
+        filtered = filterKey('LongSuit', filtered);
+        if (filtered.length == 1)
+            return [filtered[0].Bid];
+        // should sort on SuitLen key
+        if (seqIndex <= 0)
+            filtered.sort((a, b) => Card.ltr2code(b.Bid.slice(-1)) - Card.ltr2code(a.Bid.slice(-1)));
+        else
+            filtered.sort((a, b) => Card.ltr2code(a.Bid.slice(-1)) - Card.ltr2code(b.Bid.slice(-1)));
+        return [filtered[0].Bid];
+    }
 }

@@ -10,6 +10,10 @@ BidComponents.push({ 'BuildIn': true,
              { 'Bids': [{'Bid': '2C', 'Criteria': [{'HCP': [10, 12], 'Meta': {'Convention': 'NMF', 'Notes': 'Invitational', 'Forcing': true}, 'SuitLen': {'H': 5}}]}],
                'Seq': ['1D', '-', '1H', '-', '1NT', '-']},
              { 'Bids': [
+				 {'Bid': '3C', 'Criteria': [{'HCP': [10, 12], 'Meta': {'Convention': 'NMF', 'Notes': 'Invitational', 'Forcing': true}, 'SuitLen': {'S': 5}}]},
+				 {'Bid': '3D', 'Criteria': [{'HCP': [10, 12], 'Meta': {'Convention': 'NMF', 'Notes': 'Invitational', 'Forcing': true}, 'SuitLen': {'S': 5}}]}],
+               'Seq': ['1H', '-', '1S', '-', '2H', '-']},
+             { 'Bids': [
 				 {'Bid': '2C', 'Criteria': [{'HCP': [10, 12], 'Meta': {'Convention': 'NMF', 'Notes': 'Invitational', 'Forcing': true}, 'SuitLen': {'S': 5}}]},
 				 {'Bid': '2D', 'Criteria': [{'HCP': [10, 12], 'Meta': {'Convention': 'NMF', 'Notes': 'Invitational', 'Forcing': true}, 'SuitLen': {'S': 5}}]}],
                'Seq': ['1H', '-', '1S', '-', '1NT', '-']},
