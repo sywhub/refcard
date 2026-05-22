@@ -1,7 +1,9 @@
 class BidSystem {
     constructor() {
+        this.totalDealt = 0;
     }
 
+    resetCounter() { this.totalDealt = 0; }
     roundSeat(n) { return n % 4; }
 
     // Turn bid sequence into pretty string
@@ -256,7 +258,7 @@ class BidSystem {
                         if (!met)
                             met = (hand.Suits.filter(s => s >= 5).length == 1 && hand.Suits.filter(s => s == 4).length >= 1)
                     } else if (v == 'Balanced')
-                        met = hand.Suits.filter(s => s < 2).length == 0 && hand.Suits.filter(s => s == 2).length <= 2;
+                        met = hand.Suits.filter(s => s < 2).length == 0 && hand.Suits.filter(s => s == 2).length < 2;
                     break;
                 case 'AnySuit':
                 case 'SuitLen':
@@ -318,10 +320,9 @@ class BidSystem {
     findSeqMatch(seq) {
         var NSHUFFLES = 500;
         var found = null
-        var nDealt = 0;
         do {
-            [found, nDealt] = this.seqMatchOnce(seq);
-            NSHUFFLES -= nDealt;
+            found = this.seqMatchOnce(seq);
+            NSHUFFLES -= this.totalDealt;
         } while (found == null && NSHUFFLES > 0);
         return found;
     }
@@ -331,13 +332,13 @@ class BidSystem {
     seqMatchOnce(seq) {
         const NSHUFFULS = 100;
         var open = null, matches;
-        var ret = [null, 0];
+        var ret = null;
         // First try NSHUFFLES times to find a match for the opening bid,
         // then if found try to find matches for the subsequent bids without shuffling
         // Last see if the next seat meet the final criteria.
         for (let i = 0; i < NSHUFFULS && open == null; i++)  {
             this.board.deal();
-            ++ret[1];
+            this.totalDealt++;
             let j = 0;
             while (open == null && j < 4) 
                 [open, matches] = this.matchSeat(seq[0], Config.WorkingSet.Rules[seqKey('Open')], j++);
@@ -351,7 +352,7 @@ class BidSystem {
             if (subseqBid == null)
                 return ret;
         }
-        ret[0] = open;
+        ret = open;
         return ret;
     }
 
@@ -376,6 +377,8 @@ class BidSystem {
      * Choose one among bids that matched some criteria.
      */
     bestBid(hand, matches, seqIndex) {
+        return matches.map(x => x[0]);
+
         // First should be major trump suit match.
         // local function
         let filterKey = (k, arr) => {
@@ -432,6 +435,9 @@ class BidSystem {
          * 4. Finally, the hand has two equally long suits.  We pick the higher one if opening, otherwise the lower one.
          */
         let hasStrength = filterKey('Strength', subMatches);
+        if (hasStrength.length > 0)
+            return hasStrength.map(x => x[0]);  // XXX: Bugs.  Disabled for now.
+
         if (hasStrength.length == 1)
             return [hasStrength[0].Bid];
 
