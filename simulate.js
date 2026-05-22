@@ -12,14 +12,8 @@ class SimStat extends BidSystem {
         // What we will generate simulated hands that meet the criteria for the bidding sequences.
         // Simulations have other fitlers coded elsewhere.
         this.SimulateMap = {'Name': 'Simulate',
-            '1NT Interference': {'PreCheck': [{'HCP': [8, 12], 'SuitLen': {'S': 5}, 'AnySuit': {'D': 4, 'C': 4}},
-                {'HCP': [8, 12], 'SuitLen': {'H': 5}, 'AnySuit': {'D': 4, 'C': 4}},
-                {'HCP': [8, 12], 'SuitLen': {'D': 5, 'C': 5}},
-                {'HCP': [8, 12], 'AnySuit': {'S': 6, 'H': 6, 'D': 6, 'C': 6}},
-                {'HCP': [8, 12], Shape: '5-4', 'SuitLen': {'S': 4, 'H': 4}},
-                {'HCP': [13, 16], 'Shape': 'Balanced'}],
-                'Caption': 'RHO opened 1NT',
-                 'PostFilter': null, 'Samples': 0},
+            'INT Sim': {'BidSeq': [['1NT']],
+                'Caption': 'RHO opened 1NT', 'Samples': 4},
             'Slam Try': {'PreCheck': [{'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'D': 5}},
                 {'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'C': 5}}],
                 'Caption': 'Potential Slam with 4:M and 5+:m',
@@ -27,7 +21,7 @@ class SimStat extends BidSystem {
                     let pSeat = this.roundSeat(seat+2);
                     return (board.seats[seat].HCP + board.seats[pSeat].HCP >= 26);}, 'Samples': 4},
             '2C with Minor': {'PreCheck': [{'HCP': 22, 'AnySuit': {'D': 5, 'C': 5}}],
-                'Caption': '2C with Minor, partner matches',
+                'Caption': '2C with a Minor suit match',
                 'PostFilter': (board, seat) => {
                     let pSeat = this.roundSeat(seat+2);
                     return board.seats[pSeat].HCP >= 6 && board.seats[pSeat].HCP <= 10 && 
@@ -146,6 +140,7 @@ class SimStat extends BidSystem {
             sObj.Hands.push(JSON.parse(JSON.stringify(this.board.seats[sIdx].hand)));
         }
         samples.push(sObj);
+        return samples.length;
     }
 
     // Dispatcher for statistics calculations.
@@ -340,9 +335,12 @@ class SimStat extends BidSystem {
         let row = 1;
         let bIdx = 1;
         e.insertAdjacentHTML('beforeend', `<p>${description}<br>`);
-        let sampleDiv = document.createElement('div');
-        sampleDiv.setAttribute('id', 'SamplesContents');
-        e.appendChild(sampleDiv);
+        let sampleDiv = document.getElementById('SamplesContents');
+        if (sampleDiv == null) { 
+            document.createElement('div');
+            sampleDiv.setAttribute('id', 'SamplesContents');
+            e.appendChild(sampleDiv);
+        }
         if (samples[0].Annotation != null)
             sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 2vw 6vw repeat(4, 15vw); gap: 1vw;`);
         else
@@ -365,23 +363,26 @@ class SimStat extends BidSystem {
             }
             ++row;
         }
+        this.showBBOLin(e, samples);
+    }
 
-        /*
-         * LIN output.
-         * first "qx|o<n>|pn|S,W,N,E|st||md|<dealer>".  Dealer is the nth hand following.
-         *   1 => South, 2 => West, 3 => North, 4 => East.
-         * Then the hand for each seat: <Suit><Cards>, separated by comma.  Suit is S, H, D, C.  Cards are AKQJT98765432.  The 4th
-         * seat can be omitted, BBO will fill in what's left.
-         * Lastly, ends with "sv|<vul>|ah||rh|<description>|pg||".  Vul is o, n, e, b.
-         * "qx|o<n>" must be consecutive.  "Dealer" must be sequential relative to the "o" number.
-         */
+    /*
+     * LIN output.
+     * first "qx|o<n>|pn|S,W,N,E|st||md|<dealer>".  Dealer is the nth hand following.
+     *   1 => South, 2 => West, 3 => North, 4 => East.
+     * Then the hand for each seat: <Suit><Cards>, separated by comma.  Suit is S, H, D, C.  Cards are AKQJT98765432.  The 4th
+     * seat can be omitted, BBO will fill in what's left.
+     * Lastly, ends with "sv|<vul>|ah||rh|<description>|pg||".  Vul is o, n, e, b.
+     * "qx|o<n>" must be consecutive.  "Dealer" must be sequential relative to the "o" number.
+     */
+    showBBOLin(e, samples) {
         if (samples.length < 0 || samples[0].Hands.length < 4)
             return;
 
         let linDiv = document.createElement('div');
         e.appendChild(linDiv);
         linDiv.insertAdjacentHTML('beforeend', '<p>BBO LIN:<br>');
-        bIdx = 0;
+        let bIdx = 0;
         let vul = ['o', 'n', 'e', 'b'];
         let bboDiv = document.createElement('div');
         bboDiv.setAttribute('class', 'BBOLin')
@@ -411,70 +412,114 @@ class SimStat extends BidSystem {
         }
     }
 
+    showOneSample(e, samples, idx) {
+        let sampleDiv = document.getElementById('SamplesContents');
+        if (samples[0].Annotation != null)
+            sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 2vw 10vw repeat(4, 15vw); gap: 1vw;`);
+        else
+            sampleDiv.setAttribute('style', `display: grid; grid-template-columns: 2vw repeat(4, 15vw); gap: 1vw;`);
+        sampleDiv.insertAdjacentHTML('beforeend', `<div class="Counter" style="grid-column: 1; grid-row: ${idx};">${idx}.</div>`);
+        let s = samples[idx-1];
+        let sNext = [0];
+        if (s.Hands.length > 2) 
+            sNext.push(2);
+        else if (s.Hands.length > 1) 
+            sNext.push(1);
+        let colIdx = 2;
+        if (s.Annotation != null)
+            sampleDiv.insertAdjacentHTML('beforeend', `<div class="Annotation" style="grid-column: ${colIdx++}; grid-row: ${idx};">${s.Annotation}&nbsp;?</div>`);
+        for (const sIdx of sNext) {
+            let hObj = new Hand(s.Hands[sIdx]);
+            let hStr = hObj.toString();
+            sampleDiv.insertAdjacentHTML('beforeend', `<div class="Hand" style="grid-column: ${colIdx++}; grid-row: ${idx};">${hStr}</div>`);
+        }
+
+    }
+
     doSimulate(e, scenario) {
         const MAXATTEMPTS = 100;
         let sampleText = '';
         let samples = null;
-        if ('PreCheck' in this.SimulateMap[scenario]) {
-            // Generate the hand that meet certain criteria.
-            // The post-filter other creteria.
-            sampleText = this.SimulateMap[scenario].Caption;
-            samples = this.simWorker(e, scenario, this.SimulateMap[scenario].PostFilter, this.SimulateMap[scenario].Samples);
-        } else if ('BidSeq' in this.SimulateMap[scenario]) {
+        // Generate the hand that meet certain criteria.
+        // The post-filter other creteria.
+        this.resetCounter();
+        if ('PreCheck' in this.SimulateMap[scenario])
+            this.simWorker(e, scenario, this.SimulateMap[scenario].PostFilter, this.SimulateMap[scenario].Samples);
+        else if ('BidSeq' in this.SimulateMap[scenario]) {
             // Generate the hand for the "next" seat after a bidding sequence.
             // Mostly to pratice conventions.
             var cases = this.SimulateMap[scenario].BidSeq;  // bidding sequences to simulate.
-            samples = [];
-            sampleText = `Sample Hands for ${cases.map(c => this.seqString(c)).join(', ')}`;
+            if (this.SimulateMap[scenario].Caption) 
+                sampleText = this.SimulateMap[scenario].Caption;
+            else
+                sampleText = `Sample Hands for ${cases.map(c => this.seqString(c)).join(', ')}`;
+            e.insertAdjacentHTML('beforeend', `<p>${sampleText}<br>`);
+            let beginTime = new Date();
+            let sampleDiv = document.createElement('div');
+            sampleDiv.setAttribute('id', 'SamplesContents');
+            e.appendChild(sampleDiv);
             let spreads = new Array(cases.length).fill(null);   // attempt to spread out possible bids
+            samples = [];
             let attempts = 0;
-            while (samples.length < this.sampleSize) {
-                /*
-                 * Pick a random "case".
-                 * Find a board that meet the criteria of the entire bidding sequence.
-                 * Then find hana of the next seat for each possible bid.
-                 */
-                let i = Math.floor(Math.random() * cases.length);
-                let sKey = seqKey(cases[i]); 
-                if (sKey in Config.WorkingSet.Rules) {
+            let sid = setInterval(() => {
+                if (samples.length < this.sampleSize) {
+                    /*
+                    * Pick a random "case".
+                    * Find a board that meet the criteria of the entire bidding sequence.
+                    * Then find hana of the next seat for each possible bid.
+                    */
+                    let i = Math.floor(Math.random() * cases.length);
+                    let sKey = seqKey(cases[i]); 
+                    if (!(sKey in Config.WorkingSet.Rules))
+                        return;
+
                     let caseRules = Config.WorkingSet.Rules[sKey];
                     let seat = this.findSeqMatch(caseRules.Seq);
-                    if (seat != null) {
-                        if (spreads[i] == null)
-                            spreads[i] = new Array(caseRules.Bids.length).fill(0)
-                        let maxSpread = Math.max(...spreads[i]);
-                        let nMax = spreads[i].filter(s => s == maxSpread).length;
+                    if (seat == null)
+                        return;
 
-                        /*
-                         * Seat is the opener of the bid seuquence.
-                         * We are not interested in that, but the seat next to the end of the sequence.
-                         */
-                        seat = this.roundSeat(seat+cases[i].length);
-                        let found = false;
-                        // Loop through all possible bids to find one that match this hand.
-                        for (let k = 0; k < caseRules.Bids.length && !found; k++) {
-                            for (let c = 0; c < caseRules.Bids[k].Criteria.length && !found; c++)
-                                found = this.matchCriteria(this.board.seats[seat], null, caseRules.Bids[k].Criteria[c]);
+                    if (spreads[i] == null)
+                        spreads[i] = new Array(caseRules.Bids.length).fill(0)
+
+                    /*
+                    * Seat is the opener of the bid seuquence.
+                    * We are not interested in that, but the seat next to the end of the sequence.
+                    */
+                    seat = this.roundSeat(seat+cases[i].length);
+                    let found = false;
+                    // Loop through all possible bids to find one that match this hand.
+                    for (let k = 0; k < caseRules.Bids.length && !found; k++) {
+                        for (let c = 0; c < caseRules.Bids[k].Criteria.length && !found; c++)
+                            found = this.matchCriteria(this.board.seats[seat], null, caseRules.Bids[k].Criteria[c]);
+                        if (found) {
+                            let maxSpread = Math.max(...spreads[i]);
+                            let nMax = spreads[i].filter(s => s == maxSpread).length;
+                            // Found one, but was it a duplicate of previous bids?
+                            found = nMax == spreads[i].length || spreads[i][k] < maxSpread;
                             if (found) {
-                                // Found one, but was it a duplicate of previous bids?
-                                found = nMax == spreads[i].length || spreads[i][k] < maxSpread;
-                                if (found) {
-                                    // A new kind.  Good.
-                                    // Record that hand, housekeep the distribution.
-                                    ++spreads[i][k];
-                                    this.pushSample(samples, seat, 0, this.seqString(cases[i]));
-                                    attempts = 0;
-                                } else if (attempts > MAXATTEMPTS)  // Has been too many attempts.  Give up.
-                                    spreads[i].fill(maxSpread, 0, spreads[i].length);
-                                else
-                                    attempts++;
-                            }
+                                // A new kind.  Good.
+                                // Record that hand, housekeep the distribution.
+                                ++spreads[i][k];
+                                let idx = this.pushSample(samples, seat,
+                                    'Samples' in this.SimulateMap[scenario] ? this.SimulateMap[scenario].Sample : 0,
+                                    this.seqString(cases[i]));
+                                this.showOneSample(e, samples, idx);
+                                attempts = 0;
+                            } else if (attempts > MAXATTEMPTS)  // Has been too many attempts.  Give up.
+                                spreads[i].fill(maxSpread, 0, spreads[i].length);
+                            else
+                                attempts++;
                         }
                     }
+                } else {
+                    clearInterval(sid);
+                    let duration = new Date() - beginTime;
+                    e.insertAdjacentHTML('beforeend', `<p>Found ${samples.length} samples in ${duration/1000} seconds.<br>`);
+                    e.insertAdjacentHTML('beforeend', `<p>Checked ${this.totalDealt} random boards<br>`);
+                    this.showBBOLin(e, samples);
                 }
-            }
-        }
-        this.showSamples(e, samples, sampleText);
+            }, 100);
+    }
     }
 
     // Extract the critreria from the bidding rules.
@@ -512,29 +557,43 @@ class SimStat extends BidSystem {
     simWorker(e, caseName, filterFunc, pushPartner = false) {
         // The hands we are interested.
         let criteria = this.SimulateMap[caseName].PreCheck;
+        e.insertAdjacentHTML('beforeend', `<p>${this.SimulateMap[caseName].Caption}<br>`);
         let samples = [];
+        let sampleDiv = document.createElement('div');
+        sampleDiv.setAttribute('id', 'SamplesContents');
+        e.appendChild(sampleDiv);
         let spread = new Array(criteria.length).fill(0);    // Every criteria get a fair share.
-        while (samples.length < this.sampleSize) {
-            this.board.deal();
-            let found = false;
-            for (let seat = 0; seat < 4 && !found; ++seat) {
-                for (let c = 0; c < criteria.length && !found; ++c) {
-                    found = this.matchCriteria(this.board.seats[seat], null, criteria[c]);
-                    if (found) {
-                        let maxSpread = Math.max(...spread);
-                        let nMax = spread.filter(s => s == maxSpread).length;
-                        found = nMax == spread.length || spread[c] < maxSpread;
-                        if (filterFunc != null)
-                            found = found && filterFunc(this.board, seat);
+        let beginTime = new Date();
+        let sid = setInterval(() => {
+            if (samples.length < this.sampleSize) {
+                this.board.deal();
+                this.totalDealt++;
+                let found = false;
+                for (let seat = 0; seat < 4 && !found; ++seat) {
+                    for (let c = 0; c < criteria.length && !found; ++c) {
+                        found = this.matchCriteria(this.board.seats[seat], null, criteria[c]);
                         if (found) {
-                            this.pushSample(samples, seat, pushPartner, null);
-                            spread[c]++;
+                            let maxSpread = Math.max(...spread);
+                            let nMax = spread.filter(s => s == maxSpread).length;
+                            found = nMax == spread.length || spread[c] < maxSpread;
+                            if (filterFunc != null)
+                                found = found && filterFunc(this.board, seat);
+                            if (found) {
+                                let sIdx = this.pushSample(samples, seat, pushPartner, null);
+                                this.showOneSample(e, samples, sIdx);
+                                spread[c]++;
+                            }
                         }
                     }
                 }
+            } else {
+                clearInterval(sid);
+                let duration = new Date() - beginTime;
+                e.insertAdjacentHTML('beforeend', `<p>Found ${samples.length} samples in ${duration/1000} seconds.<br>`);
+                e.insertAdjacentHTML('beforeend', `<p>Checked ${this.totalDealt} random boards<br>`);
+                this.showBBOLin(e, samples);
             }
-        }
-        return samples;
+        }, 100);  // Adjust the interval time as needed
     }
 }
 
