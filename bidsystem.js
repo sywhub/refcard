@@ -372,9 +372,30 @@ class BidSystem {
         return [null, null];   
     }
 
+    /*
+     * Choose one among bids that matched some criteria.
+     */
     bestBid(hand, matches, seqIndex) {
+        // First should be major trump suit match.
+        // local function
+        let filterKey = (k, arr) => {
+            let subset = arr.filter(x => k in x);
+            subset.sort((a, b) => {
+                if (typeof(a[k]) == 'object' && typeof(b[k]) == 'object') { 
+                    let aVal = Object.values(a[k])[0], bVal = Object.values(b[k])[0];
+                    return bVal - aVal;
+                }
+                return b[k] - a[k];
+            });
+            return subset.filter(x => {
+                if (typeof(x[k]) == 'object') 
+                    return Object.values(x[k])[0] >= Object.values(subset[0][k])[0];
+                return x[k] >= subset[0][k];
+            });
+        };
         var subMatches = [];
         var o = null
+        // extract Strength and SuitLen info for each bid, if any
         matches.forEach(x => {
             o = {'Bid': x[0]};
             if ('HCP' in x[1])
@@ -402,33 +423,49 @@ class BidSystem {
             }
             subMatches.push(o);
         });
-        let filterKey = (k, arr) => {
-            let subset = arr.filter(x => k in x);
-            subset.sort((a, b) => b[k] - a[k] );
-            return subset.filter(x => x[k] >= subset[0][k]);
-        };
-        let filtered = filterKey('Strength', subMatches);
-        if (filtered.length == 1)
-            return [filtered[0].Bid];
-        filtered = filterKey('Length', subMatches);
-        if (filtered.length == 1)
-            return [filtered[0].Bid];
-        filtered.forEach(x => {
-            x.LongSuit = 0;
-            for (const s of Object.keys(x.Length)) {
-                let long = hand.Suits[Card.ltr2code(s) - Card.Club()];
-                if (long > x.LongSuit)
-                    x.LongSuit = long;
+        /*
+         * 1. Pick the bid that has the highest strength requirement, if only one.
+         * 2. Otherwise, there must be multiple bids with the same strength requirement.
+         *    We pick the one with the longest suit requirement, if only one.
+         * 3. Next, there must be multiple bids with the same strength and length requirement.
+         *    We pick the one that the hand has the longest suit, if only one.
+         * 4. Finally, the hand has two equally long suits.  We pick the higher one if opening, otherwise the lower one.
+         */
+        let hasStrength = filterKey('Strength', subMatches);
+        if (hasStrength.length == 1)
+            return [hasStrength[0].Bid];
+
+        // There could be 0 or more than 1 criteria with Strength.
+        let hasLength = filterKey('Length', hasStrength.length > 1 ? hasStrength : subMatches);
+        if (hasLength.length == 1)
+            return [hasLength[0].Bid];
+        
+        // Assumed that there was at least one with Length.
+        // Then we are left with multiple bids with the same strength and length.
+        if (hasLength.length > 1) {
+            hasLength.forEach(x => {
+                for (const s of Object.keys(x.Length)) {
+                    let long = hand.Suits[Card.ltr2code(s) - Card.Club()];
+                    x.Length[s] = long;
+                }
+            });
+            hasLength = filterKey('Length', hasLength);
+            if (hasLength.length == 1)
+                return [hasLength[0].Bid];
+            let maj = hasLength.filter(x => ['S', 'H'].includes(x.Bid.slice(-1)));
+            if (maj.length == 1)
+                return [maj[0].Bid];
+            if (maj.length > 1) {
+                maj.sort((a, b) => Card.ltr2code(b.Bid.slice(-1)) - Card.ltr2code(a.Bid.slice(-1)));
+                return [maj[seqIndex <= 0 ? 0 : 1].Bid];
             }
-        });
-        filtered = filterKey('LongSuit', filtered);
-        if (filtered.length == 1)
-            return [filtered[0].Bid];
-        // should sort on SuitLen key
-        if (seqIndex <= 0)
-            filtered.sort((a, b) => Card.ltr2code(b.Bid.slice(-1)) - Card.ltr2code(a.Bid.slice(-1)));
-        else
-            filtered.sort((a, b) => Card.ltr2code(a.Bid.slice(-1)) - Card.ltr2code(b.Bid.slice(-1)));
-        return [filtered[0].Bid];
+
+            // should sort on SuitLen key
+            hasLength.sort((a, b) => Card.ltr2code(b.Bid.slice(-1)) - Card.ltr2code(a.Bid.slice(-1)));
+            return [hasLength[seqIndex <= 0 ? 0 : 1].Bid];
+        }
+
+        // Now we have an issue.
+        return matches.map(x => x[0]);
     }
 }
