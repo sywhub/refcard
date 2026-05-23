@@ -12,8 +12,8 @@ class SimStat extends BidSystem {
         // What we will generate simulated hands that meet the criteria for the bidding sequences.
         // Simulations have other fitlers coded elsewhere.
         this.SimulateMap = {'Name': 'Simulate',
-            'INT Sim': {'BidSeq': [['1NT']],
-                'Caption': 'RHO opened 1NT', 'Samples': 4},
+            'Interfering 1NT': {'BidSeq': [['1NT']],
+                'Caption': 'RHO opened 1NT'},
             'Slam Try': {'PreCheck': [{'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'D': 5}},
                 {'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'C': 5}}],
                 'Caption': 'Potential Slam with 4:M and 5+:m',
@@ -41,7 +41,7 @@ class SimStat extends BidSystem {
                         (board.seats[seat].Suits[Card.Codes['C']-1] + board.seats[pSeat].Suits[Card.Codes['C']-1] < 8));}, 'Samples': 4},
             '2/1 Responses to 1NT': {'PreCheck': [], // to extract from rules
                  'Caption': 'Sample hands for 1M Opener rebid after partner\'s 1NT response',
-                 'PostFilter': null, 'Samples': 0},
+                 'PostFilter': null},
             'Lebensohl 1NT': {'BidSeq': [['1NT', '2D'], ['1NT', '2H'], ['1NT', '2S']]},
             'Lebensohl 2x': {'BidSeq': [['2D', 'X', '-'], ['2H', 'X', '-'], ['2S', 'X', '-']]},
             'NMF': {'BidSeq': [
