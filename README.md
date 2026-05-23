@@ -58,6 +58,24 @@ describes the criteria to bid "pass."  It is rarely used.
 
 To read about the convention, try the About page.  At its bottom, there are links to selected few.
 
+# Simulator and Statitical Analyser
+From the same diretory, "simulator.html" launches the secondary "experimental" package to simulate boards with the dual purpose of generating practices or analyzing the validity of a bid design.  This is probably best done by AI, instead of human coding.  As such, this package is quite experimental.
 
+The "Simulate" and "Statistics" buttons work from the drop-down menu for the perspective "scenario". The code was "fixed" for those and require manual coding to add/modify.  The "Download" button save either the BBO LIN entries or the generated hand into a local file for ease of sharing.
 
-# To author a new system
+The "Settings" is identical to the quick reference, but they don't share the same settings.
+
+# To author a new bidding system
+I cannot fathom anyone authoring a brand new bidding system in this modern days of bridge. The most logical thing to do is to enhance or augment an existing one.
+
+## SAYC modifications
+If the new system is based on SAYC, proceed to edit/add new data files in the data directory.  If new files are added, you must edit "index.html" to include it.
+
+Most likely scenario is adding conventions.  Follow "lebensohl.data" and create a new file.  Decide whether this convention is "always on" or an option.
+## Brand New Sysstem
+Begin with a data file for openings.  Replace "base.data" (or create a new file).  Change index.html to remove all data files and add your own "base".
+A System is made up with "Components".  Each can be "built-in" or optional.  Each component has a set of meta properties and a set of "bidding rules".  A bidding rule specifies the bid choices given a bidding sequence.  Imagine in an auction and it is your turn to bid, that rule list your possible choices with each choice one or more "criteria" that your hand must satisfy.
+
+Each "bid" has a set (more than one) criteria and an optional meta properties: whether it is forcing, the name of the convention, etc.  Each criteria is a list of "key-value" pairs in a strict format.  It is relatively tedious to hand-create all the bidding rules for all the bid sequences.  You are better off generating those rules programmatically.
+
+Remember a bidding system is alive.  It grows and changes over time.  Whatever you do to create a new system, plan for many future modifications.
