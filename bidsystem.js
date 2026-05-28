@@ -127,7 +127,7 @@ class BidSystem {
                     retString += trEnZh("At " + v[0] + ' or ' + v[1] + ' Seat');
                     break;
                 case 'Shape':
-                    if (v == "Balanced")
+                    if (v == "Balanced" || v == "Semi-Balanced")
                         retString += " " + trEnZh(v);
                     else
                         retString += " " + trEnZh(v + " or better");
@@ -259,6 +259,8 @@ class BidSystem {
                             met = (hand.Suits.filter(s => s >= 5).length == 1 && hand.Suits.filter(s => s == 4).length >= 1)
                     } else if (v == 'Balanced')
                         met = hand.Suits.filter(s => s < 2).length == 0 && hand.Suits.filter(s => s == 2).length < 2;
+                    else if (v == 'Semi-Balanced')
+                        met = hand.Suits.filter(s => s < 2).length == 0;
                     break;
                 case 'AnySuit':
                 case 'SuitLen':

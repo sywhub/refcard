@@ -181,6 +181,7 @@ var enzh = {
 	'Sandwich 1NT': '夾心1無王',
 	'Second Suit': '第二牌組',
 	'Send Feedback': '提供返饋',
+	'Semi-Balanced': '無缺門或單張',
 	'Settings': '設定',
 	'Simple Raise': '加一',
 	'Sin-Yaw Wang': '王星耀',
