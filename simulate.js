@@ -50,7 +50,13 @@ class SimStat extends BidSystem {
                         ['1C', '-', '1H', '-', '1NT', '-'],['1C', '-', '1S', '-', '1NT', '-'],
                         ['1C', '-', '1H', '-', '2C', '-'],['1C', '-', '1S', '-', '2C', '-'],
                         ['1D', '-', '1H', '-', '1NT', '-'],['1D', '-', '1S', '-', '1NT', '-'],
-                        ['1D', '-', '1H', '-', '2D', '-'],['1D', '-', '1S', '-', '2D', '-'],]}};
+                        ['1D', '-', '1H', '-', '2D', '-'],['1D', '-', '1S', '-', '2D', '-'],]},
+            '1m Strong Reply': {'BidSeq': [['1D', '-'], ['1C', '-']],
+                'PostFilter': (board, seat) => {
+                    return board.seats[seat].HCP >= 7 && board.seats[seat].HCP <= 15;}},
+            '1m Weak Reply': {'BidSeq': [['1D', '-'], ['1C', '-']],
+                'PostFilter': (board, seat) => {
+                    return board.seats[seat].HCP <= 6;}}};
         // Things we will calculate states.
         this.StatsMap = {'Name': 'Statistics',
             '5-4': {'PreCheck': [{HCP: 16, Shape: '5-4'}, {HCP: 11, Shape: '5-4'}]},
@@ -496,6 +502,8 @@ class SimStat extends BidSystem {
                             let nMax = spreads[i].filter(s => s == maxSpread).length;
                             // Found one, but was it a duplicate of previous bids?
                             found = nMax == spreads[i].length || spreads[i][k] < maxSpread;
+                            if (found && 'PostFilter' in this.SimulateMap[scenario] && this.SimulateMap[scenario].PostFilter != null)
+                                found = this.SimulateMap[scenario].PostFilter(this.board, seat);
                             if (found) {
                                 // A new kind.  Good.
                                 // Record that hand, housekeep the distribution.
