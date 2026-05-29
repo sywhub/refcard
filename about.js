@@ -140,8 +140,9 @@ function About(d) {
     right.innerHTML = Config.OptionItems.Language.IDs[Config.OptionItems.Language.Value] == 'en-US' ? enAboutText : zhAboutText;
     right.insertAdjacentHTML('beforeend', '<h2>Technical Details<h2>');
     right.insertAdjacentHTML('beforeend', `<h3>${trEnZh('Components')}</h3>`);
-    for (const comp of BidComponents) 
-        right.insertAdjacentHTML('beforeend', `${trEnZh(comp.Name)}<br>`);
+    var compList = BidComponents.map(c => c.Name).sort()
+    for (const comp of compList) 
+        right.insertAdjacentHTML('beforeend', `${trEnZh(comp)}<br>`);
     right.insertAdjacentHTML('beforeend', `<h3>${trEnZh('Coded Conventions')}</h3>`);
     let conv = [];
     for (const comp of BidComponents) {
@@ -201,6 +202,7 @@ function ConventionURL(c) {
         'Splinter': '',
         'Stayman': 'https://www.bridgebum.com/stayman.php',
         'Strong 2C': '',
+        'Soloway Jump Shift': 'https://kwbridge.com/js.htm',
         'Strong Jump Shift': '',
         'Support DBL': '',
         'Take-Out DBL': '',
