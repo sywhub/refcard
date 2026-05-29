@@ -10,6 +10,7 @@ class Soloway:
         self.suits = ['S', 'H', 'D', 'C']
         return
     
+    # main driver
     def genRules(self):
         print("// Soloway Jump Shift")
         print("BidComponents.push({'Flag': 'Soloway', 'Name': 'Soloway Jump Shift', 'Rules': [") 
@@ -29,7 +30,7 @@ class Soloway:
         self.sjsrebid()
         print(']});\n')
     
-    # Soloway JS could be one of the 4 cases
+    # Bid Soloway JS if meet one of the 4 criteria
     def sjsCriteria(self, s, js):
         self.replyCriteria = []
         self.replyCriteria.append({'HCP': 17, 'SuitLen': 5, 'Honors': 2} | self.meta)
@@ -88,6 +89,8 @@ class Soloway:
                 print(f'\n// {s} - {js}')
                 l = 3 if (self.suits.index(s) < self.suits.index(js)) else 2
                 rebids = self.makeRebids(s, js)
+                ntCriteria = copy.deepcopy(self.replyCriteria[3])
+                ntCriteria['SuitLen'] = {f"{s}": 4, f"{js}": 5}
                 for rebid in rebids.keys():
                     print("{'Bids': [")
                     rLevel = int(rebid[0])
@@ -103,17 +106,17 @@ class Soloway:
                     if rSuit != 'NT' and rLevel == 2:
                         print(f"\t{{'Bid': '{rLevel}NT', 'Criteria': [{self.replyCriteria[1]}]}},")
                     for ns in newSuits: 
-                        o = copy.deepcopy(self.replyCriteria[3])
-                        o['SuitLen'][ns[1:]] = [0, 1]
-                        print(f"\t{{'Bid': '{ns}', 'Criteria': [{o}]}},")
+                        ntCriteria['SuitLen'][ns[1:]] = [0, 1]
+                        print(f"\t{{'Bid': '{ns}', 'Criteria': [{ntCriteria}]}},")
+                        ntCriteria['SuitLen'].pop(ns[1:], None)
                     if rSuit != 'NT' and rLevel <= 3:
                         print(f"\t{{'Bid': '{rLevel}NT', 'Criteria': [{self.replyCriteria[1]}]}},")
                     elif rSuit == 'NT' and rLevel < 3:
                         print(f"\t{{'Bid': '3NT', 'Criteria': [{self.replyCriteria[1]}]}},")
                     jsLevel = rLevel + (1 if rSuit == 'NT' or self.suits.index(s) >= self.suits.index(rSuit) else 0)
-                    o = copy.deepcopy(self.replyCriteria[3])
-                    o['Shape'] = 'Semi-Balanced'
-                    print(f"\t{{'Bid': '{jsLevel}{s}', 'Criteria': [{o}]}}],")
+                    ntCriteria['Shape'] = 'Semi-Balanced'
+                    print(f"\t{{'Bid': '{jsLevel}{s}', 'Criteria': [{ntCriteria}]}}],")
+                    ntCriteria.pop('Shape', None)
                     print(f"\t'Seq': ['1{s}', '-', '{l}{js}', '-', '{rebid}', '-']}},")
 
 if __name__ == '__main__':
