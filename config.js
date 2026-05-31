@@ -74,6 +74,19 @@ class Settings {
 
     // Flip 0314 and 1430
     changeRKCB() {
+        var rkcbSeq = [];
+        for (const c of BidComponents) {
+            if (c.Flag != 'RKCB') {
+                for (const r of c.Rules) {
+                    for (const b of r.Bids) {
+                        for (const cr of b.Criteria) {
+                            if (cr.Meta != undefined && cr.Meta.Convention != undefined && cr.Meta.Convention == 'RKCB') 
+                                rkcbSeq.push([c.Name, ...r.Seq, b.Bid, '-']);
+                        }
+                    }
+                }
+            }
+        }
         var rkcbIdx = []
         for (let [k, x] of Object.entries(this.WorkingSet.Rules)) {
             for (let r of x.Bids) {
