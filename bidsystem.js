@@ -180,7 +180,7 @@ class BidSystem {
                     retString += trEnZh(tmpString);
                     break;
                 case 'SideKing':
-                    retString += v ? trEnZh('Have Side King(s)') : trEnZh('No Side King');
+                    retString += v ? (Card.ltr2html(bid.slice(1))+' '+trEnZh('Side King')) : trEnZh('No Side King');
                     break;
                 case 'Meta':
                     comma = false;
@@ -262,6 +262,8 @@ class BidSystem {
                     else if (v == 'Semi-Balanced')
                         met = hand.Suits.filter(s => s < 2).length == 0;
                     break;
+                case 'SingleVoid':
+                    v = [0, 1];
                 case 'AnySuit':
                 case 'SuitLen':
                     let suitCode = Card.ltr2code(bid) - Card.Club();
@@ -301,7 +303,6 @@ class BidSystem {
                 case 'KeyCard':
                 case 'KingCount':
                 case 'SideKing':
-                case 'SingleVoid':
                 case 'AceCount':
                 case 'TrumpQ':
                     // ignore

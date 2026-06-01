@@ -84,6 +84,7 @@ var enzh = {
 	'Have 3 Ace': '有3張A',
 	'Have 3 King': '有3張K',
 	'Have Side King(s)': '有旁門K',
+	'Side King': '旁門K',
 	'Have Trump Queen': '有王牌Q',
 	'High Reverse': '高倒叫',
 	'Honors': '大牌',
