@@ -69,24 +69,67 @@ class Settings {
                     working['Rules'] = this.mergeRules(working['Rules'], bidComp);
         }
         this.WorkingSet = working;
-        this.changeRKCB();
+        this.setRKCB();
+        this.rckbRules();
     }
 
-    // Flip 0314 and 1430
-    changeRKCB() {
+    // Generate RKCB bidding rules based on the template set for 1S-4NT.
+    rckbRules() {
+        // First find all RKCB references
         var rkcbSeq = [];
-        for (const c of BidComponents) {
-            if (c.Flag != 'RKCB') {
-                for (const r of c.Rules) {
-                    for (const b of r.Bids) {
-                        for (const cr of b.Criteria) {
-                            if (cr.Meta != undefined && cr.Meta.Convention != undefined && cr.Meta.Convention == 'RKCB') 
-                                rkcbSeq.push([c.Name, ...r.Seq, b.Bid, '-']);
+        for (const c of BidComponents.filter(b => b.Name != 'RKCB')) {
+            for (const r of c.Rules) {
+                for (const b of r.Bids) {
+                    for (const cr of b.Criteria) {
+                        if (cr.Meta != undefined && cr.Meta.Convention != undefined && cr.Meta.Convention == 'RKCB') {
+                            // Prepare to generate their follow-up bidding rules.
+                            rkcbSeq.push([...r.Seq, b.Bid]);
+                            rkcbSeq.push([...r.Seq, b.Bid, '-']);
                         }
                     }
                 }
             }
         }
+        
+        /*
+         * Search the template pattern.
+         * Use a FIFO queue to find all the bidding sequences following up RKCB's first "4NT" bid.
+         */
+        var copyQueue = [['1S', '-', '4NT'], ['1S', '-', '4NT', '-']];
+        var copyTemplates = {}; // use SeeKey as key
+        var n = copyQueue.length;
+        while (n > 0) {
+            let qSet = copyQueue.shift();
+            let k = seqKey(qSet);
+            if (k in this.WorkingSet.Rules && !(k in copyTemplates)) {
+                copyTemplates[k] = this.WorkingSet.Rules[k];
+                copyQueue.push([...qSet, '-']);
+                // Enter the interference and reply to seach queue
+                for (const b of this.WorkingSet.Rules[k].Bids) {
+                    copyQueue.push([...qSet, b.Bid]);   // oppoenent interfered
+                    copyQueue.push([...qSet, b.Bid, '-']);  // no interference, straight reply
+                }
+            }
+            n = copyQueue.length;   // force reevaluation
+        }
+        var newRules = this.WorkingSet.Rules;   // JS is shallow copy.  This is basically a pointer.
+        for (const s of rkcbSeq) {
+            let k = seqKey(s);
+            if (k in this.WorkingSet.Rules)
+                continue;   // already exists, no need to copy
+            let lastIdx = s.indexOf('4NT');
+            let lastS = s.at(lastIdx == s.length-1 ? lastIdx: -1);
+            for (const v of Object.values(copyTemplates)) {
+                if (lastS != '4NT' && v.Seq.at(v.Seq.indexOf('4NT')+1) != lastS)
+                     continue;   // not the same template
+                let newSeq = [...s, ...v.Seq.slice(v.Seq.indexOf('4NT')+(lastS != '4NT' ? 2 : 1))];
+                newRules[seqKey(newSeq)] = {'Seq': newSeq, 'Bids': v.Bids};
+            }
+        }
+    }
+
+    // Flip 0314 and 1430
+    setRKCB() {
         var rkcbIdx = []
         for (let [k, x] of Object.entries(this.WorkingSet.Rules)) {
             for (let r of x.Bids) {
@@ -98,20 +141,14 @@ class Settings {
                 }
             }
         }
+
         for (const i of rkcbIdx) {
-            let r = this.WorkingSet.Rules[i]
-            for (let j = 0; j < r.Bids.length; j++) {
-                if (r.Bids[j].Bid == '5C') {
-                    if (this.OptionItems.RKCBFlag.Value == 0)
-                        r.Bids[j].Criteria[0].KeyCard = [0, 3];
-                    else
-                        r.Bids[j].Criteria[0].KeyCard = [1, 4];
-                } else if (r.Bids[j].Bid == '5D') {
-                    if (this.OptionItems.RKCBFlag.Value == 0)
-                        r.Bids[j].Criteria[0].KeyCard = [1, 4];
-                    else
-                        r.Bids[j].Criteria[0].KeyCard = [0, 3];
-                }
+            let s = this.WorkingSet.Rules[i]
+            for (const r of s.Bids) {
+                if (r.Bid == '5C')
+                    r.Criteria[0].KeyCard = (this.OptionItems.RKCBFlag.Value == 0) ? [0, 3] : [1, 4];
+                else if (r.Bid == '5D')
+                    r.Criteria[0].KeyCard = (this.OptionItems.RKCBFlag.Value == 0) ? [1, 4] : [0, 3];
             }
         }
     }
