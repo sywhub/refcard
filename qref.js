@@ -128,6 +128,7 @@ class QReference extends BidSystem{
                 flagElem = forceFlag(rowDiv, row, c.Criteria[i], 'Convention', '', flagElem);
                 flagElem = forceFlag(rowDiv, row, c.Criteria[i], 'Forcing', '1RF', flagElem);
                 flagElem = forceFlag(rowDiv, row, c.Criteria[i], 'GF', 'GF', flagElem);
+                flagElem = forceFlag(rowDiv, row, c.Criteria[i], 'Notes', '', flagElem);
                 if (flagElem == null)
                     gridElement(rowDiv, '&nbsp;', 5, row);
                 e.appendChild(rowDiv);

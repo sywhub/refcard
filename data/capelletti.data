@@ -1,4 +1,3 @@
-
 BidComponents.push({ 'ChoiceOf': 'NT Compete',
   'Name': 'Cappelletti',
   'Rules': [ { 'Bids': [ {'Bid': 'X', 'Criteria': [{'HCP': 15, 'Meta': {'Convention': 'Cappelletti'}}]},
