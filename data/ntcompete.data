@@ -1,6 +1,5 @@
 BidComponents.push({ 'ChoiceOf': 'NT Compete',
   'DefaultOn': true,
-  'Flag': 'DONT',
   'Name': 'DONT',
   'Rules': [ { 'Bids': [ 
                          { 'Bid': 'X',

@@ -28,21 +28,21 @@ class Settings {
                     choiceSet.push(bidComp.ChoiceOf)
             }
             if (!('BuildIn' in bidComp) && bidComp.ChoiceOf == undefined) {
-                this.OptionItems[bidComp.Flag] = {'HTML': bidComp.Name};
+                this.OptionItems[bidComp.Name] = {'HTML': bidComp.Name};
                 if (bidComp.DefaultOn != undefined && bidComp.DefaultOn)
-                    this.OptionItems[bidComp.Flag]['Value'] = 1;
+                    this.OptionItems[bidComp.Name]['Value'] = 1;
             }
         }
         for (const choice of choiceSet) {
             let flagSet = [];
             BidComponents.forEach(comp => {
                 if (comp.ChoiceOf && comp.ChoiceOf == choice)
-                    flagSet.push(comp.Flag);
+                    flagSet.push(comp.Name);
             });
             this.OptionItems[choice] = {'HTML': choice, 'Choices': true, IDs: ['None']}
             let idx = 1;
             BidComponents.forEach(comp => {
-                if (flagSet.includes(comp.Flag)) {
+                if (flagSet.includes(comp.Name)) {
                     this.OptionItems[choice].IDs.push(comp.Name);
                     if (comp.DefaultOn != undefined && comp.DefaultOn)
                         this.OptionItems[choice]['Value'] = idx;
@@ -65,7 +65,7 @@ class Settings {
                 let idx = this.OptionItems[bidComp.ChoiceOf].Value;
                 if (idx > 0 && bidComp.Name == this.OptionItems[bidComp.ChoiceOf].IDs[idx]) 
                     working['Rules'] = this.mergeRules(working['Rules'], bidComp);
-            } else if (this.OptionItems[bidComp.Flag].Value > 0)
+            } else if (this.OptionItems[bidComp.Name].Value > 0)
                     working['Rules'] = this.mergeRules(working['Rules'], bidComp);
         }
         this.WorkingSet = working;

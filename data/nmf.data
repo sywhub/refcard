@@ -1,5 +1,4 @@
 BidComponents.push({ 'BuildIn': true,
-  'Flag': 'NewMinorForcing',
   'Name': 'New Minor Forcing',
   'Rules': [ { 'Bids': [{'Bid': '2D', 'Criteria': [{'HCP': [10, 12], 'Meta': {'Convention': 'NMF', 'Notes': 'Invitational', 'Forcing': true}, 'SuitLen': {'S': 5}}]}],
                'Seq': ['1C', '-', '1S', '-', '1NT', '-']},

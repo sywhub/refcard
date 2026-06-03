@@ -1,5 +1,4 @@
-BidComponents.push({ 'Flag': 'Lebensohl',
-  'Name': 'Lebensohl',
+BidComponents.push({'Name': 'Lebensohl',
   'Rules': [ { 'Bids': [ 
                          {'Bid': 'X', 'Criteria': [{'HCP': [7, 9], 'Meta': {'Convention': 'Lebensohl'}, 'SuitLen': {'D': 4}}]},
                          {'Bid': '2S', 'Criteria': [{'HCP': [0, 7], 'Meta': {'Convention': 'Lebensohl', 'Notes': 'To Play'}, 'SuitLen': 5}]},

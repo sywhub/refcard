@@ -1,6 +1,5 @@
 BidComponents.push({ 'AllowDup': true,
   'BuildIn': true,
-  'Flag': 'ReverseDrury',
   'Name': 'Reverse Drury',
   'Rules': [ { 'Bids': [ {'Bid': '1S', 'Criteria': [{'HCP': [10, 21], 'Seat': [3, 4], 'SuitLen': 5}]},
                          {'Bid': '1H', 'Criteria': [{'HCP': [10, 21], 'Seat': [3, 4], 'SuitLen': 5}]}],

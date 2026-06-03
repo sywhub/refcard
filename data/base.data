@@ -938,7 +938,6 @@ BidComponents.push({ 'BuildIn': true,
 
 
 BidComponents.push({'BuildIn': true,
-  'Flag': 'Jacoby Transfer',
   'Name': 'Jacoby Transfer',
   'Rules': [ 
              { 'Bids': [{'Bid': '2H', 'Criteria': [{'SuitLen': [2, 3], 'Meta': {'Notes': 'Accept'}}]},

@@ -1,5 +1,5 @@
 // Soloway Jump Shift
-BidComponents.push({'Flag': 'Soloway', 'Name': 'Soloway Jump Shift', 'Rules': [
+BidComponents.push({'Name': 'Soloway Jump Shift', 'Rules': [
 {'Bids': [
 	{'Bid': '3H', 'Criteria': [
 		{'HCP': 17, 'SuitLen': 5, 'Honors': 2, 'Meta': {'Convention': 'Soloway Jump Shift'}},

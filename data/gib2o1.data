@@ -1,5 +1,4 @@
 BidComponents.push({ 'ChoiceOf': '2/1 Choice',
-  'Flag': 'GIB21',
   'Name': 'GIB 2/1',
   'Rules': [ { 'Bids': [ { 'Bid': '2H',
                            'Criteria': [{'HCP': 12, 'Meta': {'Convention': '2/1 GF', 'GF': true}, 'SuitLen': 5, 'TP': 13}]},

@@ -1,5 +1,4 @@
 BidComponents.push({ 'ChoiceOf': '2/1 Choice',
-  'Flag': 'PThurston21',
   'Name': 'P. Thurston 2/1',
   'Rules': [ { 'Bids': [ {'Bid': '4S', 'Criteria': [{'HCP': [6, 10], 'SuitLen': 5}]},
                          {'Bid': '3C', 'Criteria': [{'HCP': [7, 9], 'Meta': {'Convention': 'Bergen Raise'}, 'SuitLen': {'S': 4}}]},

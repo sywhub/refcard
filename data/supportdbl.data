@@ -1,5 +1,4 @@
 BidComponents.push({ 'BuildIn': true,
-        'Flag': 'SupportDBL',
         'Name': 'Support DBL',
         'Rules': [
 	{"Seq": ['1C', '-', '1D'], "Bids": [
