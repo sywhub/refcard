@@ -56,7 +56,11 @@ class SimStat extends BidSystem {
                     return board.seats[seat].HCP >= 7 && board.seats[seat].HCP <= 15;}},
             '1m Weak Reply': {'BidSeq': [['1D', '-'], ['1C', '-']],
                 'PostFilter': (board, seat) => {
-                    return board.seats[seat].HCP <= 6;}}};
+                    return board.seats[seat].HCP <= 6;}},
+            'Michaels&U2NT': {'BidSeq': [['1S'], ['1H'], ['1C'], ['1D']],
+                'PostFilter': (board, seat) => {
+                    return board.seats[seat].HCP >= 6 && board.seats[seat].Suits.filter(s => s == 5).length == 2;}
+                }};
         // Things we will calculate states.
         this.StatsMap = {'Name': 'Statistics',
             '5-4': {'PreCheck': [{HCP: 16, Shape: '5-4'}, {HCP: 11, Shape: '5-4'}]},
@@ -501,9 +505,12 @@ class SimStat extends BidSystem {
                             let maxSpread = Math.max(...spreads[i]);
                             let nMax = spreads[i].filter(s => s == maxSpread).length;
                             // Found one, but was it a duplicate of previous bids?
-                            found = nMax == spreads[i].length || spreads[i][k] < maxSpread;
-                            if (found && 'PostFilter' in this.SimulateMap[scenario] && this.SimulateMap[scenario].PostFilter != null)
-                                found = this.SimulateMap[scenario].PostFilter(this.board, seat);
+                            if (found) {
+                                if ('PostFilter' in this.SimulateMap[scenario] && this.SimulateMap[scenario].PostFilter != null)
+                                    found = this.SimulateMap[scenario].PostFilter(this.board, seat);
+                                else 
+                                    found = nMax == spreads[i].length || spreads[i][k] < maxSpread;
+                            }
                             if (found) {
                                 // A new kind.  Good.
                                 // Record that hand, housekeep the distribution.
