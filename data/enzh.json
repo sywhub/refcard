@@ -61,6 +61,7 @@ var enzh = {
 	'Double Negative': '極低點力',
 	'Extra Conventions': '後加特約',
 	'GF': '迫成局',
+	'Gambling 3NT': '3NT碰運氣',
 	'Game Forcing': '迫叫成局',
 	'Game/Slam interest': '成局或滿貫企圖',
 	'Generated': '制度生成',
