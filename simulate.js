@@ -59,8 +59,14 @@ class SimStat extends BidSystem {
                     return board.seats[seat].HCP <= 6;}},
             'Michaels&U2NT': {'BidSeq': [['1S'], ['1H'], ['1C'], ['1D']],
                 'PostFilter': (board, seat) => {
-                    return board.seats[seat].HCP >= 6 && board.seats[seat].Suits.filter(s => s == 5).length == 2;}
-                }};
+                    return board.seats[seat].HCP >= 6 && board.seats[seat].Suits.filter(s => s == 5).length == 2;}},
+            '8.5 tricks': {'PreCheck': [{'HCP': [11, 14], 'AnySuit': {'D': 5, 'C': 5}}],
+                'PostFilter': (board, seat) => {
+                    let pSeat = this.roundSeat(seat+2);
+                    return (board.seats[pSeat].LTC + board.seats[pSeat].LTC == 15 || board.seats[pSeat].LTC + board.seats[pSeat].LTC == 16) &&
+                        (board.seats[pSeat].HCP + board.seats[pSeat].HCP == 25 || board.seats[pSeat].HCP + board.seats[pSeat].HCP == 26);
+                }, 'Samples': 4}
+            };
         // Things we will calculate states.
         this.StatsMap = {'Name': 'Statistics',
             '5-4': {'PreCheck': [{HCP: 16, Shape: '5-4'}, {HCP: 11, Shape: '5-4'}]},
@@ -543,7 +549,7 @@ class SimStat extends BidSystem {
         if (this.SimulateMap[caseName].PreCheck.length <= 0 && caseName == '2/1 Responses to 1NT') {
             // Specific rules to extract
             let thurstonRules = BidComponents
-                .filter(c => c.Flag == 'PThurston21')[0].Rules
+                .filter(c => c.Name == 'P. Thurston 2/1')[0].Rules
                     .filter(r => ['1Sp1NTp', '1Hp1NTp'].includes(seqKey(r.Seq)));
             let criteria = this.SimulateMap[caseName].PreCheck;  // JS is shallow copy. This is a pointer.
             for (let bids of thurstonRules) {
@@ -572,7 +578,10 @@ class SimStat extends BidSystem {
     simWorker(e, caseName, filterFunc, pushPartner = false) {
         // The hands we are interested.
         let criteria = this.SimulateMap[caseName].PreCheck;
-        e.insertAdjacentHTML('beforeend', `<p>${this.SimulateMap[caseName].Caption}<br>`);
+        if (this.SimulateMap[caseName].Caption) 
+            e.insertAdjacentHTML('beforeend', `<p>${this.SimulateMap[caseName].Caption}<br>`);
+        else
+            e.insertAdjacentHTML('beforeend', `<p>${caseName}<br>`);
         let samples = [];
         let sampleDiv = document.createElement('div');
         sampleDiv.setAttribute('id', 'SamplesContents');
