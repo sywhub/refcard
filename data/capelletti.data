@@ -67,10 +67,10 @@ BidComponents.push({ 'ChoiceOf': 'NT Compete',
                   {'Bid': '3C', 'Criteria': [{'SuitLen': {'C': 2}, 'Meta': {'Convention': 'Cappelletti'}}]},
                   {'Bid': '3D', 'Criteria': [{'SuitLen': {'D': 2, 'C':[0,2]}, 'Meta': {'Convention': 'Cappelletti'}}]},
                   {'Bid': '3H', 'Criteria': [{'SuitLen': {'H': 6, "D":[0,2], "C":[0,2]}, 'Honors': 2, 'Meta': {'Convention': 'Cappelletti'}}]},
-                  {'Bid': '3S', 'Criteria': [{'SuitLen': {'H': 6, "D":[0,2], "C":[0,2]}, 'Honors': 2, 'Meta': {'Convention': 'Cappelletti'}}]},
-                  {'Bid': '3NT', 'Criteria': [{'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3S', 'Criteria': [{'SuitLen': {'S': 6, "D":[0,2], "C":[0,2]}, 'Honors': 2, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '3NT', 'Criteria': [{'Meta': {'Convention': 'Cappelletti', 'Notes': 'To play'}}]},
                   {'Bid': '4C', 'Criteria': [{'SuitLen': 3, 'Meta': {'Convention': 'Cappelletti'}}]},
-                  {'Bid': '4D', 'Criteria': [{'SuitLen': 3, 'Meta': {'Convention': 'Cappelletti'}}]},
+                  {'Bid': '4D', 'Criteria': [{'SuitLen': 3, 'Meta': {'Convention': 'Cappelletti'}}]}
                   ]},
 ]});
 
