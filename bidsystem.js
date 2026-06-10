@@ -159,9 +159,9 @@ class BidSystem {
                     break;
                 case 'TrumpQ':
                     tmpString = "";
-                    if (v)
+                    if (v === true || v == 'Yes')
                         tmpString = 'Have';
-                    else
+                    else 
                         tmpString = 'No';
                     retString += trEnZh(tmpString + " "+ "Trump Queen");
                     break;
@@ -180,7 +180,7 @@ class BidSystem {
                     retString += trEnZh(tmpString);
                     break;
                 case 'SideKing':
-                    retString += v ? (Card.ltr2html(bid.slice(1))+' '+trEnZh('Side King')) : trEnZh('No Side King');
+                    retString += (v === true || v == 'Yes') ? (Card.ltr2html(bid.slice(1))+' '+trEnZh('Side King')) : trEnZh('No Side King');
                     break;
                 case 'Meta':
                     comma = false;

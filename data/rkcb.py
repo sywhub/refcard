@@ -51,13 +51,13 @@ class RKCBGenerator:
             {
                 "Bid": "5H",
                 "Criteria": [
-                    {"KeyCard": 2, "Meta": {"Convention": "RKCB"}, "TrumpQ": "false"}
+                    {"KeyCard": 2, "Meta": {"Convention": "RKCB"}, "TrumpQ": "No"}
                 ],
             },
             {
                 "Bid": "5S",
                 "Criteria": [
-                    {"KeyCard": 2, "Meta": {"Convention": "RKCB"}, "TrumpQ": "true"}
+                    {"KeyCard": 2, "Meta": {"Convention": "RKCB"}, "TrumpQ": "Yes"}
                 ],
             },
         ]
@@ -95,13 +95,13 @@ class RKCBGenerator:
         other_suits = [s for s in self.suit_order if s != trump and s not in used]
 
         ask_bid = "5D" if keycard_response == "5C" else "5H"
-        no_q_bid = f"5{trump}"
+        no_q_bid = f"{5 if ask_bid[1] != trump else 6}{trump}"
 
         bids = [
             {
                 "Bid": no_q_bid,
                 "Criteria": [
-                    {"Meta": {"Convention": "RKCB"}, "TrumpQ": "false"}
+                    {"Meta": {"Convention": "RKCB"}, "TrumpQ": "No"}
                 ],
             },
             {
@@ -109,8 +109,8 @@ class RKCBGenerator:
                 "Criteria": [
                     {
                         "Meta": {"Convention": "RKCB"},
-                        "SideKing": "false",
-                        "TrumpQ": "true",
+                        "SideKing": "No",
+                        "TrumpQ": "Yes",
                     }
                 ],
             },
@@ -123,8 +123,8 @@ class RKCBGenerator:
                     "Criteria": [
                         {
                             "Meta": {"Convention": "RKCB"},
-                            "SideKing": "true",
-                            "TrumpQ": "true",
+                            "SideKing": "Yes",
+                            "TrumpQ": "Yes",
                         }
                     ],
                 }
@@ -193,7 +193,7 @@ class RKCBGenerator:
 
     def generate(self):
         print("// RKCB")
-        print("BidComponents.push({'BuildIn': 'true',")
+        print("BidComponents.push({'BuildIn': 'Yes',")
         print("  'Name': 'RKCB',")
         print("  'Rules': [ ")
 
