@@ -60,6 +60,8 @@ class SimStat extends BidSystem {
             'Michaels&U2NT': {'BidSeq': [['1S'], ['1H'], ['1C'], ['1D']],
                 'PostFilter': (board, seat) => {
                     return board.seats[seat].HCP >= 6 && board.seats[seat].Suits.filter(s => s == 5).length == 2;}},
+            'Ogust': {'PreCheck': [{'HCP': [6, 11], 'AnySuit': {'S': 6, 'H': 6, 'D': 6}}],
+                    'Caption': 'Sample hands for Ogust'},
             '8.5 tricks': {'PreCheck': [{'HCP': [11, 14], 'AnySuit': {'D': 5, 'C': 5}}],
                 'PostFilter': (board, seat) => {
                     let pSeat = this.roundSeat(seat+2);

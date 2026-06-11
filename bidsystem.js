@@ -8,19 +8,20 @@ class BidSystem {
 
     // Turn bid sequence into pretty string
     seqString(sequence) { 
-        var seqStr = "";
-        var opponent = sequence.length % 2;
+        const parts = [];
+        let opponent = sequence.length % 2;
         for (const s of sequence) {
             let str = this.htmlBid(s);
             if (opponent == 1) {
-                if (str != '-')
+                if (str !== '-')
                     str = '[' + str + ']';
-                seqStr += '<span class="OpponentBid"> ' + str + '</span>';
-            } else
-                seqStr += ' ' + str;
+                parts.push(`<span class="OpponentBid"> ${str}</span>`);
+            } else {
+                parts.push(` ${str}`);
+            }
             opponent = 1 - opponent;
         }       
-        return seqStr;
+        return parts.join('');
     } 
 
 
@@ -35,36 +36,35 @@ class BidSystem {
      * object = Suit : <simple descriptor> [, object]
      */
     suitLenString(k, v, bid) {
-        var retString = "";
+        var parts = [];
         if (Array.isArray(v)) {
             if (v[0] == 0)
-                retString += v[1] + '-';
+                parts.push(v[1] + '-');
             else if (Number(v[0]) == Number(v[1]))
-                retString += v[0];
+                parts.push(v[0]);
             else
-                retString += v[0] + '~' + v[1];
-            retString += Card.ltr2html(bid.slice(1));
+                parts.push(v[0] + '~' + v[1]);
+            parts.push(Card.ltr2html(bid.slice(1)));
         } else if (typeof(v) == 'object') {
             for (const [sKey, sVal] of Object.entries(v)) {
                 if (Array.isArray(sVal)) {
                     if (sVal[0] == 0)
-                        retString += sVal[1] + '-';
+                        parts.push(sVal[1] + '-');
                     else if (Number(sVal[0]) == Number(sVal[1]))
-                        retString += sVal[0];
+                        parts.push(sVal[0]);
                     else
-                        retString += sVal[0] + '~' + sVal[1];
+                        parts.push(sVal[0] + '~' + sVal[1]);
                 } else
-                    retString += sVal + '+';
-                retString += Card.ltr2html(sKey);
-                retString += ' and ';
+                    parts.push(sVal + '+');
+                parts.push(Card.ltr2html(sKey));
+                parts.push(' and ');
             }
-            retString = retString.slice(0, -5);
+            parts.pop();
         } else {
-            retString += v + '+' + Card.ltr2html(bid.slice(1));
+            parts.push(v + '+' + Card.ltr2html(bid.slice(1)));
         }
 
-                
-        return retString;
+        return parts.join('');
     }
 
     // Turn bid into pretty HTML code
@@ -90,7 +90,7 @@ class BidSystem {
     }
 
     criteriaString(c, bid) {
-        if (c === undefined || c == null || c.length <= 0)
+        if (!c || c.length <= 0)
             return '';
 
         var dispatchTbl = {
@@ -237,7 +237,7 @@ class BidSystem {
                         suitList = [bid];
                     else if (Array.isArray(v))
                         suitList = [...v];
-                    for (const s of v) {
+                    for (const s of suitList) {
                         let suitCode = Card.ltr2code(s);
                         let suitCards = hand.hand.filter(x => x.suit == suitCode);
                         met = k == 'Control' && suitCards.length == 0;
@@ -273,7 +273,7 @@ class BidSystem {
                         else if (v[0] == v[1])
                             met = hand.Suits[suitCode] == v[1];
                         else
-                            met = hand.Suits[suitCode] >= v[0] && hand.Suits[k] <= v[1];
+                            met = hand.Suits[suitCode] >= v[0] && hand.Suits[suitCode] <= v[1];
                     } else if (typeof(v) == 'object') {
                         for (const [sKey, sVal] of Object.entries(v)) {
                             let whichSuit = Card.ltr2code(sKey) - Card.Club();
@@ -319,44 +319,29 @@ class BidSystem {
         return metCount > 0 && met;
     }
 
-    // Find a board that matches the bid sequence given, and the options of the following bids
+    // Find a board that matches the given bid sequence.  Up to 1000 shuffles.
     findSeqMatch(seq) {
-        var NSHUFFLES = 500;
-        var found = null
+        var NSHUFFLES = 1000;
+        var found = null, matches;
+        var ret = null;
+        var openRules = Config.WorkingSet.Rules[seqKey('Open')];
         do {
-            found = this.seqMatchOnce(seq);
-            NSHUFFLES -= this.totalDealt;
+            this.board.deal();
+            ++this.totalDealt;
+            --NSHUFFLES;
+            for (let j = 0; found == null && j < 4; ++j) 
+                [found, matches] = this.matchSeat(seq[0], openRules, j);
+            if (found == null)
+                continue;
+            let subseqBid = null
+            for (let k = 0; k < seq.length-1; k++) {
+                let nextSeat = this.roundSeat(found+k+1);
+                [subseqBid, matches] = this.matchSeat(seq[k+1], Config.WorkingSet.Rules[seqKey(seq.slice(0,k+1))], nextSeat, k);
+                if (subseqBid == null)
+                    found = null;
+            }
         } while (found == null && NSHUFFLES > 0);
         return found;
-    }
-
-
-    // Faciliate looping above.
-    seqMatchOnce(seq) {
-        const NSHUFFULS = 100;
-        var open = null, matches;
-        var ret = null;
-        // First try NSHUFFLES times to find a match for the opening bid,
-        // then if found try to find matches for the subsequent bids without shuffling
-        // Last see if the next seat meet the final criteria.
-        for (let i = 0; i < NSHUFFULS && open == null; i++)  {
-            this.board.deal();
-            this.totalDealt++;
-            let j = 0;
-            while (open == null && j < 4) 
-                [open, matches] = this.matchSeat(seq[0], Config.WorkingSet.Rules[seqKey('Open')], j++);
-        }
-        if (open == null)
-            return ret;
-        var subseqBid = null
-        for (let k = 0; k < seq.length-1; k++) {
-            let nextSeat = this.roundSeat(open+k+1);
-            [subseqBid, matches] = this.matchSeat(seq[k+1], Config.WorkingSet.Rules[seqKey(seq.slice(0,k+1))], nextSeat, k);
-            if (subseqBid == null)
-                return ret;
-        }
-        ret = open;
-        return ret;
     }
 
     matchSeat(expect, rules, seat, seqIndex = 0) {
@@ -365,10 +350,14 @@ class BidSystem {
         if (rules == null && expect == '-')
             return [seat, matches];
 
+        let seenBids = new Set();
         for (const b of rules.Bids) 
-            for (const c of b.Criteria) 
-                if (matches.filter(x => x[0] === b.Bid).length == 0 && this.matchCriteria(this.board.seats[seat], b.Bid, c))
-                    matches.push([b.Bid, c])
+            if (!seenBids.has(b.Bid))
+                for (const c of b.Criteria) 
+                    if (this.matchCriteria(this.board.seats[seat], b.Bid, c)) {
+                        seenBids.add(b.Bid);
+                        matches.push([b.Bid, c])
+                    }
         if (matches.length > 1)
             chosen = this.bestBid(this.board.seats[seat], matches, seqIndex);
         if ((expect == '-' && chosen.length == 0) || chosen.includes(expect))
@@ -418,7 +407,7 @@ class BidSystem {
                 } else if (typeof(sl) == 'object') {
                     for (const [sKey, sVal] of Object.entries(sl)) {
                         if (Array.isArray(sVal)) {
-                            if (sl[0] != 0)
+                            if (sVal[0] != 0)
                                 o['Length'][sKey] = sVal[0];
                         } else 
                             o['Length'][sKey] = sVal
