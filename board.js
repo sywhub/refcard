@@ -10,7 +10,11 @@ class Hand {
     // initialize all strength properties
     constructor(h) {
         this.hand = [...h]; // shallow copy
-        this.sorthand();
+        // Decending order, in Bridge sense
+        this.hand.sort((a, b) => {
+            if (a.suit != b.suit)
+                return b.suit - a.suit;
+            return b.rank - a.rank;});
         this.HCP = 0;
         this.TP = 0;
         this.DP = 0;
@@ -22,14 +26,6 @@ class Hand {
         this.Balanced = false;
     }
 
-    // Decending order, in Bridge sense
-    sorthand() {
-        this.hand.sort((a, b) => {
-            if (a.suit != b.suit)
-                return b.suit - a.suit;
-            return b.rank - a.rank;});
-    }
-
     // convert a hand to printable form
     toString() { return this.basicString(); }
 
@@ -37,18 +33,18 @@ class Hand {
     // as pre-sorted
     basicString() {
         let suit = this.hand[0].suit;
-        var str = Card.cHTML[suit];
+        var str = [Card.cHTML[suit]];
         for (let j of this.hand) {
             if (j.suit != suit) {
                 suit = j.suit;
-                str += " " + Card.cHTML[suit];
+                str.push(" " + Card.cHTML[suit]);
             }
             if (j.rank < Card.Jack)
-                str += j.rank + 2;
+                str.push((j.rank + 2).toString());
             else
-                str += Card.Royals[j.rank - Card.Jack];
+                str.push(Card.Royals[j.rank - Card.Jack]);
         }
-        return str;
+        return str.join("");
     }
 
     // Hand's evaluted results
@@ -73,42 +69,22 @@ class Hand {
     }
 
     eval() {
-        this.countHonors();
-        this.countSuits();
-        this.countStrength();    // in the sequence of HCP, DP, TP
-        this.isBalanced();
-        this.twoSuiter();
-    }
-
-	// length of each suit in a hand
-	countSuits() {
+        [Card.Spade(), Card.Heart(), Card.Diam(), Card.Club()].forEach(x => {
+            this.Honors[x - 1] = this.hand.filter(y => y.suit == x && y.rank > Card.Jack).length; });
         this.hand.forEach(x => { this.Suits[x.suit - 1] += 1; });
-	}
+        this.countStrength();    // in the sequence of HCP, DP, TP
+	    this.Balanced = this.Suits.filter(s => s < 2).length == 0 && this.Suits.filter(s => s == 2).length < 2;
+        this.have54 = false;
+        this.have54 = this.have55 = this.Suits.filter(x => x >= 5).length >= 2;
+        if (!this.have54)
+            this.have54 = this.Suits.filter(x => x >= 5).length == 1 && this.Suits.filter(x => x == 4).length >= 1;
+    }
 
     countStrength() {
-        this.countHCP();
-        this.countDP();
-        this.countTP();
-        this.countLTC();
-    }
-
-	countHCP() {
         this.HCP = this.hand
             .map(x => x.rank >= Card.Jack ? x.rank - Card.Jack + 1 : 0)
             .reduce((a, b) => a + b, 0);
-    }
-
-	countHonors() {
-        [Card.Spade(), Card.Heart(), Card.Diam(), Card.Club()].forEach(x => {
-            this.Honors[x - 1] = this.hand.filter(y => y.suit == x && y.rank >= Card.Jack).length; });
-	}
-
-	// add only long-suit distribution points
-	countTP() {
-		this.TP = this.HCP + this.DP;;
-	}
-
-	countDP() {
+        this.DP = 0;
 		this.Suits.forEach(b => {
             if (b >= 5)
                 this.DP += (b - 4)
@@ -119,7 +95,9 @@ class Hand {
 			else if (b == 2)
 				this.DP += 1;
 		});
-	}
+		this.TP = this.HCP + this.DP;;
+        this.countLTC();
+    }
 
     countLTC() {
         const Ace = 12;
@@ -155,31 +133,6 @@ class Hand {
 			}
             this.LTC += loser;
         }
-    }
-
-	isBalanced() {
-		let deuce = 0;
-        this.Balanced = true;
-        this.Suits.forEach(x => {
-            if (x <= 1)
-                this.Balanced = false;
-            else if (x == 2)
-                deuce++;
-        });
-        if (this.Balanced && deuce >= 2)
-            this.Balanced = false;
-	}
-
-    twoSuiter() {
-        var count54 = 0;
-        this.have55 = false;
-        this.have54 = false;
-        this.Suits.forEach(x => {if (x >= 5) count54 += 1;});
-        if (count54 >= 2)
-            this.have55 = true;
-        else if (count54 == 1)
-            this.Suits.forEach(x => {if (x == 4) count54 += 1;});
-        this.have54 = count54 >= 2;
     }
 }
 

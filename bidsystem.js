@@ -38,9 +38,12 @@ class BidSystem {
     suitLenString(k, v, bid) {
         var parts = [];
         if (Array.isArray(v)) {
-            if (v[0] == 0)
-                parts.push(v[1] + '-');
-            else if (Number(v[0]) == Number(v[1]))
+            if (v[0] == 0) {
+                if (v[1] == 1)
+                    parts.push(trEnZh("Singleton or Void"));
+                else
+                    parts.push(v[1] + '-');
+            } else if (Number(v[0]) == Number(v[1]))
                 parts.push(v[0]);
             else
                 parts.push(v[0] + '~' + v[1]);
@@ -48,9 +51,12 @@ class BidSystem {
         } else if (typeof(v) == 'object') {
             for (const [sKey, sVal] of Object.entries(v)) {
                 if (Array.isArray(sVal)) {
-                    if (sVal[0] == 0)
-                        parts.push(sVal[1] + '-');
-                    else if (Number(sVal[0]) == Number(sVal[1]))
+                    if (sVal[0] == 0) {
+                        if (sVal[1] == 1)
+                            parts.push(trEnZh("Singleton or Void")+ " ");
+                        else
+                            parts.push(sVal[1] + '-');
+                    } else if (Number(sVal[0]) == Number(sVal[1]))
                         parts.push(sVal[0]);
                     else
                         parts.push(sVal[0] + '~' + sVal[1]);
@@ -78,15 +84,14 @@ class BidSystem {
      * AnySuit is an object of [SuitChar Num] pairs
      */
     anySuitString(k, v, dummy) {
-        var str = trEnZh("Any of");
-        for (const [sKey, sVal] of Object.entries(v)) 
-            str += `  ${sVal}+${Card.ltr2html(sKey)} `;
-        return str.trim();
+        var parts = [trEnZh("Any of")];
+        for (const [sKey, sVal] of  Object.entries(v)) 
+            parts.push(`  ${sVal}+${Card.ltr2html(sKey)} `);
+        return parts.join('').trim();
     }
 
     honorsString(k, v, bid) {
-        var s = this.suitLenString(k, v, bid);
-        return s + ' Honors';
+        return this.suitLenString(k, v, bid) + ' ' + trEnZh("Honors");
     }
 
     criteriaString(c, bid) {
@@ -98,16 +103,17 @@ class BidSystem {
             'AnySuit': this.anySuitString,
             'Honors': this.honorsString,
         }
+        var parts = [];
         var retString = "";
         var tmpString = "";
         var comma = false;
         for (const [k, v] of Object.entries(c)) {
             if (k in dispatchTbl) {
-                if (comma) {retString += ", "}
+                if (comma) { parts.push(", "); }
                 comma = true;
-                retString += dispatchTbl[k].bind(this, k, v, bid)();
+                parts.push(dispatchTbl[k].bind(this, k, v, bid)());
             } else {
-                if (comma) {retString += ", "}
+                if (comma) { parts.push(", "); }
                 comma = true;
                 switch (k) {
                 case 'HCP':
@@ -115,47 +121,47 @@ class BidSystem {
                 case 'TP':
                     if (Array.isArray(v)) {
                         if (v[0] == 0)
-                            retString += v[1]+'- '+trEnZh(k);
+                            parts.push(v[1]+'- '+trEnZh(k));
                         else if (v[0] == v[1])
-                            retString += v[0]+' '+trEnZh(k);
+                            parts.push(v[0]+' '+trEnZh(k));
                         else
-                            retString += v[0]+'~'+v[1]+' '+trEnZh(k);
+                            parts.push(v[0]+'~'+v[1]+' '+trEnZh(k));
                     } else
-                        retString += v+'+'+trEnZh(k);
+                        parts.push(v+'+'+trEnZh(k));
                     break;
                 case 'Seat':
-                    retString += trEnZh("At " + v[0] + ' or ' + v[1] + ' Seat');
+                    parts.push(trEnZh("At " + v[0] + ' or ' + v[1] + ' Seat'));
                     break;
                 case 'Shape':
                     if (v == "Balanced" || v == "Semi-Balanced")
-                        retString += " " + trEnZh(v);
+                        parts.push(" " + trEnZh(v));
                     else
-                        retString += " " + trEnZh(v + " or better");
+                        parts.push(" " + trEnZh(v + " or better"));
                     break;
                 case 'SingleVoid':
-                    retString += trEnZh("Singleton or Void");
+                    parts.push(trEnZh("Singleton or Void"));
                     break;
                 case 'Control':
                     if (typeof(v) == 'string')
-                        retString += Card.ltr2html(v) + ' '+trEnZh('have ' + k);
+                        parts.push(Card.ltr2html(v) + ' '+trEnZh('have ' + k));
                     else if (typeof(v) == 'boolean')
-                        retString += trEnZh(k);
+                        parts.push(trEnZh(k));
                     break;
                 case 'KingSuit':
-                    retString += trEnZh("Have")+" " + Card.ltr2html(v) + "K" ;
+                    parts.push(trEnZh("Have")+" " + Card.ltr2html(v) + "K" );
                     break;
                 case 'NoStopper':
                 case 'Stopper':
                     if (Array.isArray(v)) {
                     for (let i = 0; i < v.length - 1; ++i)
-                        retString+=Card.ltr2html(v[i])+' and ';
-                    retString+=Card.ltr2html(v[v.length -1]);
+                    parts.push(Card.ltr2html(v[i])+' and ');
+                    parts.push(Card.ltr2html(v[v.length -1]));
                     } else
-                    retString += Card.ltr2html(v);
+                    parts.push(Card.ltr2html(v));
                     if (k == 'Stopper')
-                        retString+= " "+trEnZh("Stopper");
+                        parts.push(" "+trEnZh("Stopper"));
                     else if (k == 'NoStopper')
-                        retString += " " + trEnZh("No Stopper");
+                        parts.push(" " + trEnZh("No Stopper"));
                     break;
                 case 'TrumpQ':
                     tmpString = "";
@@ -163,7 +169,7 @@ class BidSystem {
                         tmpString = 'Have';
                     else 
                         tmpString = 'No';
-                    retString += trEnZh(tmpString + " "+ "Trump Queen");
+                    parts.push(trEnZh(tmpString + " "+ "Trump Queen"));
                     break;
                 case 'KeyCard':
                 case 'AceCount':
@@ -177,21 +183,21 @@ class BidSystem {
                         tmpString += ' ' + k.slice(0,-5);
                     else
                         tmpString += ' ' + k;
-                    retString += trEnZh(tmpString);
+                    parts.push(trEnZh(tmpString));
                     break;
                 case 'SideKing':
-                    retString += (v === true || v == 'Yes') ? (Card.ltr2html(bid.slice(1))+' '+trEnZh('Side King')) : trEnZh('No Side King');
+                    parts.push((v === true || v == 'Yes') ? (Card.ltr2html(bid.slice(1))+' '+trEnZh('Side King')) : trEnZh('No Side King'));
                     break;
                 case 'Meta':
                     comma = false;
                     break;
                 default:
-                    retString += '"' + k + '": "' + v + '"';
+                    parts.push('"' + k + '": "' + v + '"');
                     break;
                 }
             }
         }
-        retString = retString.trim();
+        retString = parts.join('').trim();
         if (retString.at(-1) == ',')
             retString=retString.substring(0,retString.length-1);
         return retString;
@@ -252,13 +258,11 @@ class BidSystem {
                     break;
                 case 'Shape':
                     if (v == '5-5')
-                        met = hand.Suits.filter(s => s >= 5).length >= 2;
+                        met = hand.have55;
                     else if (v == '5-4') {
-                        met = hand.Suits.filter(s => s >= 5).length >= 2;
-                        if (!met)
-                            met = (hand.Suits.filter(s => s >= 5).length == 1 && hand.Suits.filter(s => s == 4).length >= 1)
+                        met = hand.have54;
                     } else if (v == 'Balanced')
-                        met = hand.Suits.filter(s => s < 2).length == 0 && hand.Suits.filter(s => s == 2).length < 2;
+                        met = hand.Balanced;
                     else if (v == 'Semi-Balanced')
                         met = hand.Suits.filter(s => s < 2).length == 0;
                     break;
