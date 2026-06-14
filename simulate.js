@@ -14,7 +14,7 @@ class SimStat extends BidSystem {
         // What we will generate simulated hands that meet the criteria for the bidding sequences.
         // Simulations have other fitlers coded elsewhere.
         this.SimulateMap = {'Name': 'Simulate',
-            'Interfering 1NT': {'BidSeq': [['1NT']],
+            'DONT or Cappelletti': {'BidSeq': [['1NT']],
                 'Caption': 'RHO opened 1NT'},
             'Slam Try': {'PreCheck': [{'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'D': 5}},
                 {'HCP': 17, 'AnySuit': {'S': 4, 'H': 4}, 'SuitLen': {'C': 5}}],
@@ -41,9 +41,8 @@ class SimStat extends BidSystem {
                         (board.seats[seat].Suits[Card.Codes['H']-1] + board.seats[pSeat].Suits[Card.Codes['H']-1] < 8) &&
                         (board.seats[seat].Suits[Card.Codes['D']-1] + board.seats[pSeat].Suits[Card.Codes['D']-1] < 8) &&
                         (board.seats[seat].Suits[Card.Codes['C']-1] + board.seats[pSeat].Suits[Card.Codes['C']-1] < 8));}, 'Samples': 4},
-            '2/1 Responses to 1NT': {'PreCheck': [], // to extract from rules
-                 'Caption': 'Sample hands for 1M Opener rebid after partner\'s 1NT response',
-                 'PostFilter': null},
+            '2/1 Responses to 1NT': {'Extract': ['P. Thurston 2/1', ['1Sp1NTp', '1Hp1NTp']],
+                 'Caption': 'Sample hands for 1M Opener rebid after partner\'s 1NT response'},
             'Lebensohl 1NT': {'BidSeq': [['1NT', '2D'], ['1NT', '2H'], ['1NT', '2S']]},
             'Lebensohl 2x': {'BidSeq': [['2D', 'X', '-'], ['2H', 'X', '-'], ['2S', 'X', '-']]},
             'NMF': {'BidSeq': [
@@ -61,7 +60,9 @@ class SimStat extends BidSystem {
             'Michaels&U2NT': {'BidSeq': [['1S'], ['1H'], ['1C'], ['1D']],
                 'PostFilter': (board, seat) => {
                     return board.seats[seat].HCP >= 6 && board.seats[seat].Suits.filter(s => s == 5).length == 2;}},
-            'Ogust': {'PreCheck': [{'HCP': [6, 11], 'AnySuit': {'S': 6, 'H': 6, 'D': 6}}],
+            'Ogust': {'PreCheck': [{'HCP': [6, 11], 'SuitLen': {'S': 6}, 'Meta': {'PreCheckHint': ['2S', '-', '2NT', '-']}},
+                                    {'HCP': [6, 11], 'SuitLen': {'H': 6}, 'Meta': {'PreCheckHint': ['2H', '-', '2NT', '-']}},
+                                    {'HCP': [6, 11], 'SuitLen': {'D': 6}, 'Meta': {'PreCheckHint': ['2D', '-', '2NT', '-']}}],
                     'Caption': 'Sample hands for Ogust'},
             '8.5 tricks': {'PreCheck': [{'HCP': [11, 14], 'AnySuit': {'D': 5, 'C': 5}}],
                 'PostFilter': (board, seat) => {
@@ -129,7 +130,7 @@ class SimStat extends BidSystem {
         if (Config.WorkingSet == undefined || Config.WorkingSet == null) {
             Config.getDefaults();
             Config.makeBidRules();
-            this.simMakeCriteria(null, '2/1 Responses to 1NT');
+            this.simMakeCriteria();
         }
         var e = document.getElementById('ListDisplay');
         clearContents(e)
@@ -473,17 +474,18 @@ class SimStat extends BidSystem {
         e.appendChild(sampleDiv);
 
         if ('PreCheck' in map)
-            this.simPreCheck(e, scenario, map.PostFilter, map.Samples);
+            this.simPreCheck(e, scenario, map.Samples);
         else if ('BidSeq' in map)
             this.simBidSeq(e, scenario);
     }
 
     // Simulation hand generator for bidding sequences.
-    simFinalize(e, sid, samples, beginTime) {
+    simFinalize(e, sid, samples, beginTime, averageCount) {
         clearInterval(sid);
         let duration = new Date() - beginTime;
         e.insertAdjacentHTML('beforeend', `<p>Found ${samples.length} samples in ${duration/1000} seconds.<br>`);
         e.insertAdjacentHTML('beforeend', `<p>Checked ${this.totalDealt} random boards<br>`);
+        e.insertAdjacentHTML('beforeend', `<p>Average ${averageCount.toFixed(2)} per ${this.TIMER}ms<br>`);
         this.showBBOLin(e, samples);
     }
 
@@ -492,14 +494,16 @@ class SimStat extends BidSystem {
         // Generate the hand for the "next" seat after a bidding sequence.
         // Mostly to pratice conventions.
         var cases = this.SimulateMap[scenario].BidSeq;  // bidding sequences to simulate.
-        let beginTime = new Date();
-        let spreads = new Array(cases.length);
+        var beginTime = new Date();
+        var spreads = new Array(cases.length);
         for (let x = 0; x < cases.length; x++) 
             spreads[x] = new Set();
-        let seenCases = new Set();  // to track the cases we have seen, to help spread out the samples.
-        let samples = [];
-        let attempts = new Array(cases.length).fill(0);
-        let sid = setInterval(() => {
+        var seenCases = new Set();  // to track the cases we have seen, to help spread out the samples.
+        var samples = [];
+        var attempts = new Array(cases.length).fill(0);
+        var timerCount = 1;
+        var loopCount = 0;
+        var sid = setInterval(() => {
             let intStart = new Date();
             let oneLoop = 0;
             while (oneLoop < this.TIMER && samples.length < this.sampleSize) {
@@ -521,15 +525,15 @@ class SimStat extends BidSystem {
 
                 seat = this.roundSeat(seat+cases[i].length);    // the seat who is to bid next
                 let found = false;
+                let hasPostFilter = 'PostFilter' in this.SimulateMap[scenario] && this.SimulateMap[scenario].PostFilter != null;
                 // Loop through all possible bids to find one that match this hand.
                 for (let k = 0; k < caseRules.Bids.length && !found; k++) {
-                    if (spreads[i].has(k))  // seen this bid already
+                    if (!hasPostFilter && spreads[i].has(k))  // seen this bid already
                         continue;
                     for (let c = 0; c < caseRules.Bids[k].Criteria.length && !found; c++)
                         found = this.matchCriteria(this.board.seats[seat], null, caseRules.Bids[k].Criteria[c]);
 
-                    found &&= !('PostFilter' in this.SimulateMap[scenario]) || this.SimulateMap[scenario].PostFilter == null ||
-                            this.SimulateMap[scenario].PostFilter(this.board, seat);
+                    found &&= !hasPostFilter || this.SimulateMap[scenario].PostFilter(this.board, seat);
 
                     if (found) {
                         // A new kind.  Good.
@@ -539,9 +543,11 @@ class SimStat extends BidSystem {
                             this.seqString(cases[i]));
                         this.showOneSample(e, samples, idx);
 
-                        spreads[i].add(k);
-                        if (spreads[i].size >= caseRules.Bids.length)
-                            spreads[i].clear();
+                        if (!hasPostFilter) {
+                            spreads[i].add(k);
+                            if (spreads[i].size >= caseRules.Bids.length)
+                                spreads[i].clear();
+                        }
                         attempts[i] = 0;
                     } else 
                         attempts[i]++;
@@ -554,22 +560,30 @@ class SimStat extends BidSystem {
                     }
                 }
                 oneLoop = new Date() - intStart;
+                ++loopCount;
             } 
             if (samples.length >= this.sampleSize)
-                this.simFinalize(e, sid, samples, beginTime);
+                this.simFinalize(e, sid, samples, beginTime, loopCount/timerCount);
+            else
+                ++timerCount;
         }, this.TIMER);
     }
 
     // Extract the critreria from the bidding rules.
-    simMakeCriteria(e, caseName) {
+    simMakeCriteria() {
         // Just once
-        if (this.SimulateMap[caseName].PreCheck.length <= 0 && caseName == '2/1 Responses to 1NT') {
+        for (const caseName of Object.keys(this.SimulateMap)) {
+            if (typeof(this.SimulateMap[caseName]) != 'object' || !('Extract' in this.SimulateMap[caseName]))
+                continue;
+            let compName = this.SimulateMap[caseName].Extract[0];
+            let ruleKeys = this.SimulateMap[caseName].Extract[1];
             // Specific rules to extract
-            let thurstonRules = BidComponents
-                .filter(c => c.Name == 'P. Thurston 2/1')[0].Rules
-                    .filter(r => ['1Sp1NTp', '1Hp1NTp'].includes(seqKey(r.Seq)));
-            let criteria = this.SimulateMap[caseName].PreCheck;  // JS is shallow copy. This is a pointer.
-            for (let bids of thurstonRules) {
+            let compRules = BidComponents
+                .filter(c => c.Name == compName)[0].Rules
+                .filter(r => ruleKeys.includes(seqKey(r.Seq)));
+            
+            this.SimulateMap[caseName].PreCheck = [];  // JS is shallow copy. This is a pointer.
+            for (let bids of compRules) {
                 let cKey = bids.Seq[0].at(-1);  // Open suit
                 for (let b of bids.Bids) {
                     if  (b.Criteria.length > 0) {
@@ -583,22 +597,27 @@ class SimStat extends BidSystem {
                                 c.SuitLen[cKey] = 5;
                         } else 
                             c.SuitLen = {[cKey]: 5};
-                        criteria.push(c);
+                        c['Meta'] = {'PreCheckHint': [...bids.Seq, b.Bid]};  // for debugging
+                        this.SimulateMap[caseName].PreCheck.push(c);
                     }
                 }
             }
+            delete this.SimulateMap[caseName].Extract;
         }
     }
 
 
     // Generic Simulation hand generator
-    simPreCheck(e, caseName, filterFunc, pushPartner = false) {
+    simPreCheck(e, caseName, pushPartner = false) {
         // The hands we are interested.
-        let criteria = this.SimulateMap[caseName].PreCheck;
-        let samples = [];
-        let spread = new Set();    // Every criteria get a fair share.
-        let beginTime = new Date();
-        let sid = setInterval(() => {
+        var criteria = this.SimulateMap[caseName].PreCheck;
+        var samples = [];
+        var spread = new Set();    // Every criteria get a fair share.
+        var beginTime = new Date();
+        var hasPostFilter = 'PostFilter' in this.SimulateMap[caseName] && this.SimulateMap[caseName].PostFilter != null;
+        var timerCount = 1;
+        var loopCount = 0;
+        var sid = setInterval(() => {
             let intStart = new Date();
             let oneLoop = 0
             while (oneLoop < this.TIMER && samples.length < this.sampleSize) {
@@ -606,24 +625,32 @@ class SimStat extends BidSystem {
                 this.totalDealt++;
                 let found = false;
                 for (let c = 0; c < criteria.length && !found; ++c) {
-                    if (spread.has(c))
+                    if (!hasPostFilter && spread.has(c))
                         continue;
                     for (let seat = 0; seat < 4 && !found; ++seat) {
                         found = this.matchCriteria(this.board.seats[seat], null, criteria[c]) &&
-                            (filterFunc == null || filterFunc(this.board, seat));
+                            (!hasPostFilter || !this.SimulateMap[caseName].PostFilter(this.board, seat));
                         if (found) {
-                            let sIdx = this.pushSample(samples, seat, pushPartner, null);
+                            let annotation = null;
+                            if ('Meta' in criteria[c] && 'PreCheckHint' in criteria[c].Meta)
+                                annotation = this.seqString(criteria[c].Meta.PreCheckHint.slice(0, -1));
+                            let sIdx = this.pushSample(samples, seat, pushPartner, annotation);
                             this.showOneSample(e, samples, sIdx);
-                            spread.add(c);
-                            if (spread.size == criteria.length)
-                                spread.clear();
+                            if (!hasPostFilter) {
+                                spread.add(c);
+                                if (spread.size == criteria.length)
+                                    spread.clear();
+                            }
                         }
                     }
                 }
                 oneLoop = new Date() - intStart;
+                ++loopCount;
             }
             if (samples.length >= this.sampleSize)
-                this.simFinalize(e, sid, samples, beginTime);
+                this.simFinalize(e, sid, samples, beginTime, loopCount/timerCount);
+            else
+                ++timerCount;
         }, this.TIMER);
     }
 }
