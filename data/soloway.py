@@ -3,17 +3,18 @@
 # From https://kwbridge.com/js.htm
 # Alternative is at BridgeBum
 import copy
+from convention import Convention
 
-class Soloway:
+class Soloway(Convention):
     def __init__(self):
-        self.meta = {'Meta': {'Convention': 'Soloway Jump Shift'}}
-        self.suits = ['S', 'H', 'D', 'C']
+        super().__init__()
+        self.meta['Meta']['Convention'] = 'Soloway Jump Shift'
         return
     
     # main driver
     def genRules(self):
-        print("// Soloway Jump Shift")
-        print("BidComponents.push({'Flag': 'Soloway', 'Name': 'Soloway Jump Shift', 'Rules': [") 
+        self.prtHeader(flag='Soloway')
+        print("  'Rules': [ ")
         # Opening and 1st SJS bid
         for s in self.suits:
             print("{'Bids': [")
@@ -120,5 +121,4 @@ class Soloway:
                     print(f"\t'Seq': ['1{s}', '-', '{l}{js}', '-', '{rebid}', '-']}},")
 
 if __name__ == '__main__':
-    soloway = Soloway()
-    soloway.genRules()
+    Soloway().genRules()

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Generate RKCB bidding rules in the same structure as rkcb.data."""
+from convention import Convention
 
-
-class RKCBGenerator:
+class RKCBGenerator(Convention):
     def __init__(self):
-        self.suit_order = ["S", "H", "D", "C"]
+        super().__init__()
+        self.meta['Meta']['Convention'] = 'RKCB'
 
     def ask_sequences(self):
         sequences = [
@@ -27,14 +28,14 @@ class RKCBGenerator:
     def trump_for_seq(self, seq):
         idx = seq.index("4NT")
         for token in reversed(seq[:idx]):
-            if token and token[-1] in self.suit_order:
+            if token and token[-1] in self.suits:
                 return token[-1]
         raise ValueError(f"Cannot determine trump for sequence: {seq}")
 
     def used_suits(self, seq):
         used = set()
         for token in seq:
-            if token and token[-1] in self.suit_order:
+            if token and token[-1] in self.suits:
                 used.add(token[-1])
         return used
 
@@ -92,7 +93,7 @@ class RKCBGenerator:
     def queen_answer_rule(self, prefix, keycard_response):
         trump = self.trump_for_seq(prefix)
         used = self.used_suits(prefix)
-        other_suits = [s for s in self.suit_order if s != trump and s not in used]
+        other_suits = [s for s in self.suits if s != trump and s not in used]
 
         ask_bid = "5D" if keycard_response == "5C" else "5H"
         no_q_bid = f"{5 if ask_bid[1] != trump else 6}{trump}"
@@ -192,14 +193,10 @@ class RKCBGenerator:
         print(f"               'Seq': {seq}}},")
 
     def generate(self):
-        print("// RKCB")
-        print("BidComponents.push({'BuildIn': 'Yes',")
-        print("  'Name': 'RKCB',")
+        self.prtHeader(True)
         print("  'Rules': [ ")
-
         for rule in self.all_rules():
             self.print_rule(rule)
-
         print("  ]});")
 
 
