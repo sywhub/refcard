@@ -38,7 +38,7 @@ class FitSJ(Convention):
             over = [x for x in self.suits if x != o]
             for inf in over:
                 iLevel = 1 if self.suits.index(inf) < self.suits.index(o) else 2
-                res = ['-', 'X', f"'2{o}'"]
+                res = ['-', 'X', f'2{o}']
                 for r in res:
                     print("\t{'Bids': [")
                     rLevel = 2 if r[0] == '2' else 1
@@ -58,7 +58,7 @@ class FitSJ(Convention):
                     print("\t\t],")
                     infBid = f"{iLevel if inf != 'X' else ''}"
                     infBid += inf
-                    print(f"\t'Seq': ['1{o}', '{infBid}', {r}]}},")
+                    print(f"\t'Seq': ['1{o}', '{infBid}', '{r}']}},")
 
         return
 
