@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Fit Showing Jump rules for fsj.data."""
+"""Generate Fit Showing Jump rules for fitsj.data."""
 from convention import Convention
 
 class FitSJ(Convention):
