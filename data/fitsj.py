@@ -6,67 +6,80 @@ class FitSJ(Convention):
     def __init__(self):
         super().__init__()
         self.meta['Meta']['Convention'] = 'Fit Showing Jump'
+        self.tpRange = {2: 11, 3: 13, 4: 15, 5: 16}
+
+    # compute bid level increment
+    def bidLevelInc(self, bid, prior, alt=''):
+        comp = prior
+        if prior == 'X' or prior == '-':
+            comp = alt
+        inc = 0 if (bid == 'X' or bid == '-') or self.suits.index(bid) < self.suits.index(comp) else 1
+        return inc
+
+    def startBids(self):
+        self.notFirst = False
+        print("\t{'Bids': [",end='')
+
+    def oneBid(self, o, jLevel, j, js):
+        if self.notFirst:
+            print('\t\t',end='')
+        self.notFirst = True
+        print(f"{{'Bid': '{jLevel}{j}',",end='')
+        supportLen = 4 if self.suits.index(o) <= 1 else 5
+        print(f" 'Criteria': [{{'TP': {self.tpRange[jLevel]}, 'SuitLen': {{'{j}': 5, '{o}': {supportLen}}}, ",end="")
+        conv = self.meta['Meta']['Convention']
+        print(f"'Meta': {{'Convention': '{conv}', 'GF': true}}}}]}}",end='')
+        if j != js[-1]:
+            print(',')
+        else:
+            print('',end='')
 
     # A set of Fit SJ, responder jump after RHO overcalled
-    def rulesA(self):
+    def rulesResponder(self):
         for o in self.suits:
             over = [x for x in self.suits if x != o]
             over.append('X')
             for b in over:
-                oLevel = 1 if (b == 'X') or (self.suits.index(b) < self.suits.index(o)) else 2
-                print("\t{'Bids': [")
+                oLevel = 1 + self.bidLevelInc(b, o)
+                self.startBids()
                 js = [x for x in self.suits if x != o and x != b]
                 for j in js:
-                    if b == 'X':
-                        jLevel = 1 if (self.suits.index(j) < self.suits.index(o)) else 2
-                    else:
-                        jLevel = 1 if (self.suits.index(j) < self.suits.index(b)) else 2
-                    jLevel += oLevel
-                    print(f"\t\t{{'Bid': '{jLevel}{j}',",end='')
-                    supportLen = 4 if self.suits.index(o) <= 1 else 5
-                    tp = 12 if jLevel <= 3 else 13
-                    print(f" 'Criteria': [{{'TP': {tp}, 'SuitLen': {{'{j}': 5, '{o}': {supportLen}}}, ",end="")
-                    conv = self.meta['Meta']['Convention']
-                    print(f"'Meta': {{'Convention': '{conv}', 'GF': true}}}}]}},")
-                print("\t\t],")
+                    jLevel = oLevel + 1 + self.bidLevelInc(j, b, o)
+                    self.oneBid(o, jLevel, j, js)
+                print("],")
                 overBid = f"{oLevel if b != 'X' else ''}"
                 overBid += b
                 print(f"\t'Seq': ['1{o}', '{overBid}']}},")
 
-    def rulesB(self):
+    # Rule set B is for advancer to jump to a new suit against overcall's bid
+    # The advancer is either the 4th seat or pass hand
+    def rulesAdvancer(self):
         for o in self.suits:
             over = [x for x in self.suits if x != o]
             for inf in over:
-                iLevel = 1 if self.suits.index(inf) < self.suits.index(o) else 2
-                res = ['-', 'X', f'2{o}']
+                iLevel = 1 + self.bidLevelInc(inf, o)
+                res = ['-', 'X', o]
+                res.extend([x for x in self.suits if x != o and x != inf])
                 for r in res:
-                    print("\t{'Bids': [")
-                    rLevel = 2 if r[0] == '2' else 1
-                    js = [x for x in self.suits if x != o and x != inf]
+                    self.startBids()
+                    rLevel = iLevel + self.bidLevelInc(r, inf)
+                    js = [x for x in self.suits if x != inf and x != r and x != o]
                     for j in js:
-                        if r == 'X' or r == '-':
-                            jLevel = 1 if (self.suits.index(j) < self.suits.index(inf)) else 2
-                        else:
-                            jLevel = 2
-                        jLevel += iLevel
-                        print(f"\t\t{{'Bid': '{jLevel}{j}',",end='')
-                        supportLen = 4 if self.suits.index(o) <= 1 else 5
-                        tp = 10 if jLevel <= 3 else 12
-                        print(f" 'Criteria': [{{'TP': {tp}, 'SuitLen': {{'{j}': 5, '{inf}': {supportLen}}}, ",end="")
-                        conv = self.meta['Meta']['Convention']
-                        print(f"'Meta': {{'Convention': '{conv}', 'GF': true}}}}]}},")
-                    print("\t\t],")
+                        jLevel = rLevel + 1 + self.bidLevelInc(j, r, inf)
+                        self.oneBid(inf, jLevel, j, js)
+                    print("],")
                     infBid = f"{iLevel if inf != 'X' else ''}"
                     infBid += inf
-                    print(f"\t'Seq': ['1{o}', '{infBid}', '{r}']}},")
-
+                    rBid = f"{rLevel if r != 'X' and r != '-' else ''}"
+                    rBid += r
+                    print(f"\t'Seq': ['1{o}', '{infBid}', '{rBid}']}},")
         return
 
     def genRules(self):
         self.prtHeader(flag='Fit Showing Jump')
         print("  'Rules': [ ")
-        self.rulesA()
-        self.rulesB()
+        self.rulesResponder()
+        self.rulesAdvancer()
         print("  ]});")
 
 if __name__ == "__main__":
