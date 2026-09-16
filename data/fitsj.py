@@ -8,22 +8,10 @@ class FitSJ(Convention):
         self.meta['Meta']['Convention'] = 'Fit Showing Jump'
         self.tpRange = {2: 11, 3: 13, 4: 15, 5: 16}
 
-    # compute bid level increment
-    def bidLevelInc(self, bid, prior, alt=''):
-        comp = prior
-        if prior == 'X' or prior == '-':
-            comp = alt
-        inc = 0 if (bid == 'X' or bid == '-') or self.suits.index(bid) < self.suits.index(comp) else 1
-        return inc
-
-    def startBids(self):
-        self.notFirst = False
-        print("\t{'Bids': [",end='')
-
     def oneBid(self, o, jLevel, j, js):
-        if self.notFirst:
+        if self.newBidLine:
             print('\t\t',end='')
-        self.notFirst = True
+        self.newBidLine = True
         print(f"{{'Bid': '{jLevel}{j}',",end='')
         supportLen = 4 if self.suits.index(o) <= 1 else 5
         print(f" 'Criteria': [{{'TP': {self.tpRange[jLevel]}, 'SuitLen': {{'{j}': 5, '{o}': {supportLen}}}, ",end="")

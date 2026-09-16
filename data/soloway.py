@@ -17,7 +17,7 @@ class Soloway(Convention):
         print("  'Rules': [ ")
         # Opening and 1st SJS bid
         for s in self.suits:
-            print("{'Bids': [")
+            self.startBids()
             jTargets = [x for x in self.suits if x != s]
             for js in jTargets:
                 l = 3 if (self.suits.index(s) < self.suits.index(js)) else 2
@@ -54,7 +54,7 @@ class Soloway(Convention):
                 l = 3 if (self.suits.index(s) < self.suits.index(js)) else 2
                 rebids = self.makeRebids(s, js) # given the sjs response, the actual rebid options
                 lastCount = len(rebids.keys())
-                print("{'Bids': [")
+                self.startBids()
                 for r,c in rebids.items():
                     o = {'Bid': r} | c
                     print(f"\t{o}", end='')
@@ -93,7 +93,7 @@ class Soloway(Convention):
                 ntCriteria = copy.deepcopy(self.replyCriteria[3])
                 ntCriteria['SuitLen'] = {f"{s}": 4, f"{js}": 5}
                 for rebid in rebids.keys():
-                    print("{'Bids': [")
+                    self.startBids()
                     rLevel = int(rebid[0])
                     rSuit = rebid[1:]
                     newSuits = [x for x in self.suits if x not in [s, js, rSuit]]

@@ -207,7 +207,8 @@ function ConventionURL(c) {
         'Support DBL': '',
         'Take-Out DBL': '',
         'Texas Transfer': '',
-        'Unusual 2NT': 'https://www.bridgebum.com/unusual_2nt.php'};
+        'Unusual 2NT': 'https://www.bridgebum.com/unusual_2nt.php',
+        'XYZ': '',};
     if (c in ConvURL && ConvURL[c] != '')
         return ConvURL[c];
     return null;
