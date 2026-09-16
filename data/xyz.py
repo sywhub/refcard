@@ -23,10 +23,14 @@ class XYZ(Convention):
                 ruleObj['Bids'].append({'Bid': r, 'Criteria': [{}]})
                 if r == '2C':
                     ruleObj['Bids'][-1]['Criteria'][0]['Meta'] = {'Notes': 'Puppet'}
-                elif r == '2D' or r == '3D' or r == '3H' or r == '3S':
+                elif r == '2D':
+                    ruleObj['Bids'][-1]['Criteria'][0]['Meta'] = {'GF': 'Yes'}
+                elif r == '3D' or r == '3H' or r == '3S':
                     if r[1] == ruleObj['Seq'][-2][1]:
                         ruleObj['Bids'][-1]['Criteria'][0]['SuitLen'] = {r[1]: 4}
-                    elif r[1] != 'D':
+                    elif r[1] == ruleObj['Seq'][0][1]:
+                        ruleObj['Bids'][-1]['Criteria'][0]['SuitLen'] = {r[1]: 5}
+                    else:
                         ruleObj['Bids'][-1]['Criteria'][0]['SuitLen'] = {r[1]: 6}
                     ruleObj['Bids'][-1]['Criteria'][0]['Meta'] = {'GF': 'Yes'}
                 elif r == '2NT':
@@ -34,6 +38,8 @@ class XYZ(Convention):
                 elif r == '2H' or r == '2S' or r == '3C':
                     if r[1] == ruleObj['Seq'][-2][1]:
                         ruleObj['Bids'][-1]['Criteria'][0]['SuitLen'] = {r[1]: 4}
+                    elif r[1] == ruleObj['Seq'][0][1]:
+                        ruleObj['Bids'][-1]['Criteria'][0]['SuitLen'] = {r[1]: 5}
                     else:
                         ruleObj['Bids'][-1]['Criteria'][0]['SuitLen'] = {r[1]: 6}
                     ruleObj['Bids'][-1]['Criteria'][0]['Meta'] = {'Notes': 'To Play'}
@@ -85,7 +91,7 @@ class FSF(Convention):
                     ruleObj = {'Seq': [f"1{o}", '-', f"{respondLevel}{response}", '-', f"{rebidLevel}{rebid}", '-']}
                     lastOne = [x for x in self.suits if x != o and x != response and x != rebid][0]
                     lastlevel = rebidLevel + self.bidLevelInc(lastOne, rebid)
-                    isReversed = self.suits.index(ruleObj['Seq'][4][1]) < self.suits.index(ruleObj['Seq'][0][1])
+                    isReversed = self.suits.index(ruleObj['Seq'][4][1]) < self.suits.index(ruleObj['Seq'][0][1]) and int(ruleObj['Seq'][4][0]) >= 2
                     if isReversed:
                         hcp = 9
                     else:
