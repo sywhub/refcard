@@ -3,19 +3,19 @@
 
 class Convention:
     def __init__(self):
-        self.meta = {'Meta': {'Convention': ''}}
+        self.meta = {'Convention': ''}
         self.suits = ['S', 'H', 'D', 'C']
         self.rules = []
         return
 
     def prtHeader(self, builtIn=False, flag=''):
-        print(f"// {self.meta['Meta']['Convention']}")
+        print(f"// {self.meta['Convention']}")
         print("BidComponents.push({",end='')
         if not builtIn and flag:
             print(f"'Flag': '{flag}',",end=' ')
         if builtIn:
             print("'BuildIn': 'Yes',", end=' ')
-        print(f"'Name': '{self.meta['Meta']['Convention']}',")
+        print(f"'Name': '{self.meta['Convention']}',")
 
     def startBids(self):
         self.newBidLine = False
@@ -30,7 +30,7 @@ class Convention:
         return inc
 
     def printRules(self, builtIn=False):
-        self.prtHeader(builtIn=builtIn, flag=self.meta['Meta']['Convention'])
+        self.prtHeader(builtIn=builtIn, flag=self.meta['Convention'])
         print(f"{' '*4}'Rules': [")
         for r in self.rules:
             self.startBids()
