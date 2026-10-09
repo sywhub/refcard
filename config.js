@@ -608,7 +608,7 @@ class Settings {
             if (conv.has('Soloway Jump Shift'))
                 convCopy.Others.push('Soloway Jump Shift');
             else
-                convCopy.Others.push('Soloway Jump Shift');
+                convCopy.Others.push('Strong Jump Shift');
             convCopy.Major.push('Limited Raise')
         }
 
