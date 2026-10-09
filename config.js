@@ -11,6 +11,16 @@ class Settings {
         'RKCBFlag': {HTML: 'RKCB',  Choices: true, IDs: ['0314', '1430']},
         };
 
+    Conventions = {'Major': ['Reverse Drury', 'Jacoby 2NT'],
+        'No Trump':	['Gerber, Stayman, Jacoby Transfer, Texas Transfer', 'Smolen', '2S Puppet to 3C', '2NT invitational'],
+        'Minor':	['Inverted Minor', '2NT Invitational'],
+        'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative (3- HCP)'],
+        'Preemptive':	['6+ cards with honor(s), 8-11 HCP.  7-cards at 3-level'],
+        'Over-Call':	['Michaels, Unusual 2NT'],
+        'Double':	['Take-out up to 3♠, Support DBL, Negative DBL', 'Responsive DBL'],
+        'Others':	['Splinter, New Minor Forcing, 4th Suit Forcing', 'Opener Reverse'],
+        'Slam Attempt':	['No Queen Ask, 5NT for King Count', 'D0P1 & R0P1','Gerber for NT Contract']};
+
     constructor(){
         this.Version = LatestGitTag;
         this.DisplayDate = DeployDate;
@@ -531,7 +541,14 @@ class Settings {
         }
     }
 
+    /*
+     * Convert the current configuration to a convention card.
+     */
     convCard() {
+        /*
+         * Add a new tab to the browser.
+         * Add the necesssary header information.
+         */
         var tab = window.open('about:blank', '_blank');
         tab.document.documentElement.lang = 'en';
         var e = document.createElement('meta');
@@ -558,9 +575,11 @@ class Settings {
         var gridDiv = document.createElement('div');
         gridDiv.setAttribute('class', 'ConvCard');
         tab.document.body.appendChild(gridDiv);
+
+        /* Collect the current active conventions */
+        var convCopy = JSON.parse(JSON.stringify(this.Conventions));
         var conv = new Set();
         for (const bidComp of BidComponents) {
-
             if ('BuildIn' in bidComp) {
                 bidComp.Rules.forEach((r) => {
                     r.Bids.forEach((b) => {
@@ -580,18 +599,11 @@ class Settings {
                 conv.add(bidComp.Name);
             }
         }
+        /* Construct the page */
         conv.delete('RKCB');
         conv.add('RKCB ' + this.OptionItems['RKCBFlag'].IDs[this.OptionItems['RKCBFlag'].Value]);
         if (this.OptionItems['2/1 Choice'].Value > 0)
             conv.delete(this.OptionItems['2/1 Choice'].IDs[this.OptionItems['2/1 Choice'].Value]);
-        var category = {'Major': ['Jacoby 2NT'],
-           'No Trump':	['Gerber, Stayman, Jacoby Transfer, Texas Transfer', '2S Puppet to 3C', '2NT invitational'],
-           'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative (3- HCP)'],
-           'Preemptive':	['6+ cards with honor(s), 8-11 HCP.  7-cards at 3-level'],
-           'Over-Call':	['Michaels, Unusual 2NT'],
-           'Double':	['Take-out up to 3♠, Support DBL, Negative DBL'],
-           'Others':	['Splinter, New Minor Forcing, 4th Suit Forcing', 'Opener Reverse'],
-           'Slam Attempt':	['No Queen Ask, 5NT for King Count']};
 
         var theme = 'SAYC';
         var twoOneFlag = this.OptionItems['2/1 Choice'].Value
@@ -603,28 +615,48 @@ class Settings {
         h.setAttribute('class', 'ConfigHeading');
 
         if (twoOneFlag == 1) {
-            category.Major.push('Bergen Raises')
-            category['Others'].unshift('Weak Jump Shift');
+            convCopy.Major.push('Bergen Raises')
+        } else {
+            if (conv.has('Soloway Jump Shift'))
+                convCopy.Others.push('Soloway Jump Shift');
+            else
+                convCopy.Others.push('Soloway Jump Shift');
         }
-        else
-            category['Others'].unshift('Strong Jump Shift');
+
         if (conv.has('Ogust'))
-            category['Preemptive'].push('Ogust');
+            convCopy.Preemptive.push('Ogust')
         else
-            category['Preemptive'].push('2NT Feature Ask');
+            convCopy.Preemptive.push('Feature Ask')
 
         if (conv.has('RKCB 0314'))
-            category['Slam Attempt'].unshift('RKCB 0314');
+            convCopy["Slam Attempt"].unshift('RKCB 0314')
         else
-            category['Slam Attempt'].unshift('RKCB 1430');
-        if (conv.has('Gambling 3NT'))
-            category['Others'].push('Gambling 3NT');
+            convCopy["Slam Attempt"].unshift('RKCB 1430')
+
         if (conv.has('DONT'))
-            category['Over-Call'].push('DONT');
+            convCopy["Over-Call"].push('DONT')
         else if (conv.has('Cappelletti'))
-            category['Over-Call'].push('Cappelletti');
+            convCopy["Over-Call"].push('Cappelletti')
+
+        for (const [k, v] of Object.entries(convCopy)) {
+            for (const str of v) {
+                let cStr = str.split(',');
+                cStr.forEach(s => {
+                    if (conv.has(s.trim())) {
+                        conv.delete(s.trim())
+                    }
+                });
+            }
+        }
+        ['NMF', '4SF', 'R0P1', 'D0P1', "2C-2H Double Negative", "2C-2D Waiting", "Strong Jump Shift", "Minor Transfer", "Take-Out DBL"].forEach(c => conv.delete(c));
+
+        conv.forEach(c => convCopy['Others'].push(c));
         
-        for (const [k,v] of Object.entries(category)) { 
+        /* 
+         * Do it as HTML for now.
+         * Should try to do PDF directly.
+         */
+        for (const [k,v] of Object.entries(convCopy)) { 
             let e = gridElement(gridDiv, k, 1, row)
             e.setAttribute('class', 'ConfigHeading');
             for (const str of v) {
