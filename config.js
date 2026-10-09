@@ -18,11 +18,13 @@ class Settings {
         'No Trump':	['Gerber, Stayman, Jacoby Transfer, Texas Transfer', 'Smolen', '2S Puppet to 3C', '2NT invitational'],
         'Minor':	['Inverted Minor', '2NT Invitational'],
         'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative'],
-        'Preemptive':	['6+ cards with honor(s), 8-11 HCP.  7-cards at 3-level'],
-        'Over-Call':	['Michaels, Unusual 2NT'],
+        'Preemptive':	['6+ cards with honor(s), 8-11 HCP',
+            '7-cards at 3-level'],
+        'OverCall':	['Michaels, Unusual 2NT'],
         'Double':	['Take-out up to 3♠, Support DBL, Negative DBL', 'Responsive DBL'],
         'Others':	['Splinter, New Minor Forcing, 4th Suit Forcing', 'High Reverse'],
-        'Slam Attempt':	['No Queen Ask, 5NT for King Count', 'D0P1 & R0P1','Gerber for NT Contract']};
+        'Slam Attempt':	['No Queen Ask, 5NT for King Count', 'D0P1', 
+             'R0P1','Gerber for NT Contract']};
 
     constructor(){
         this.Version = LatestGitTag;
@@ -337,7 +339,7 @@ class Settings {
         btn = document.createElement('input');
         btn.setAttribute('type', 'button');
         btn.setAttribute('class', this.UIClass);
-        btn.setAttribute('value', trEnZh('Convention Card'));
+        btn.setAttribute('value', trEnZh('Print Friendly'));
         btn.addEventListener('click', () => this.convCard());
         subd.appendChild(btn);
         subd.insertAdjacentHTML('beforeend', '<br>')
@@ -621,9 +623,9 @@ class Settings {
             convCopy["Slam Attempt"].unshift('RKCB 1430')
 
         if (conv.has('DONT'))
-            convCopy["Over-Call"].push('DONT')
+            convCopy["OverCall"].push('DONT')
         else if (conv.has('Cappelletti'))
-            convCopy["Over-Call"].push('Cappelletti')
+            convCopy["OverCall"].push('Cappelletti')
 
         for (const [k, v] of Object.entries(convCopy)) {
             for (const str of v) {
@@ -649,10 +651,12 @@ class Settings {
          */
         var row = 1;
         for (const [k,v] of Object.entries(convCopy)) { 
-            let e = gridElement(gridDiv, k, 1, row)
+            let e = gridElement(gridDiv, trEnZh(k), 1, row)
             e.setAttribute('class', 'ConfigHeading');
             for (const str of v) {
-                e = gridElement(gridDiv, str, 2, row++)
+                let subStr = str.split(',');
+                let trStr = subStr.map(s => trEnZh(s.trim())).join(', ');
+                e = gridElement(gridDiv, trEnZh(trStr), 2, row++)
                 e.setAttribute('class', 'ConfigData');
             }
         }
