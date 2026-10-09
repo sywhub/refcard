@@ -11,14 +11,17 @@ class Settings {
         'RKCBFlag': {HTML: 'RKCB',  Choices: true, IDs: ['0314', '1430']},
         };
 
-    Conventions = {'Major': ['Reverse Drury', 'Jacoby 2NT'],
+    Conventions = {
+        'Theme': [''],
+        'General': [`5-Card Major, Better Minor, Strong 2${Card.ltr2html('C')}, Strong NT, RKCB`],
+        'Major': ['Reverse Drury', 'Jacoby 2NT'],
         'No Trump':	['Gerber, Stayman, Jacoby Transfer, Texas Transfer', 'Smolen', '2S Puppet to 3C', '2NT invitational'],
         'Minor':	['Inverted Minor', '2NT Invitational'],
-        'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative (3- HCP)'],
+        'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative'],
         'Preemptive':	['6+ cards with honor(s), 8-11 HCP.  7-cards at 3-level'],
         'Over-Call':	['Michaels, Unusual 2NT'],
         'Double':	['Take-out up to 3♠, Support DBL, Negative DBL', 'Responsive DBL'],
-        'Others':	['Splinter, New Minor Forcing, 4th Suit Forcing', 'Opener Reverse'],
+        'Others':	['Splinter, New Minor Forcing, 4th Suit Forcing', 'High Reverse'],
         'Slam Attempt':	['No Queen Ask, 5NT for King Count', 'D0P1 & R0P1','Gerber for NT Contract']};
 
     constructor(){
@@ -231,21 +234,11 @@ class Settings {
 
     // Text are mostly hand-coded.
     ConventionCard(gridDiv, row) {
-        var headings = {'General': `5-Card Major, Better Minor, Strong 2${Card.ltr2html('C')}, Strong NT, RKCB`,
-             'Major':
-                'Reverse Drury, Jacoby 2NT, Limited Raise, Negative Double, Cue-bid 3-Card Support',
-             'No Trump':
-                `1NT 15-17 HCP, 2NT 20~21 HCP, Gerber, Stayman, Smolen, Jacoby Transfer, Texas Transfer, 2S Minor Transfer, 2NT invitational`,
-             'Minor':
-                'Inverted Minor',
-             'Strong 2&clubs;': `2&clubs;-2&diams; Waiting, 2&clubs;-2&hearts; Double Negative`,
-             'Preemptive': '6+ cards with honor(s), 8-11 HCP',
-             'OverCall':
-                "Michaels, Unusual 2NT, DONT",
-             'Double':
-                `Take-out up to 3${Card.ltr2html('S')}, Responsive DBL, Support DBL, Negative DBL`,
-             'Others': 'Strong Jump Shift, Soloway Jump Shift, Fit Showing Jump, Splinter, New Minor Forcing, 4th Suit Forcing, XYZ, D0P1, R0P1, Sandwich 1NT, High Reverse',
-            };
+        var headings = {};
+        for (const [k,v] of Object.entries(this.Conventions)) 
+            if (k != 'Theme')
+                headings[k] = v.join(', ');
+            
         var e = gridElement(gridDiv, trEnZh('Convention Card'), 1, row++);
         e.style['grid-column'] = '1 / span 2'
         e.setAttribute('class', 'ConventionCard');
@@ -605,14 +598,7 @@ class Settings {
         if (this.OptionItems['2/1 Choice'].Value > 0)
             conv.delete(this.OptionItems['2/1 Choice'].IDs[this.OptionItems['2/1 Choice'].Value]);
 
-        var theme = 'SAYC';
         var twoOneFlag = this.OptionItems['2/1 Choice'].Value
-        if (twoOneFlag > 0)
-            theme = '2/1 GF';
-            
-        var row = 1;
-        var h = gridElement(gridDiv, theme, 1, row++);
-        h.setAttribute('class', 'ConfigHeading');
 
         if (twoOneFlag == 1) {
             convCopy.Major.push('Bergen Raises')
@@ -621,6 +607,7 @@ class Settings {
                 convCopy.Others.push('Soloway Jump Shift');
             else
                 convCopy.Others.push('Soloway Jump Shift');
+            convCopy.Major.push('Limited Raise')
         }
 
         if (conv.has('Ogust'))
@@ -652,10 +639,15 @@ class Settings {
 
         conv.forEach(c => convCopy['Others'].push(c));
         
+        convCopy.Theme[0] = 'SAYC';
+        if (twoOneFlag > 0)
+            convCopy.Theme[0] = '2/1 GF';
+            
         /* 
          * Do it as HTML for now.
          * Should try to do PDF directly.
          */
+        var row = 1;
         for (const [k,v] of Object.entries(convCopy)) { 
             let e = gridElement(gridDiv, k, 1, row)
             e.setAttribute('class', 'ConfigHeading');
