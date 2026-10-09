@@ -330,6 +330,15 @@ class Settings {
         subd.appendChild(btn);
         subd.insertAdjacentHTML('beforeend', '<br>')
 
+
+        btn = document.createElement('input');
+        btn.setAttribute('type', 'button');
+        btn.setAttribute('class', this.UIClass);
+        btn.setAttribute('value', trEnZh('Convention Card'));
+        btn.addEventListener('click', () => this.convCard());
+        subd.appendChild(btn);
+        subd.insertAdjacentHTML('beforeend', '<br>')
+        
         btn = document.createElement('input');
         btn.setAttribute('type', 'button');
         btn.setAttribute('class', this.UIClass);
@@ -339,15 +348,6 @@ class Settings {
         subd.appendChild(btn);
         subd.insertAdjacentHTML('beforeend', '<br>')
 
-        /*
-        btn = document.createElement('input');
-        btn.setAttribute('type', 'button');
-        btn.setAttribute('class', this.UIClass);
-        btn.setAttribute('value', trEnZh('Dump Rules'));
-        btn.addEventListener('click', () => this.dumprules());
-        subd.appendChild(btn);
-        subd.insertAdjacentHTML('beforeend', '<br>')
-        */
     }
 
     // GUI for multiple choices
@@ -528,6 +528,109 @@ class Settings {
                     e.insertAdjacentHTML('beforeend',`<span>&nbsp;&nbsp;</span>${JSON.stringify(c)}<br>`)
             }
             row++;
+        }
+    }
+
+    convCard() {
+        var tab = window.open('about:blank', '_blank');
+        tab.document.documentElement.lang = 'en';
+        var e = document.createElement('meta');
+        e.setAttribute('charset', 'UTF-8');
+        tab.document.head.appendChild(e);
+
+        e = document.createElement('meta');
+        e.setAttribute('name', 'author');
+        e.setAttribute('content', 'Sin-Yaw Wang');
+        tab.document.head.appendChild(e);
+
+        e = document.createElement('meta');
+        e.setAttribute('name', 'title');
+        e.setAttribute('content', 'Convention Card');
+        tab.document.head.appendChild(e);
+        tab.document.title = 'Convention Card';
+        
+        e = document.createElement('link');
+        e.setAttribute('rel', 'stylesheet');
+        e.setAttribute('href', 'styles.css');
+        e.setAttribute('type', 'text/css');
+        tab.document.head.appendChild(e);
+
+        var gridDiv = document.createElement('div');
+        gridDiv.setAttribute('class', 'ConvCard');
+        tab.document.body.appendChild(gridDiv);
+        var conv = new Set();
+        for (const bidComp of BidComponents) {
+
+            if ('BuildIn' in bidComp) {
+                bidComp.Rules.forEach((r) => {
+                    r.Bids.forEach((b) => {
+                        if ('Criteria' in b)
+                            b.Criteria.forEach((c) => {
+                                if ('Meta' in c && 'Convention' in c.Meta)
+                                    conv.add(c.Meta.Convention);
+                            });
+                    });
+                });
+            } else if (bidComp.ChoiceOf != undefined){
+                let idx = this.OptionItems[bidComp.ChoiceOf].Value;
+                if (idx > 0 && bidComp.Name == this.OptionItems[bidComp.ChoiceOf].IDs[idx]) 
+                    conv.add(this.OptionItems[bidComp.ChoiceOf].IDs[idx]);
+            }
+            else if (this.OptionItems[bidComp.Name].Value > 0) {
+                conv.add(bidComp.Name);
+            }
+        }
+        conv.delete('RKCB');
+        conv.add('RKCB ' + this.OptionItems['RKCBFlag'].IDs[this.OptionItems['RKCBFlag'].Value]);
+        if (this.OptionItems['2/1 Choice'].Value > 0)
+            conv.delete(this.OptionItems['2/1 Choice'].IDs[this.OptionItems['2/1 Choice'].Value]);
+        var category = {'Major': ['Jacoby 2NT'],
+           'No Trump':	['Gerber, Stayman, Jacoby Transfer, Texas Transfer', '2S Puppet to 3C', '2NT invitational'],
+           'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative (3- HCP)'],
+           'Preemptive':	['6+ cards with honor(s), 8-11 HCP.  7-cards at 3-level'],
+           'Over-Call':	['Michaels, Unusual 2NT'],
+           'Double':	['Take-out up to 3♠, Support DBL, Negative DBL'],
+           'Others':	['Splinter, New Minor Forcing, 4th Suit Forcing', 'Opener Reverse'],
+           'Slam Attempt':	['No Queen Ask, 5NT for King Count']};
+
+        var theme = 'SAYC';
+        var twoOneFlag = this.OptionItems['2/1 Choice'].Value
+        if (twoOneFlag > 0)
+            theme = '2/1 GF';
+            
+        var row = 1;
+        var h = gridElement(gridDiv, theme, 1, row++);
+        h.setAttribute('class', 'ConfigHeading');
+
+        if (twoOneFlag == 1) {
+            category.Major.push('Bergen Raises')
+            category['Others'].unshift('Weak Jump Shift');
+        }
+        else
+            category['Others'].unshift('Strong Jump Shift');
+        if (conv.has('Ogust'))
+            category['Preemptive'].push('Ogust');
+        else
+            category['Preemptive'].push('2NT Feature Ask');
+
+        if (conv.has('RKCB 0314'))
+            category['Slam Attempt'].unshift('RKCB 0314');
+        else
+            category['Slam Attempt'].unshift('RKCB 1430');
+        if (conv.has('Gambling 3NT'))
+            category['Others'].push('Gambling 3NT');
+        if (conv.has('DONT'))
+            category['Over-Call'].push('DONT');
+        else if (conv.has('Cappelletti'))
+            category['Over-Call'].push('Cappelletti');
+        
+        for (const [k,v] of Object.entries(category)) { 
+            let e = gridElement(gridDiv, k, 1, row)
+            e.setAttribute('class', 'ConfigHeading');
+            for (const str of v) {
+                e = gridElement(gridDiv, str, 2, row++)
+                e.setAttribute('class', 'ConfigData');
+            }
         }
     }
 }

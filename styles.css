@@ -38,6 +38,12 @@ h2, h3 {color: blueviolet;}
     display: grid;
     grid-template-columns: 10vw 45vw;
 }
+.ConvCard {
+    float: left;
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 10vw 35vw;
+}
 .ConfigData { font-style: italic; }
 .BBOLin { font-family: 'Courier New', Courier, monospace; font-size: 6;}
 .BidKeys { display: grid; grid-template-columns: repeat(3, 15vw) 20vw; }
