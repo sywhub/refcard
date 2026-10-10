@@ -404,13 +404,14 @@ class Settings {
                 flipItems.push(k)
             }
         });
-        var flipKeys = flipItems.sort();
+        // Add a spacer
         var d = document.createElement('div')
-        d.setAttribute('class', 'ConfigToggle');
         d.style['grid-row-start'] = row++;
-        d.style['grid-column-start'] = 2;
+        d.style['grid-column-start'] = 2
         d.innerHTML = '&nbsp;';
         gridDiv.appendChild(d);
+
+        var flipKeys = flipItems.sort();
         for (const fkey of flipKeys) {
             let v = this.OptionItems[fkey];
             d = document.createElement('div')
@@ -652,13 +653,28 @@ class Settings {
          * Should try to do PDF directly.
          */
         var row = 1;
+        // Compact printing
+        const WRAP = this.ConvCard.General[0].length
         for (const [k,v] of Object.entries(convCopy)) { 
             let e = gridElement(gridDiv, trEnZh(k), 1, row)
             e.setAttribute('class', 'ConvCardHeading');
+            let renderStr = '';
             for (const str of v) {
-                let subStr = str.split(',');
-                let trStr = subStr.map(s => trEnZh(s.trim())).join(', ');
-                e = gridElement(gridDiv, trStr, 2, row++)
+                let trStr = str.split(',')
+                    .map(s => trEnZh(s.trim()))
+                    .join(', ');;
+                if (renderStr.length + trStr.length <= WRAP) {
+                    if (renderStr.length > 0) 
+                        renderStr += ', ';
+                    renderStr += trStr
+                } else {
+                    e = gridElement(gridDiv, renderStr, 2, row++)
+                    e.setAttribute('class', 'ConvCardData');
+                    renderStr = '';
+                }
+            }
+            if (renderStr.length > 0) {
+                e = gridElement(gridDiv, renderStr, 2, row++)
                 e.setAttribute('class', 'ConvCardData');
             }
         }
