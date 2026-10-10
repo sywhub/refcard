@@ -356,15 +356,15 @@ class Settings {
 
     // GUI for multiple choices
     mkToggles(gridDiv, row) {
-        var allToggles = {}
+        var allToggles = []
         Object.entries(this.OptionItems).forEach(([k, v]) => {
             if (k != 'Language' && 'Choices' in v)  {
-                allToggles[k] = v;
+                allToggles.push(k);
             }
         });
-        var keys = Object.keys(allToggles).sort();
+        var keys = allToggles.sort();
         for (const k of keys) {
-            let v = allToggles[k];
+            let v = this.OptionItems[k];
             let d = document.createElement('div')
             d.setAttribute('class', 'ConfigToggle');
             d.style['grid-row-start'] = row++;
@@ -398,16 +398,22 @@ class Settings {
 
     // Yes/No options
     mkFlips(gridDiv, row) {
-        var flipItems = {}
+        var flipItems = []
         Object.entries(this.OptionItems).forEach(([k, v]) => {
             if (v.Choices == undefined || !v.Choices) {
-                flipItems[k] = v;
+                flipItems.push(k)
             }
         });
-        var flipKeys = Object.keys(flipItems).sort();
+        var flipKeys = flipItems.sort();
+        var d = document.createElement('div')
+        d.setAttribute('class', 'ConfigToggle');
+        d.style['grid-row-start'] = row++;
+        d.style['grid-column-start'] = 2;
+        d.innerHTML = '&nbsp;';
+        gridDiv.appendChild(d);
         for (const fkey of flipKeys) {
-            let v = flipItems[fkey];
-            let d = document.createElement('div')
+            let v = this.OptionItems[fkey];
+            d = document.createElement('div')
             d.setAttribute('class', 'ConfigToggle');
             d.style['grid-row-start'] = row++;
             d.style['grid-column-start'] = 2;
