@@ -558,7 +558,7 @@ BidComponents.push({ 'BuildIn': true,
                          {'Bid': '2NT', 'Criteria': [{'HCP': [10, 16], 'Shape': 'Balanced'}]}],
                'Seq': ['1S', '-', '2C', '-']}]});
 
-BidComponents.push({ 'BuildIn': true,
+BidComponents.push({ 'Flag': 'Responsive DBL',
   'Name': 'Responsive DBL',
   'Rules': [ { 'Bids': [ { 'Bid': 'X',
                            'Criteria': [{'HCP': 6, 'Meta': {'Convention': 'Responsive DBL'}, 'SuitLen': {'H': 4, 'S': 4}}]}],
@@ -601,7 +601,11 @@ BidComponents.push({ 'BuildIn': true,
                'Seq': ['1D', '1H', '2D']},
              { 'Bids': [ { 'Bid': 'X',
                            'Criteria': [{'HCP': 8, 'Meta': {'Convention': 'Responsive DBL'}, 'SuitLen': {'C': 4, 'D': 4}}]}],
-               'Seq': ['1H', '1S', '2H']},
+               'Seq': ['1H', '1S', '2H']}]});
+
+BidComponents.push({ 'Flag': 'Sandwich 1NT',
+  'Name': 'Sandwich 1NT',
+	'Rules': [
              { 'Bids': [ { 'Bid': 'X',
                            'Criteria': [ { 'HCP': 12,
                                            'Meta': {'Convention': 'Take-Out DBL', 'Forcing': true},

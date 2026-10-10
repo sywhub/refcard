@@ -356,17 +356,15 @@ class Settings {
 
     // GUI for multiple choices
     mkToggles(gridDiv, row) {
-        var allToggles = [];
+        var allToggles = {}
         Object.entries(this.OptionItems).forEach(([k, v]) => {
             if (k != 'Language' && 'Choices' in v)  {
-                let o = {};
-                o[k] = v;
-                allToggles.push(o)
+                allToggles[k] = v;
             }
         });
-        for (const toggle of allToggles) {
-            let v = Object.values(toggle)[0];
-            let k = Object.keys(toggle)[0];
+        var keys = Object.keys(allToggles).sort();
+        for (const k of keys) {
+            let v = allToggles[k];
             let d = document.createElement('div')
             d.setAttribute('class', 'ConfigToggle');
             d.style['grid-row-start'] = row++;
@@ -400,16 +398,15 @@ class Settings {
 
     // Yes/No options
     mkFlips(gridDiv, row) {
-        var flipItems = [];
+        var flipItems = {}
         Object.entries(this.OptionItems).forEach(([k, v]) => {
             if (v.Choices == undefined || !v.Choices) {
-                let o = {};
-                o[k] = v;
-                flipItems.push(o);
+                flipItems[k] = v;
             }
         });
-        for (const fItem of flipItems) {
-            let v = Object.values(fItem)[0];
+        var flipKeys = Object.keys(flipItems).sort();
+        for (const fkey of flipKeys) {
+            let v = flipItems[fkey];
             let d = document.createElement('div')
             d.setAttribute('class', 'ConfigToggle');
             d.style['grid-row-start'] = row++;
@@ -423,7 +420,7 @@ class Settings {
             var chk = document.createElement('input');
             chk.setAttribute('type', 'checkbox');
             chk.setAttribute('class', this.UIClass);
-            chk.setAttribute('id', Object.keys(fItem)[0]);
+            chk.setAttribute('id', fkey);
             chk.checked = v['Value'] > 0;
             chk.addEventListener('click', (e) => this.doOption(e));
             sp.appendChild(l);
@@ -536,7 +533,7 @@ class Settings {
     }
 
     /*
-     * Convert the current configuration to a convention card.
+     * Convert the current configuration to a convention card that's good for printing.
      */
     convCard() {
         /*
