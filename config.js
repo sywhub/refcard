@@ -11,7 +11,7 @@ class Settings {
         'RKCBFlag': {HTML: 'RKCB',  Choices: true, IDs: ['0314', '1430']},
         };
 
-    Conventions = {
+    ConvCard = {
         'Theme': [''],
         'General': [`5-Card Major, Better Minor, Strong 2${Card.ltr2html('C')}, Strong NT, RKCB`],
         'Major': ['Reverse Drury', 'Jacoby 2NT'],
@@ -237,7 +237,7 @@ class Settings {
     // Text are mostly hand-coded.
     ConventionCard(gridDiv, row) {
         var headings = {};
-        for (const [k,v] of Object.entries(this.Conventions)) 
+        for (const [k,v] of Object.entries(this.ConvCard)) 
             if (k != 'Theme')
                 headings[k] = v.join(', ');
             
@@ -255,7 +255,6 @@ class Settings {
             e = gridElement(gridDiv, trStr, 2, row++);
             e.setAttribute('class', this.Data);
         }
-        // this.showOptionalConventions();
         return row;
     }
 
@@ -572,7 +571,7 @@ class Settings {
         tab.document.body.appendChild(gridDiv);
 
         /* Collect the current active conventions */
-        var convCopy = JSON.parse(JSON.stringify(this.Conventions));
+        var convCopy = JSON.parse(JSON.stringify(this.ConvCard));
         var conv = new Set();
         for (const bidComp of BidComponents) {
             if ('BuildIn' in bidComp) {
@@ -652,12 +651,12 @@ class Settings {
         var row = 1;
         for (const [k,v] of Object.entries(convCopy)) { 
             let e = gridElement(gridDiv, trEnZh(k), 1, row)
-            e.setAttribute('class', 'ConfigHeading');
+            e.setAttribute('class', 'ConvCardHeading');
             for (const str of v) {
                 let subStr = str.split(',');
                 let trStr = subStr.map(s => trEnZh(s.trim())).join(', ');
-                e = gridElement(gridDiv, trEnZh(trStr), 2, row++)
-                e.setAttribute('class', 'ConfigData');
+                e = gridElement(gridDiv, trStr, 2, row++)
+                e.setAttribute('class', 'ConvCardData');
             }
         }
     }

@@ -28,7 +28,7 @@ h2, h3 {color: blueviolet;}
     display: grid;
     grid-template-columns: 10vw 35vw;
 }
-.ConfigHeading {
+.ConfigHeading, .ConvCardHeading {
     justify-self: right;
     margin-right: 15px;
     font-weight: bold;
@@ -44,7 +44,8 @@ h2, h3 {color: blueviolet;}
     display: grid;
     grid-template-columns: 10vw 35vw;
 }
-.ConfigData { font-style: italic; }
+.ConfigData, .ConvCardData { font-style: italic; }
+.ConvCardData {border-bottom: 1px solid black}
 .BBOLin { font-family: 'Courier New', Courier, monospace; font-size: 6;}
 .BidKeys { display: grid; grid-template-columns: repeat(3, 15vw) 20vw; }
 .ConfigUI, .QRefUI { font-family: inherit; font-size: inherit; margin: 5px;}
