@@ -20,11 +20,13 @@ class Settings {
         'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative'],
         'Preemptive':	['8-11 HCP', '6+ cards with honor(s) ',
             '7-cards at 3-level'],
-        'OverCall':	['Michaels, Unusual 2NT'],
-        'Double':	['Take-out up to 3♠, Support DBL, Negative DBL', 'Responsive DBL'],
+        'OverCall':	['Suit 8-16 HCP', '1NT 15~19 HCP', 'Michaels, Unusual 2NT'],
+        'Doubles':	['Take-out up to 3♠, Support DBL, Negative DBL', 'Responsive DBL'],
         'Others':	['Splinter, New Minor Forcing, 4th Suit Forcing', 'High Reverse'],
         'Slam Attempt':	['No Queen Ask, 5NT for King Count', 
-             'Gerber for NT Contract']};
+             'Gerber for NT Contract'],
+        'Carding':	['Standard', 'Lead 4th from long suit']
+            };
 
     constructor(){
         this.Version = LatestGitTag;
@@ -632,7 +634,7 @@ class Settings {
             }
         }
         if (!convCopy['Preemptive'].includes('Ogust'))
-             convCopy['Preemptive'].push('2NT Ask Stopper Suit');
+             convCopy['Preemptive'].push('2NT Ask Feature');
 
         for (const [k, v] of Object.entries(convCopy)) {
             for (const str of v) {
