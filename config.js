@@ -18,13 +18,13 @@ class Settings {
         'No Trump':	['Gerber, Stayman, Jacoby Transfer, Texas Transfer', 'Smolen', '2S Puppet to 3C', '2NT invitational'],
         'Minor':	['Inverted Minor', '2NT Invitational'],
         'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative'],
-        'Preemptive':	['6+ cards with honor(s), 8-11 HCP',
+        'Preemptive':	['8-11 HCP', '6+ cards with honor(s) ',
             '7-cards at 3-level'],
         'OverCall':	['Michaels, Unusual 2NT'],
         'Double':	['Take-out up to 3♠, Support DBL, Negative DBL', 'Responsive DBL'],
         'Others':	['Splinter, New Minor Forcing, 4th Suit Forcing', 'High Reverse'],
-        'Slam Attempt':	['No Queen Ask, 5NT for King Count', 'D0P1', 
-             'R0P1','Gerber for NT Contract']};
+        'Slam Attempt':	['No Queen Ask, 5NT for King Count', 
+             'Gerber for NT Contract']};
 
     constructor(){
         this.Version = LatestGitTag;
@@ -607,28 +607,32 @@ class Settings {
 
         if (twoOneFlag == 1) {
             convCopy.Major.push('Bergen Raises')
+            convCopy.Others.unshift('Weak Jump Shift');
         } else {
             if (conv.has('Soloway Jump Shift'))
-                convCopy.Others.push('Soloway Jump Shift');
+                convCopy.Others.unshift('Soloway Jump Shift');
             else
-                convCopy.Others.push('Strong Jump Shift');
+                convCopy.Others.unshift('Strong Jump Shift');
             convCopy.Major.push('Limited Raise')
         }
 
-        if (conv.has('Ogust'))
-            convCopy.Preemptive.push('Ogust')
-        else
-            convCopy.Preemptive.push('Feature Ask')
-
-        if (conv.has('RKCB 0314'))
-            convCopy["Slam Attempt"].unshift('RKCB 0314')
-        else
-            convCopy["Slam Attempt"].unshift('RKCB 1430')
-
-        if (conv.has('DONT'))
-            convCopy["OverCall"].push('DONT')
-        else if (conv.has('Cappelletti'))
-            convCopy["OverCall"].push('Cappelletti')
+        for (const [c, cat, p] of [['Ogust', 'Preemptive', false], 
+            ['RKCB 0314', 'Slam Attempt', true],
+            ['RKCB 1430', 'Slam Attempt', true],
+            ['DONT', 'OverCall', false],
+            ['Cappelletti', 'OverCall', false],
+            ['R0P1', 'Slam Attempt', false],
+            ['D0P1', 'Slam Attempt', false]]) {
+            if (conv.has(c)) {
+                if (p) 
+                    convCopy[cat].unshift(c);
+                else
+                    convCopy[cat].push(c);
+                conv.delete(c);
+            }
+        }
+        if (!convCopy['Preemptive'].includes('Ogust'))
+             convCopy['Preemptive'].push('2NT Ask Stopper Suit');
 
         for (const [k, v] of Object.entries(convCopy)) {
             for (const str of v) {
@@ -640,7 +644,7 @@ class Settings {
                 });
             }
         }
-        ['NMF', '4SF', 'R0P1', 'D0P1', "2C-2H Double Negative", "2C-2D Waiting", "Strong Jump Shift", "Minor Transfer", "Take-Out DBL"].forEach(c => conv.delete(c));
+        ['NMF', '4SF', "2C-2H Double Negative", "2C-2D Waiting", "Strong Jump Shift", "Minor Transfer", "Take-Out DBL"].forEach(c => conv.delete(c));
 
         conv.forEach(c => convCopy['Others'].push(c));
         
@@ -659,18 +663,17 @@ class Settings {
             let e = gridElement(gridDiv, trEnZh(k), 1, row)
             e.setAttribute('class', 'ConvCardHeading');
             let renderStr = '';
-            for (const str of v) {
-                let trStr = str.split(',')
-                    .map(s => trEnZh(s.trim()))
-                    .join(', ');;
-                if (renderStr.length + trStr.length <= WRAP) {
+            let strList = [];
+            v.forEach(s => strList.push(...s.split(',')));
+            for (const str of strList) {
+                if (renderStr.length + str.length <= WRAP) {
                     if (renderStr.length > 0) 
                         renderStr += ', ';
-                    renderStr += trStr
+                    renderStr += trEnZh(str.trim());
                 } else {
                     e = gridElement(gridDiv, renderStr, 2, row++)
                     e.setAttribute('class', 'ConvCardData');
-                    renderStr = '';
+                    renderStr = str;
                 }
             }
             if (renderStr.length > 0) {
