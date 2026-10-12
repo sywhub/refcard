@@ -555,22 +555,32 @@ class Settings {
         e.setAttribute('charset', 'UTF-8');
         tab.document.head.appendChild(e);
 
-        e = document.createElement('meta');
-        e.setAttribute('name', 'author');
-        e.setAttribute('content', 'Sin-Yaw Wang');
-        tab.document.head.appendChild(e);
-
-        e = document.createElement('meta');
-        e.setAttribute('name', 'title');
-        e.setAttribute('content', 'Convention Card');
-        tab.document.head.appendChild(e);
-        tab.document.title = 'Convention Card';
+        [['author', 'Sin-Yaw Wang'], ['title', 'Convention Card'],
+             ['description', 'Printable Convention Card']]
+            .forEach(([name, content]) => {
+            e = document.createElement('meta');
+            e.setAttribute('name', name);
+            e.setAttribute('content', content);
+            tab.document.head.appendChild(e);
+        });
+        tab.document.title = 'Conventions & Carding';
         
         e = document.createElement('link');
         e.setAttribute('rel', 'stylesheet');
         e.setAttribute('href', 'styles.css');
         e.setAttribute('type', 'text/css');
-        tab.document.head.appendChild(e);
+        tab.document.head.appendChild(e); 
+
+        e = document.createElement('div');
+        var p = document.createElement('p');
+        p.style.textAlign = 'left';
+        p.style.fontStyle = 'italic';
+        p.style.marginLeft = '10vw';
+        p.innerHTML = '&spades;<span style="color: red">&hearts;</span> '
+            +tab.document.title + 
+            ' <span style="color: red">&diams;</span>'+'&clubs;';
+        e.appendChild(p);
+        tab.document.body.appendChild(e);
 
         var gridDiv = document.createElement('div');
         gridDiv.setAttribute('class', 'ConvCard');
@@ -683,6 +693,20 @@ class Settings {
                 e.setAttribute('class', 'ConvCardData');
             }
         }
+
+        /*
+        var convDate = new Date();
+        var datestring = convDate.toLocaleDateString(Config.Language, {month: "short", year: "numeric", day: "numeric"});
+        e = document.createElement('div');
+        p = document.createElement('p');
+        p.style.textAlign = 'left';
+        p.style.fontStyle = 'italic';
+        p.style.fontSize = '0.8em';
+        p.style.marginLeft = '10vw';
+        p.innerHTML = datestring;
+        e.appendChild(p);
+        tab.document.body.appendChild(e);
+        */
     }
 }
 
