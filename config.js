@@ -575,7 +575,6 @@ class Settings {
             conv.delete(this.OptionItems['2/1 Choice'].IDs[this.OptionItems['2/1 Choice'].Value]);
 
         var twoOneFlag = this.OptionItems['2/1 Choice'].Value
-
         if (twoOneFlag == 1) {
             convCopy.Major.push('Bergen Raises')
             convCopy.Others.unshift('Weak Jump Shift');
@@ -600,8 +599,7 @@ class Settings {
             ["2C-2H Double Negative", '', false],
             ["2C-2D Waiting", '', false],
             ["Strong Jump Shift", '', false], 
-            ["Minor Transfer", '', false], 
-            ["Take-Out DBL", '', false]]) {
+            ["Minor Transfer", '', false]]) {
             if (conv.has(c)) {
                 if (cat) 
                     p ?  convCopy[cat].unshift(c) : convCopy[cat].push(c);
