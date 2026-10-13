@@ -28,12 +28,13 @@ h2, h3 {color: blueviolet;}
     display: grid;
     grid-template-columns: 10vw 35vw;
 }
-.ConfigHeading, .ConvCardHeading {
+.ConfigHeading, .ConvCardHeading, .ConvCardTdHeading {
     justify-self: right;
     margin-right: 15px;
     font-weight: bold;
     color: blueviolet;
 }
+.ConvCardTdHeading {width: 10vw; text-align: right;}
 .About {
     display: grid;
     grid-template-columns: 10vw 45vw;
@@ -44,8 +45,9 @@ h2, h3 {color: blueviolet;}
     display: grid;
     grid-template-columns: 10vw 35vw;
 }
-.ConfigData, .ConvCardData { font-style: italic; }
-.ConvCardData {border-bottom: 1px solid black}
+.ConfigData, .ConvCardData, .ConvCardTdData { font-style: italic; }
+.ConvCardData, .ConvCardTdData {border-bottom: 1px solid black}
+.ConvCardTdData {width: 35vw; padding-left: 0.5em;}
 .BBOLin { font-family: 'Courier New', Courier, monospace; font-size: 6;}
 .BidKeys { display: grid; grid-template-columns: repeat(3, 15vw) 20vw; }
 .ConfigUI, .QRefUI { font-family: inherit; font-size: inherit; margin: 5px;}

@@ -545,47 +545,6 @@ class Settings {
      * Convert the current configuration to a convention card that's good for printing.
      */
     convCard() {
-        /*
-         * Add a new tab to the browser.
-         * Add the necesssary header information.
-         */
-        var tab = window.open('about:blank', '_blank');
-        tab.document.documentElement.lang = 'en';
-        var e = document.createElement('meta');
-        e.setAttribute('charset', 'UTF-8');
-        tab.document.head.appendChild(e);
-
-        [['author', 'Sin-Yaw Wang'], ['title', 'Convention Card'],
-             ['description', 'Printable Convention Card']]
-            .forEach(([name, content]) => {
-            e = document.createElement('meta');
-            e.setAttribute('name', name);
-            e.setAttribute('content', content);
-            tab.document.head.appendChild(e);
-        });
-        tab.document.title = 'Conventions & Carding';
-        
-        e = document.createElement('link');
-        e.setAttribute('rel', 'stylesheet');
-        e.setAttribute('href', 'styles.css');
-        e.setAttribute('type', 'text/css');
-        tab.document.head.appendChild(e); 
-
-        e = document.createElement('div');
-        var p = document.createElement('p');
-        p.style.textAlign = 'left';
-        p.style.fontStyle = 'italic';
-        p.style.marginLeft = '10vw';
-        p.innerHTML = '&spades;<span style="color: red">&hearts;</span> '
-            +tab.document.title + 
-            ' <span style="color: red">&diams;</span>'+'&clubs;';
-        e.appendChild(p);
-        tab.document.body.appendChild(e);
-
-        var gridDiv = document.createElement('div');
-        gridDiv.setAttribute('class', 'ConvCard');
-        tab.document.body.appendChild(gridDiv);
-
         /* Collect the current active conventions */
         var convCopy = JSON.parse(JSON.stringify(this.ConvCard));
         var conv = new Set();
@@ -634,19 +593,24 @@ class Settings {
             ['DONT', 'OverCall', false],
             ['Cappelletti', 'OverCall', false],
             ['R0P1', 'Slam Attempt', false],
-            ['D0P1', 'Slam Attempt', false]]) {
+            ['D0P1', 'Slam Attempt', false],
+            ['NMF', '', false],
+            ['4SF', '', false],
+            ["2C-2H Double Negative", '', false],
+            ["2C-2D Waiting", '', false],
+            ["Strong Jump Shift", '', false], 
+            ["Minor Transfer", '', false], 
+            ["Take-Out DBL", '', false]]) {
             if (conv.has(c)) {
-                if (p) 
-                    convCopy[cat].unshift(c);
-                else
-                    convCopy[cat].push(c);
+                if (cat) 
+                    p ?  convCopy[cat].unshift(c) : convCopy[cat].push(c);
                 conv.delete(c);
             }
         }
         if (!convCopy['Preemptive'].includes('Ogust'))
              convCopy['Preemptive'].push('2NT Ask Feature');
 
-        for (const [k, v] of Object.entries(convCopy)) {
+        for (const [k,v] of Object.entries(convCopy)) {
             for (const str of v) {
                 let cStr = str.split(',');
                 cStr.forEach(s => {
@@ -656,24 +620,64 @@ class Settings {
                 });
             }
         }
-        ['NMF', '4SF', "2C-2H Double Negative", "2C-2D Waiting", "Strong Jump Shift", "Minor Transfer", "Take-Out DBL"].forEach(c => conv.delete(c));
 
         conv.forEach(c => convCopy['Others'].push(c));
         
         convCopy.Theme[0] = 'SAYC';
         if (twoOneFlag > 0)
             convCopy.Theme[0] = '2/1 GF';
-            
-        /* 
-         * Do it as HTML for now.
-         * Should try to do PDF directly.
+
+        /*
+         * Add a new tab to the browser.
+         * Add the necesssary header information.
          */
-        var row = 1;
-        // Compact printing
+        var tab = window.open('about:blank', '_blank');
+        tab.document.documentElement.lang = 'en';
+        var e = document.createElement('meta');
+        e.setAttribute('charset', 'UTF-8');
+        tab.document.head.appendChild(e);
+
+        [['author', 'Sin-Yaw Wang'], ['title', 'Convention Card'],
+             ['description', 'Printable Convention Card']]
+            .forEach(([name, content]) => {
+            e = document.createElement('meta');
+            e.setAttribute('name', name);
+            e.setAttribute('content', content);
+            tab.document.head.appendChild(e);
+        });
+        tab.document.title = 'Conventions Card';
+        
+        e = document.createElement('link');
+        e.setAttribute('rel', 'stylesheet');
+        e.setAttribute('href', 'styles.css');
+        e.setAttribute('type', 'text/css');
+        tab.document.head.appendChild(e); 
+
+        e = document.createElement('div');
+        var p = document.createElement('p');
+        p.style.textAlign = 'left';
+        p.style.fontStyle = 'italic';
+        p.style.marginLeft = '10vw';
+        p.innerHTML = '&spades;<span style="color: red">&hearts;</span> '
+            +tab.document.title + 
+            ' <span style="color: red">&diams;</span>'+'&clubs;';
+        e.appendChild(p);
+        tab.document.body.appendChild(e);
+
+        /* Do it as HTML for now.  */
         const WRAP = this.ConvCard.General[0].length
+        var t = document.createElement('table');
+        t.setAttribute('class', 'ConvCardTable');
         for (const [k,v] of Object.entries(convCopy)) { 
-            let e = gridElement(gridDiv, trEnZh(k), 1, row)
-            e.setAttribute('class', 'ConvCardHeading');
+            let tr = document.createElement('tr');
+            tr.setAttribute('class', 'ConvCardRow');
+            t.appendChild(tr);
+
+            let td = document.createElement('td');
+            td.innerHTML = trEnZh(k);
+            td.setAttribute('class', 'ConvCardTdHeading');
+            tr.appendChild(td);
+            let tdFlag = false;
             let renderStr = '';
             let strList = [];
             v.forEach(s => strList.push(...s.split(',')));
@@ -683,30 +687,51 @@ class Settings {
                         renderStr += ', ';
                     renderStr += trEnZh(str.trim());
                 } else {
-                    e = gridElement(gridDiv, renderStr, 2, row++)
-                    e.setAttribute('class', 'ConvCardData');
+                    if (tdFlag) {
+                        tr = document.createElement('tr');
+                        tr.setAttribute('class', 'ConvCardRow');
+                        t.appendChild(tr);
+                        td = document.createElement('td');
+                        td.setAttribute('class', 'ConvCardTdHeading');
+                        td.innerHTML = '&nbsp;';
+                        tr.appendChild(td);
+                    }
+                    td = document.createElement('td');
+                    td.innerHTML = renderStr;
+                    td.setAttribute('class', 'ConvCardTdData');
+                    tr.appendChild(td);
                     renderStr = str;
+                    tdFlag = true;
                 }
             }
             if (renderStr.length > 0) {
-                e = gridElement(gridDiv, renderStr, 2, row++)
-                e.setAttribute('class', 'ConvCardData');
+                if (tdFlag) {
+                    tr = document.createElement('tr');
+                    tr.setAttribute('class', 'ConvCardRow');
+                    t.appendChild(tr);
+                    td = document.createElement('td');
+                    td.innerHTML = '&nbsp;';
+                    td.setAttribute('class', 'ConvCardTdHeading');
+                    tr.appendChild(td);
+                }
+                td = document.createElement('td');
+                td.innerHTML = renderStr;
+                td.setAttribute('class', 'ConvCardTdData');
+                tr.appendChild(td);
             }
         }
+        tab.document.body.appendChild(t);
 
-        /*
         var convDate = new Date();
         var datestring = convDate.toLocaleDateString(Config.Language, {month: "short", year: "numeric", day: "numeric"});
         e = document.createElement('div');
         p = document.createElement('p');
         p.style.textAlign = 'left';
         p.style.fontStyle = 'italic';
-        p.style.fontSize = '0.8em';
-        p.style.marginLeft = '10vw';
+        p.style.fontSize = '0.5em';
         p.innerHTML = datestring;
         e.appendChild(p);
         tab.document.body.appendChild(e);
-        */
     }
 }
 
