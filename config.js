@@ -14,7 +14,7 @@ class Settings {
     ConvCard = {
         'Theme': [''],
         'General': [`5-Card Major, Better Minor, Strong 2${Card.ltr2html('C')}, Strong NT, RKCB`],
-        'Major': ['Reverse Drury', 'Jacoby 2NT'],
+        'Major': ['Jacoby 2NT'],
         'No Trump':	['Gerber, Stayman, Jacoby Transfer, Texas Transfer', 'Smolen', '2S Puppet to 3C', '2NT invitational'],
         'Minor':	['Inverted Minor', '2NT Invitational'],
         'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative'],
@@ -588,6 +588,7 @@ class Settings {
         }
 
         for (const [c, cat, p] of [['Ogust', 'Preemptive', false], 
+            ['Reverse Drury', 'Major', true],
             ['RKCB 0314', 'Slam Attempt', true],
             ['RKCB 1430', 'Slam Attempt', true],
             ['DONT', 'OverCall', false],
