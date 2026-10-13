@@ -652,30 +652,44 @@ class Settings {
         e.setAttribute('type', 'text/css');
         tab.document.head.appendChild(e); 
 
-        e = document.createElement('div');
-        var p = document.createElement('p');
-        p.style.textAlign = 'left';
-        p.style.fontStyle = 'italic';
-        p.style.marginLeft = '10vw';
-        p.innerHTML = '&spades;<span style="color: red">&hearts;</span> '
-            +tab.document.title + 
-            ' <span style="color: red">&diams;</span>'+'&clubs;';
-        e.appendChild(p);
-        tab.document.body.appendChild(e);
-
         /* Do it as HTML for now.  */
         const WRAP = this.ConvCard.General[0].length
         var t = document.createElement('table');
         t.setAttribute('class', 'ConvCardTable');
+        var tr = document.createElement('tr');
+        tr.setAttribute('class', 'ConvCardRow');
+        t.appendChild(tr);
+        var td = document.createElement('th');
+        td.setAttribute('colspan', '2');
+        td.innerHTML = '&spades;<span style="color: red">&hearts;</span> '
+            +tab.document.title + 
+            ' <span style="color: red">&diams;</span>'+'&clubs;';
+        td.setAttribute('class', 'ConvCardTblTitle');
+        tr.appendChild(td);
         for (const [k,v] of Object.entries(convCopy)) { 
             let tr = document.createElement('tr');
             tr.setAttribute('class', 'ConvCardRow');
             t.appendChild(tr);
+            if (k == 'Carding') {   // add a blank line
+                let td = document.createElement('td');
+                td.innerHTML = '&nbsp;';
+                tr.appendChild(td);
+                td = document.createElement('td');
+                td.innerHTML = '&nbsp;';
+                td.setAttribute('class', 'ConvCardTdData');
+                tr.appendChild(td);
+
+                tr = document.createElement('tr');
+                tr.setAttribute('class', 'ConvCardRow');
+                t.appendChild(tr);
+            }
 
             let td = document.createElement('td');
             td.innerHTML = trEnZh(k);
             td.setAttribute('class', 'ConvCardTdHeading');
             tr.appendChild(td);
+            
+            // Simulate heading effect
             let tdFlag = false;
             let renderStr = '';
             let strList = [];
@@ -691,7 +705,6 @@ class Settings {
                         tr.setAttribute('class', 'ConvCardRow');
                         t.appendChild(tr);
                         td = document.createElement('td');
-                        td.setAttribute('class', 'ConvCardTdHeading');
                         td.innerHTML = '&nbsp;';
                         tr.appendChild(td);
                     }
@@ -710,7 +723,6 @@ class Settings {
                     t.appendChild(tr);
                     td = document.createElement('td');
                     td.innerHTML = '&nbsp;';
-                    td.setAttribute('class', 'ConvCardTdHeading');
                     tr.appendChild(td);
                 }
                 td = document.createElement('td');
@@ -719,18 +731,21 @@ class Settings {
                 tr.appendChild(td);
             }
         }
-        tab.document.body.appendChild(t);
 
         var convDate = new Date();
         var datestring = convDate.toLocaleDateString(Config.Language, {month: "short", year: "numeric", day: "numeric"});
-        e = document.createElement('div');
-        p = document.createElement('p');
-        p.style.textAlign = 'left';
-        p.style.fontStyle = 'italic';
-        p.style.fontSize = '0.5em';
-        p.innerHTML = datestring;
-        e.appendChild(p);
-        tab.document.body.appendChild(e);
+        tr = document.createElement('tr');
+        td = document.createElement('td');
+        td.innerHTML = '&nbsp;';
+        tr.appendChild(td);
+        td = document.createElement('td');
+        td.innerHTML = datestring;
+        td.style['text-align'] = 'right';
+        td.style['font-style'] = 'italic';
+        td.style['font-size'] = '0.5em';
+        tr.appendChild(td);
+        t.appendChild(tr);
+        tab.document.body.appendChild(t);
     }
 }
 
