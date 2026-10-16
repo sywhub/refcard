@@ -1,5 +1,5 @@
 // New Minor Forcing
-BidComponents.push({'BuildIn': 'Yes', 'Name': 'New Minor Forcing',
+BidComponents.push({'BuiltIn': 'Yes', 'Name': 'New Minor Forcing',
     'Rules': [
 	{'Bids': [{'Bid': '2D', 'Criteria': [{'SuitLen': {'H': 5}, 'HCP': [10, 12], 'Meta': {'Forcing': 'Yes', 'Notes': 'Invitational', 'Convention': 'NMF'}}]}],
 	'Seq': ['1C', '-', '1H', '-', '1NT', '-']},
@@ -13,7 +13,7 @@ BidComponents.push({'BuildIn': 'Yes', 'Name': 'New Minor Forcing',
 	'Seq': ['1H', '-', '1S', '-', '1NT', '-']}
     ]});
 // 4th Suit Forcing
-BidComponents.push({'BuildIn': 'Yes', 'Name': '4th Suit Forcing',
+BidComponents.push({'BuiltIn': 'Yes', 'Name': '4th Suit Forcing',
     'Rules': [
 	{'Bids': [{'Bid': '4C', 'Criteria': [{'HCP': 16, 'Meta': {'Convention': '4SF', 'GF': 'Yes'}}]}],
 	'Seq': ['1S', '-', '2H', '-', '3D', '-']},

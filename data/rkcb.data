@@ -1,5 +1,5 @@
 // RKCB
-BidComponents.push({'BuildIn': 'Yes',
+BidComponents.push({'BuiltIn': 'Yes',
   'Name': 'RKCB',
   'Rules': [ 
              { 'Bids': [ {'Bid': '5C', 'Criteria': [{'KeyCard': [0, 3], 'Meta': {'Convention': 'RKCB'}}]},

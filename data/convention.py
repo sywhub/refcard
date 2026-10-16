@@ -14,7 +14,7 @@ class Convention:
         if not builtIn and flag:
             print(f"'Flag': '{flag}',",end=' ')
         if builtIn:
-            print("'BuildIn': 'Yes',", end=' ')
+            print("'BuilDIn': 'Yes',", end=' ')
         print(f"'Name': '{self.meta['Convention']}',")
 
     def startBids(self):

@@ -138,29 +138,28 @@ function About(d) {
 
     var right = gridElement(divDisp, '', 2, 1);
     right.innerHTML = Config.OptionItems.Language.IDs[Config.OptionItems.Language.Value] == 'en-US' ? enAboutText : zhAboutText;
-    right.insertAdjacentHTML('beforeend', '<h2>Technical Details<h2>');
-    right.insertAdjacentHTML('beforeend', `<h3>${trEnZh('Components')}</h3>`);
-    var compList = BidComponents.map(c => c.Name).sort()
-    for (const comp of compList) 
-        right.insertAdjacentHTML('beforeend', `${trEnZh(comp)}<br>`);
     right.insertAdjacentHTML('beforeend', `<h3>${trEnZh('Coded Conventions')}</h3>`);
     let conv = [];
     for (const comp of BidComponents) {
         for (const r of comp.Rules) {
             for (const b of r.Bids) {
                 b.Criteria.forEach((c) => {
-                    if ('Meta' in c && 'Convention' in c.Meta && !conv.includes(c.Meta.Convention))
-                        conv.push(c.Meta.Convention);});
+                    if ('Meta' in c && 'Convention' in c.Meta &&
+                        !conv.some(x => x[0] === c.Meta.Convention)) {
+                        let con = c.Meta.Convention;
+                        conv.push([con, ConventionURL(con),
+                            Object.hasOwn(Config.ConvCategory, con) ? Config.ConvCategory[con] : 'Others']);
+                    }
+                });
             }
         }
     }
-    conv.sort();
+    conv.sort((a, b) => a[0] > b[0]);
     conv.forEach(c => {
-        let url = ConventionURL(c);
-        let text = trEnZh(c);
-        if (url) {
+        let text = trEnZh(c[0]);
+        if (c[1]) {
             let e = document.createElement('a')
-            e.setAttribute('href', url)
+            e.setAttribute('href', c[1])
             e.innerHTML = text;
             right.appendChild(e)
             right.insertAdjacentHTML('beforeend', `<br>`);

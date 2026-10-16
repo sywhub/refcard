@@ -11,22 +11,46 @@ class Settings {
         'RKCBFlag': {HTML: 'RKCB',  Choices: true, IDs: ['0314', '1430']},
         };
 
-    ConvCard = {
-        'Theme': [''],
-        'General': [`5-Card Major, Better Minor, Strong 2${Card.ltr2html('C')}, Strong NT, RKCB`],
-        'Major': ['Jacoby 2NT'],
-        'No Trump':	['Gerber, Stayman, Jacoby Transfer, Texas Transfer', 'Smolen', '2S Puppet to 3C', '2NT invitational'],
-        'Minor':	['Inverted Minor', '2NT Invitational'],
+    ConvCardBase = {
+        'General': [`5-Card Major, Better Minor, Strong 2${Card.ltr2html('C')}, Strong NT`],
+        'Major': [],
+        'No Trump':	['2S Puppet to 3C', '2NT invitational'],
+        'Minor':	['2NT Invitational'],
         'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative'],
         'Preemptive':	['8-11 HCP', '6+ cards with honor(s) ',
             '7-cards at 3-level'],
-        'OverCall':	['Suit 8-16 HCP', '1NT 15~19 HCP', 'Michaels, Unusual 2NT'],
-        'Doubles':	['Take-out up to 3♠, Support DBL, Negative DBL', 'Responsive DBL'],
-        'Others':	['Splinter, New Minor Forcing, 4th Suit Forcing', 'High Reverse'],
-        'Slam Attempt':	['No Queen Ask, 5NT for King Count', 
-             'Gerber for NT Contract'],
-        'Carding':	['Standard', 'Lead 4th from long suit']
+        'Doubles':	[],
+        'Competitive':	['Suit 8-16 HCP', '1NT 15~19 HCP', 'Take-out up to 3♠'],
+        'Others':	['High Reverse'],
+        'Slam':	['5NT for King Count', 'Gerber for NT Contract']
             };
+
+    ConvCategory = 
+            {'Leaping Michaels': 'Competitive',
+            'Lebensohl': 'Competitive',
+            'Michaels': 'Competitive',
+            'Sandwich 1NT': 'Competitive',
+            'Unusual 2NT': 'Competitive',
+            'Negative DBL': 'Doubles',
+            'Responsive DBL': 'Doubles',
+            'Support DBL': 'Doubles',
+            'RKCB': 'General',
+            'Bergen Raise': 'Major',
+            'Jacoby 2NT': 'Major',
+            'Limited Raise': 'Major',
+            'Reverse Drury': 'Major',
+            'Inverted Minor': 'Minor',
+            'DONT': 'No Trump',
+            'Gerber': 'No Trump',
+            'Jacoby Transfer': 'No Trump',
+            'Smolen': 'No Trump',
+            'Stayman': 'No Trump',
+            'Texas Transfer': 'No Trump',
+            'Minor Transfer': 'No Trump',
+            'Cappelletti': 'No Trump',
+            'Ogust': 'Preemptive',
+            'D0P1': 'Slam',
+            'R0P1': 'Slam'};
 
     constructor(){
         this.Version = LatestGitTag;
@@ -37,29 +61,28 @@ class Settings {
 
     init(e) {
         this.disp = e;
-        var choiceSet = [];
+        this.allConventions();
+        var choiceSet = new Set();
         // Construct GUI options from data
         for (const bidComp of BidComponents) {
-            if (bidComp.ChoiceOf != undefined) {
-                if (!choiceSet.includes(bidComp.ChoiceOf))
-                    choiceSet.push(bidComp.ChoiceOf)
-            }
-            if (!('BuildIn' in bidComp) && bidComp.ChoiceOf == undefined) {
+            if (bidComp.ChoiceOf != undefined) 
+                    choiceSet.add(bidComp.ChoiceOf)
+            if (!('BuiltIn' in bidComp) && bidComp.ChoiceOf == undefined) {
                 this.OptionItems[bidComp.Name] = {'HTML': bidComp.Name};
                 if (bidComp.DefaultOn != undefined && bidComp.DefaultOn)
                     this.OptionItems[bidComp.Name]['Value'] = 1;
             }
         }
         for (const choice of choiceSet) {
-            let flagSet = [];
+            let flagSet = new Set();
             BidComponents.forEach(comp => {
                 if (comp.ChoiceOf && comp.ChoiceOf == choice)
-                    flagSet.push(comp.Name);
+                    flagSet.add(comp.Name);
             });
             this.OptionItems[choice] = {'HTML': choice, 'Choices': true, IDs: ['None']}
             let idx = 1;
             BidComponents.forEach(comp => {
-                if (flagSet.includes(comp.Name)) {
+                if (flagSet.has(comp.Name)) {
                     this.OptionItems[choice].IDs.push(comp.Name);
                     if (comp.DefaultOn != undefined && comp.DefaultOn)
                         this.OptionItems[choice]['Value'] = idx;
@@ -76,7 +99,7 @@ class Settings {
         // base should be the first one
         for (let i = 0; i < BidComponents.length; i++) {
             let bidComp = BidComponents[i];
-            if ('BuildIn' in bidComp)
+            if ('BuiltIn' in bidComp)
                 working['Rules'] = this.mergeRules(working['Rules'], bidComp);
             else if (bidComp.ChoiceOf != undefined) {
                 let idx = this.OptionItems[bidComp.ChoiceOf].Value;
@@ -232,27 +255,41 @@ class Settings {
         e.setAttribute('class', this.Heading);
         e = gridElement(gridDiv, trEnZh(this.Version), 2, row++);
         e.setAttribute('class', this.Data);
-        row = this.ConventionCard(gridDiv, row)
-        this.showOptions(gridDiv, row);
+        row = this.BuiltInConventions(gridDiv, row);
+        this.showOptions(gridDiv, row)
+    }
+
+    builtInObject() {
+        var headings = {};
+        for (const [k,v] of Object.entries(this.ConvCardBase)) {
+            headings[k] = [];
+            for (const x of v)
+                headings[k].push(...x.split(','));
+        }
+        for (const c of this.convByCat.BuiltIn) {
+            if (Object.hasOwn(this.ConvCategory, c)) {
+                let cat = this.ConvCategory[c];
+                if (Object.hasOwn(headings, cat))
+                    headings[cat].push(c);
+            } else
+                headings['Others'].push(c);
+        }
+        return headings;
     }
 
     // Text are mostly hand-coded.
-    ConventionCard(gridDiv, row) {
-        var headings = {};
-        for (const [k,v] of Object.entries(this.ConvCard)) 
-            if (k != 'Theme')
-                headings[k] = v.join(', ');
-            
-        var e = gridElement(gridDiv, trEnZh('Convention Card'), 1, row++);
+    BuiltInConventions(gridDiv, row) {
+        var headings = this.builtInObject()
+        const WRAP = this.ConvCardBase.General[0].length + 10
+        var e = gridElement(gridDiv, trEnZh('Built-In Conventions'), 1, row++);
         e.style['grid-column'] = '1 / span 2'
         e.setAttribute('class', 'ConventionCard');
         // Translate words one by one
         for (const [k,v] of Object.entries(headings)) {
             e = gridElement(gridDiv, trEnZh(k), 1, row);
             e.setAttribute('class', this.Heading);
-            let trUnits = v.split(',')
             let trStr = ''
-            trUnits.forEach((x) => trStr += `${trEnZh(x.trim())}, `);
+            v.forEach((x) => trStr += `${trEnZh(x.trim())}, `);
             trStr = trStr.substring(0, trStr.length - 2)
             e = gridElement(gridDiv, trStr, 2, row++);
             e.setAttribute('class', this.Data);
@@ -262,36 +299,11 @@ class Settings {
 
     // User clickables
     showOptions(gridDiv, row) {
-        var e = gridElement(gridDiv, trEnZh('Options'), 1, row);
-        e.setAttribute('class', this.Heading);
-        row = this.mkToggles(gridDiv, row);
-        row = this.mkFlips(gridDiv, row);
-    }
-
-    // Conventions from optional components
-    showOptionalConventions() {
-        for (const bidComp of BidComponents) {
-            if ('BuildIn' in bidComp)
-                continue;
-            let conv = []
-            bidComp.Rules.forEach((r) => {
-                r.Bids.forEach((b) => {
-                    if ('Criteria' in b)
-                        b.Criteria.forEach((c) => {
-                            if ('Meta' in c && 'Convention' in c.Meta && !conv.includes(c.Meta.Convention))
-                                conv.push(c.Meta.Convention);
-                        });
-                });
-            });
-            if (conv.length > 0) {
-                conv.sort();
-                let s = `${bidComp.Name}: `;
-                conv.forEach((c) => s += ` ${c},`);
-                s = s.substring(0, s.length - 1);
-                e.insertAdjacentHTML('beforeend', s)
-                e.insertAdjacentHTML('beforeend', '<br>')
-            }
-        }
+        var e = gridElement(gridDiv, trEnZh('Options'), 1, row++);
+        e.style['grid-column'] = '1 / span 2'
+        e.setAttribute('class', 'ConventionCard');
+        row = this.mkChoices(gridDiv, row);
+        row = this.mkOnOffs(gridDiv, row);
     }
 
     // Retrieve previously saved options from localStorage, if any.
@@ -340,7 +352,7 @@ class Settings {
         btn = document.createElement('input');
         btn.setAttribute('type', 'button');
         btn.setAttribute('class', this.UIClass);
-        btn.setAttribute('value', trEnZh('Print Friendly'));
+        btn.setAttribute('value', trEnZh('Convention Card'));
         btn.addEventListener('click', () => this.convCard());
         subd.appendChild(btn);
         subd.insertAdjacentHTML('beforeend', '<br>')
@@ -357,7 +369,7 @@ class Settings {
     }
 
     // GUI for multiple choices
-    mkToggles(gridDiv, row) {
+    mkChoices(gridDiv, row) {
         var allToggles = []
         Object.entries(this.OptionItems).forEach(([k, v]) => {
             if (k != 'Language' && 'Choices' in v)  {
@@ -399,7 +411,7 @@ class Settings {
     }
 
     // Yes/No options
-    mkFlips(gridDiv, row) {
+    mkOnOffs(gridDiv, row) {
         var flipItems = []
         Object.entries(this.OptionItems).forEach(([k, v]) => {
             if (v.Choices == undefined || !v.Choices) {
@@ -546,85 +558,10 @@ class Settings {
      */
     convCard() {
         /* Collect the current active conventions */
-        var convCopy = JSON.parse(JSON.stringify(this.ConvCard));
-        var conv = new Set();
-        for (const bidComp of BidComponents) {
-            if ('BuildIn' in bidComp) {
-                bidComp.Rules.forEach((r) => {
-                    r.Bids.forEach((b) => {
-                        if ('Criteria' in b)
-                            b.Criteria.forEach((c) => {
-                                if ('Meta' in c && 'Convention' in c.Meta)
-                                    conv.add(c.Meta.Convention);
-                            });
-                    });
-                });
-            } else if (bidComp.ChoiceOf != undefined){
-                let idx = this.OptionItems[bidComp.ChoiceOf].Value;
-                if (idx > 0 && bidComp.Name == this.OptionItems[bidComp.ChoiceOf].IDs[idx]) 
-                    conv.add(this.OptionItems[bidComp.ChoiceOf].IDs[idx]);
-            }
-            else if (this.OptionItems[bidComp.Name].Value > 0) {
-                conv.add(bidComp.Name);
-            }
-        }
-        /* Construct the page */
-        conv.delete('RKCB');
-        conv.add('RKCB ' + this.OptionItems['RKCBFlag'].IDs[this.OptionItems['RKCBFlag'].Value]);
-        if (this.OptionItems['2/1 Choice'].Value > 0)
-            conv.delete(this.OptionItems['2/1 Choice'].IDs[this.OptionItems['2/1 Choice'].Value]);
-
-        var twoOneFlag = this.OptionItems['2/1 Choice'].Value
-        if (twoOneFlag == 1) {
-            convCopy.Major.push('Bergen Raises')
-            convCopy.Others.unshift('Weak Jump Shift');
-        } else {
-            if (conv.has('Soloway Jump Shift'))
-                convCopy.Others.unshift('Soloway Jump Shift');
-            else
-                convCopy.Others.unshift('Strong Jump Shift');
-            convCopy.Major.push('Limited Raise')
-        }
-
-        for (const [c, cat, p] of [['Ogust', 'Preemptive', false], 
-            ['Reverse Drury', 'Major', true],
-            ['RKCB 0314', 'Slam Attempt', true],
-            ['RKCB 1430', 'Slam Attempt', true],
-            ['DONT', 'OverCall', false],
-            ['Cappelletti', 'OverCall', false],
-            ['R0P1', 'Slam Attempt', false],
-            ['D0P1', 'Slam Attempt', false],
-            ['NMF', '', false],
-            ['4SF', '', false],
-            ["2C-2H Double Negative", '', false],
-            ["2C-2D Waiting", '', false],
-            ["Strong Jump Shift", '', false], 
-            ["Minor Transfer", '', false]]) {
-            if (conv.has(c)) {
-                if (cat) 
-                    p ?  convCopy[cat].unshift(c) : convCopy[cat].push(c);
-                conv.delete(c);
-            }
-        }
-        if (!convCopy['Preemptive'].includes('Ogust'))
-             convCopy['Preemptive'].push('2NT Ask Feature');
-
-        for (const [k,v] of Object.entries(convCopy)) {
-            for (const str of v) {
-                let cStr = str.split(',');
-                cStr.forEach(s => {
-                    if (conv.has(s.trim())) {
-                        conv.delete(s.trim())
-                    }
-                });
-            }
-        }
-
-        conv.forEach(c => convCopy['Others'].push(c));
-        
-        convCopy.Theme[0] = 'SAYC';
-        if (twoOneFlag > 0)
-            convCopy.Theme[0] = '2/1 GF';
+        var conv = this.collectConventions();
+        const SortOrder = ['Theme', 'General', 'Major',
+        'No Trump', 'Minor', 'Strong 2♣', 'Preemptive',
+        'Doubles', 'Competitive', 'Others', 'Slam'];
 
         /*
          * Add a new tab to the browser.
@@ -653,7 +590,7 @@ class Settings {
         tab.document.head.appendChild(e); 
 
         /* Do it as HTML for now.  */
-        const WRAP = this.ConvCard.General[0].length
+        const WRAP = this.ConvCardBase.General[0].length + 10
         var t = document.createElement('table');
         t.setAttribute('class', 'ConvCardTable');
         var tr = document.createElement('tr');
@@ -666,24 +603,12 @@ class Settings {
             ' <span style="color: red">&diams;</span>'+'&clubs;';
         td.setAttribute('class', 'ConvCardTblTitle');
         tr.appendChild(td);
-        for (const [k,v] of Object.entries(convCopy)) { 
+
+        for (const k of SortOrder) {
+            let v = conv[k];    
             let tr = document.createElement('tr');
             tr.setAttribute('class', 'ConvCardRow');
             t.appendChild(tr);
-            if (k == 'Carding') {   // add a blank line
-                let td = document.createElement('td');
-                td.innerHTML = '&nbsp;';
-                tr.appendChild(td);
-                td = document.createElement('td');
-                td.innerHTML = '&nbsp;';
-                td.setAttribute('class', 'ConvCardTdData');
-                tr.appendChild(td);
-
-                tr = document.createElement('tr');
-                tr.setAttribute('class', 'ConvCardRow');
-                t.appendChild(tr);
-            }
-
             let td = document.createElement('td');
             td.innerHTML = trEnZh(k);
             td.setAttribute('class', 'ConvCardTdHeading');
@@ -692,9 +617,7 @@ class Settings {
             // Simulate heading effect
             let tdFlag = false;
             let renderStr = '';
-            let strList = [];
-            v.forEach(s => strList.push(...s.split(',')));
-            for (const str of strList) {
+            for (const str of v) {
                 if (renderStr.length + str.length <= WRAP) {
                     if (renderStr.length > 0) 
                         renderStr += ', ';
@@ -732,6 +655,27 @@ class Settings {
             }
         }
 
+        // blank line
+        tr = document.createElement('tr');
+        t.appendChild(tr);
+        td = document.createElement('td');
+        td.innerHTML = '&nbsp;';
+        tr.appendChild(td);
+        td = document.createElement('td');
+        td.innerHTML = '&nbsp;';
+        tr.appendChild(td);
+
+        tr = document.createElement('tr');
+        tr.setAttribute('class', 'ConvCardRow');
+        t.appendChild(tr);
+        td = document.createElement('td');
+        td.innerHTML = '&nbsp;';
+        tr.appendChild(td);
+        td = document.createElement('td');
+        td.setAttribute('class', 'ConvCardTdData');
+        td.innerHTML = trEnZh('Standard Carding');
+        tr.appendChild(td);
+
         var convDate = new Date();
         var datestring = convDate.toLocaleDateString(Config.Language, {month: "short", year: "numeric", day: "numeric"});
         tr = document.createElement('tr');
@@ -746,6 +690,84 @@ class Settings {
         tr.appendChild(td);
         t.appendChild(tr);
         tab.document.body.appendChild(t);
+    }
+
+    collectConventions() {
+        var conv = this.builtInObject();
+
+        conv.General[conv.General.indexOf('RKCB')] += ' ' + this.OptionItems['RKCBFlag'].IDs[this.OptionItems['RKCBFlag'].Value];
+
+        conv['Theme'] = ['SAYC'];
+        var twoOneFlag = this.OptionItems['2/1 Choice'].Value
+        if (twoOneFlag > 0)
+            conv.Theme = ['2/1 GF'];
+
+        if (twoOneFlag == 1) {
+            conv.Major.push('Bergen Raises')
+            conv.Major.splice(conv.Major.indexOf('Limited Raise'), 1);
+            if (!this.OptionItems['Soloway Jump Shift'].Value)
+                conv.Others.unshift('Weak Jump Shift');
+        } else {
+            if (this.OptionItems['Soloway Jump Shift'].Value)
+                conv.Others.unshift('Soloway Jump Shift');
+            else
+                conv.Others.splice(conv.Others.indexOf('Strong Jump Shift'), 1 );
+        }
+
+        for (const spllout of [['NMF', 'New Minor Forcing'],
+            ['4SF', '4th Suit Forcing']]) {
+                let idx = conv.Others.indexOf(spllout[0]);
+                if (idx >= 0) {
+                    conv.Others[idx] = spllout[1];
+                }
+            }
+
+        for (const opt of this.convByCat.Adopted) {
+            if (this.OptionItems[opt].Value) {
+                if (Object.hasOwn(this.ConvCategory, opt))
+                    conv[this.ConvCategory[opt]].push(opt);
+                else
+                    conv['Others'].push(opt);
+            }
+        }
+        if (!this.OptionItems['Ogust'].Value)
+             conv['Preemptive'].push('2NT Ask Feature');
+
+        return conv;
+    }
+
+    /*
+     * Find all the conventions in the current set of rules and categorize
+     * them into BuiltIn, ChoiceSet, and Adopted.
+     */
+    allConventions() {
+        this.convByCat = {'BuiltIn': new Set(), 
+            'ChoiceSet': {},
+            'Adopted': new Set()};
+        for (const bidComp of BidComponents) {
+                bidComp.Rules.forEach((r) => {
+                    r.Bids.forEach((b) => {
+                        if ('Criteria' in b)
+                            b.Criteria.forEach((c) => {
+                                if ('Meta' in c && 'Convention' in c.Meta)
+                                    if ('BuiltIn' in bidComp)
+                                        this.convByCat.BuiltIn.add(c.Meta.Convention);
+                                    else if (bidComp.ChoiceOf != undefined) {
+                                        if (!Object.hasOwn(this.convByCat.ChoiceSet, bidComp.ChoiceOf)) 
+                                            this.convByCat.ChoiceSet[bidComp.ChoiceOf] = {}
+                                        if (!Object.hasOwn(this.convByCat.ChoiceSet[bidComp.ChoiceOf], bidComp.Name))
+                                            this.convByCat.ChoiceSet[bidComp.ChoiceOf][bidComp.Name] = new Set();
+                                        this.convByCat.ChoiceSet[bidComp.ChoiceOf][bidComp.Name].add(c.Meta.Convention);
+                                    } else
+                                        this.convByCat.Adopted.add(c.Meta.Convention);
+                            });
+                    });
+                });
+        }
+        this.convByCat.BuiltIn.forEach((bIn) => {
+            if (this.convByCat.Adopted.has(bIn))
+                this.convByCat.Adopted.delete(bIn);
+        });
     }
 }
 

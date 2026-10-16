@@ -34,7 +34,7 @@ h2, h3 {color: blueviolet;}
     font-weight: bold;
     color: blueviolet;
 }
-.ConvCardTdHeading {width: 10vw; text-align: right;}
+.ConvCardTdHeading {width: 10vw; text-align: right; vertical-align: top;}
 .About {
     display: grid;
     grid-template-columns: 10vw 45vw;

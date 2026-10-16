@@ -64,7 +64,8 @@ class SupportDBL:
                     if b['Bid'] == 'XX':
                         b['Criteria'][0]['SuitLen'] = {}
                         b['Criteria'][0]['SuitLen'][res] = 3
-                        b['Criteria'][0]['Meta'] = dict(Notes='Support DBL')
+                        b['Criteria'][0]['Meta'] = dict(Convention='Support DBL')
+						n
                         break
                 rules.append(dict(Seq=xSeq, Bids=bids))
 
@@ -77,7 +78,7 @@ class SupportDBL:
             print('\t\t]},')
 
     def printHeaders(self):
-        headers = '''BidComponents.push({ 'BuildIn': true,
+        headers = '''BidComponents.push({ 'BuiltIn': true,
         'Flag': 'SupportDBL',
         'Name': 'Support DBL',
         'Rules': ['''

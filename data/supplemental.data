@@ -1,4 +1,4 @@
-BidComponents.push({ 'BuildIn': true,
+BidComponents.push({ 'BuiltIn': true,
   'Name': 'D0P1',
   'Rules': [ { 'Bids': [ {'Bid': '5H', 'Criteria': [{'Meta': {'Convention': 'D0P1'}}]},
                          {'Bid': '5D', 'Criteria': [{'Meta': {'Convention': 'D0P1'}}]},
@@ -270,7 +270,7 @@ BidComponents.push({ 'BuildIn': true,
                'Seq': ['1NT', '2D', '2H', '-', '3S', '-', '4NT', '5C']}
   ]});
 
-BidComponents.push({ 'BuildIn': true,
+BidComponents.push({ 'BuiltIn': true,
   'Name': 'R0P1',
   'Rules': [ {'Bids': [{'Bid': 'X', 'Criteria': [{'Meta': {'Convention': 'R0P1'}}]}], 'Seq': ['1S', '-', '4NT']},
              {'Bids': [{'Bid': 'X', 'Criteria': [{'Meta': {'Convention': 'R0P1'}}]}], 'Seq': ['1H', '-', '4NT']},
@@ -423,7 +423,7 @@ BidComponents.push({ 'BuildIn': true,
                          {'Bid': '5D', 'Criteria': [{'KeyCard': 2, 'Meta': {'Convention': 'R0P1'}, 'TrumpQ': true}]}],
                'Seq': ['1NT', '2D', '2H', '-', '3S', '-', '4NT', 'X']}]});
 
-BidComponents.push({ 'BuildIn': true,
+BidComponents.push({ 'BuiltIn': true,
   'Name': 'Open Rebid',
   'Rules': [ { 'Bids': [ {'Bid': '2H', 'Criteria': [{'HCP': [17, 21], 'Meta': {'Forcing': true}, 'SuitLen': 4}]},
                          {'Bid': '2D', 'Criteria': [{'HCP': [17, 21], 'Meta': {'Forcing': true}, 'SuitLen': 4}]},
@@ -721,7 +721,7 @@ BidComponents.push({ 'Flag': 'Sandwich 1NT',
                          {'Bid': '3C', 'Criteria': [{'Meta': {'Convention': 'Sandwich 1NT'}, 'SuitLen': 4}]}],
                'Seq': ['1H', '-', '1S', '1NT', '-']}]});
 
-BidComponents.push({ 'BuildIn': true,
+BidComponents.push({ 'BuiltIn': true,
   'Name': 'Preemptive Overcall',
   'Rules': [ { 'Bids': [ {'Bid': '2S', 'Criteria': [{'HCP': [10, 15], 'SuitLen': 5}]},
                          {'Bid': '2H', 'Criteria': [{'HCP': [10, 15], 'SuitLen': 5}]},
@@ -976,7 +976,7 @@ BidComponents.push({ 'BuildIn': true,
                'Seq': ['3S', 'X', '-', '4C', '-']}]});
 
 BidComponents.push({
-   'BuildIn': true, 'Name': 'Preempt TakeOut', 'Rules': [
+   'BuiltIn': true, 'Name': 'Preempt TakeOut', 'Rules': [
 	 {'Bids': [{'Bid': '2NT', 'Criteria': [{ 'HCP': [8, 12],
 		   'Meta': {'Notes': 'Take-Out DBL'},
 		   'Shape': 'Balanced', 'Stopper': 'S'}]},
@@ -1116,8 +1116,8 @@ BidComponents.push({
   'DefaultOn': true,
   'Name': 'Gambling 3NT',
   'Rules': [ { 'Bids': [ 
-				 {'Bid': '3NT', 'Criteria': [{'SuitLen': {'D': 7}, 'Honors': {'D': 3}, 'Meta': {'Notes': 'Gambling 3NT'}},
-				 			{'SuitLen': {'C': 7}, 'Honors': {'C': 3}, 'Meta': {'Notes': 'Gambling 3NT'}}
+				 {'Bid': '3NT', 'Criteria': [{'SuitLen': {'D': 7}, 'Honors': {'D': 3}, 'Meta': {'Convention': 'Gambling 3NT'}},
+				 			{'SuitLen': {'C': 7}, 'Honors': {'C': 3}, 'Meta': {'Convention': 'Gambling 3NT'}}
 				 ]}],
                'Seq': []}]});
 
