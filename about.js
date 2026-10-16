@@ -179,7 +179,9 @@ function ConventionURL(c) {
         'Cappelletti': 'https://web2.acbl.org/documentLibrary/play/Commonly_Used_Conventions/cappellettipt1.pdf',
         'D0P1': 'https://www.bridgebum.com/double_0_pass_1.php',
         'DONT': 'https://www.bridgebum.com/dont.php',
-        'Gerber': '',
+        'Fit Showing Jump': 'https://en.wikipedia.org/wiki/Fit_showing_jump_bid',
+        'Gambling 3NT': 'https://www.bridgebum.com/gambling_3nt.php',
+        'Gerber': 'https://www.bridgebum.com/gerber.php',
         'HSGT': 'https://www.bridgebum.com/help_suit_game_try.php',
         'High Reverse': 'https://www.bridgehands.com/H/High_Reverse.htm',
         'Inverted Minor': '',
@@ -207,7 +209,7 @@ function ConventionURL(c) {
         'Take-Out DBL': '',
         'Texas Transfer': '',
         'Unusual 2NT': 'https://www.bridgebum.com/unusual_2nt.php',
-        'XYZ': '',};
+        'XYZ': 'https://www.larryco.com/bridge-articles/xyz',};
     if (c in ConvURL && ConvURL[c] != '')
         return ConvURL[c];
     return null;
