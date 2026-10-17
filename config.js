@@ -20,7 +20,7 @@ class Settings {
         'Preemptive':	['8-11 HCP', '6+ cards with honor(s) ',
             '7-cards at 3-level'],
         'Doubles':	[],
-        'Competitive':	['Suit 8-16 HCP', '1NT 15~19 HCP', 'Take-out up to 3♠'],
+        'Competitive':	['8-16 HCP for Suit', '15~19 HCP for NT', 'Take-out up to 3♠'],
         'Others':	['High Reverse'],
         'Slam':	['5NT for King Count', 'Gerber for NT Contract']
             };
@@ -264,7 +264,7 @@ class Settings {
         for (const [k,v] of Object.entries(this.ConvCardBase)) {
             headings[k] = [];
             for (const x of v)
-                headings[k].push(...x.split(','));
+                headings[k].push(...x.split(',').map(x => x.trim()));
         }
         for (const c of this.convByCat.BuiltIn) {
             if (Object.hasOwn(this.ConvCategory, c)) {
@@ -274,6 +274,8 @@ class Settings {
             } else
                 headings['Others'].push(c);
         }
+        headings['Slam'][headings['Slam'].indexOf('D0P1')] += '/R0P1';
+        headings['Slam'].splice(headings['Slam'].indexOf('R0P1'), 1);
         return headings;
     }
 
@@ -289,7 +291,7 @@ class Settings {
             e = gridElement(gridDiv, trEnZh(k), 1, row);
             e.setAttribute('class', this.Heading);
             let trStr = ''
-            v.forEach((x) => trStr += `${trEnZh(x.trim())}, `);
+            v.sort((a,b) => a.localeCompare(b)).forEach((x) => trStr += `${trEnZh(x)}, `);
             trStr = trStr.substring(0, trStr.length - 2)
             e = gridElement(gridDiv, trStr, 2, row++);
             e.setAttribute('class', this.Data);
@@ -617,7 +619,7 @@ class Settings {
             // Simulate heading effect
             let tdFlag = false;
             let renderStr = '';
-            for (const str of v) {
+            for (const str of v.sort()) {
                 if (renderStr.length + str.length <= WRAP) {
                     if (renderStr.length > 0) 
                         renderStr += ', ';
@@ -723,7 +725,7 @@ class Settings {
             }
 
         for (const opt of this.convByCat.Adopted) {
-            if (this.OptionItems[opt].Value) {
+            if (this.OptionItems[opt].Value > 0) {
                 if (Object.hasOwn(this.ConvCategory, opt))
                     conv[this.ConvCategory[opt]].push(opt);
                 else
