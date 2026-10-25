@@ -17,7 +17,7 @@ class Settings {
         'No Trump':	['2S Puppet to 3C', '2NT invitational'],
         'Minor':	['2NT Invitational'],
         'Strong 2♣':	['2♣-2♦ Waiting, 2♣-2♥ Double Negative'],
-        'Preemptive':	['8-11 HCP', '6+ cards with honor(s) ',
+        'Preemptive':	['5-11 HCP', '6+ cards with honor(s) ',
             '7-cards at 3-level'],
         'Doubles':	[],
         'Competitive':	['8-16 HCP for Suit', '15~19 HCP for NT', 'Take-out up to 3♠'],
@@ -707,10 +707,10 @@ class Settings {
         if (twoOneFlag == 1) {
             conv.Major.push('Bergen Raises')
             conv.Major.splice(conv.Major.indexOf('Limited Raise'), 1);
-            if (!this.OptionItems['Soloway Jump Shift'].Value)
+            if (this.OptionItems['Soloway Jump Shift'].Value <= 0)
                 conv.Others.unshift('Weak Jump Shift');
         } else {
-            if (this.OptionItems['Soloway Jump Shift'].Value)
+            if (this.OptionItems['Soloway Jump Shift'].Value > 0)
                 conv.Others.unshift('Soloway Jump Shift');
             else
                 conv.Others.splice(conv.Others.indexOf('Strong Jump Shift'), 1 );
