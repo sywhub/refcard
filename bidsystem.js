@@ -40,7 +40,7 @@ class BidSystem {
         if (Array.isArray(v)) {
             if (v[0] == 0) {
                 if (v[1] == 1)
-                    parts.push(trEnZh("Singleton or Void"));
+                    parts.push(`${trEnZh("Singleton or Void")} `);
                 else
                     parts.push(v[1] + '-');
             } else if (Number(v[0]) == Number(v[1]))
@@ -85,8 +85,10 @@ class BidSystem {
      */
     anySuitString(k, v, dummy) {
         var parts = [trEnZh("Any of")];
-        for (const [sKey, sVal] of  Object.entries(v)) 
-            parts.push(`  ${sVal}+${Card.ltr2html(sKey)} `);
+        for (const [sKey, sVal] of  Object.entries(v)) {
+            let suitPart = this.suitLenString(sKey, sVal, ` ${sKey}`);
+            parts.push(`  ${suitPart}`);
+        }
         return parts.join('').trim();
     }
 

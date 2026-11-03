@@ -1119,5 +1119,33 @@ BidComponents.push({
 				 {'Bid': '3NT', 'Criteria': [{'SuitLen': {'D': 7}, 'Honors': {'D': 3}, 'Meta': {'Convention': 'Gambling 3NT'}},
 				 			{'SuitLen': {'C': 7}, 'Honors': {'C': 3}, 'Meta': {'Convention': 'Gambling 3NT'}}
 				 ]}],
-               'Seq': []}]});
+               'Seq': []},
+		{'Bids': [
+			{'Bid': '-', 'Criteria': [{'Meta': { 'Notes': 'To Play'}}]},
+			{'Bid': '4C', 'Criteria': [{'Meta': { 'Notes': 'Pass/Correct'}}]},
+			{'Bid': '4D', 'Criteria': [{'Meta': {'GF': 'Yes'}}]},
+			{'Bid': '4H', 'Criteria': [{'SuitLen': 6, 'Meta': { 'Notes': 'To Play'}}]},
+			{'Bid': '4S', 'Criteria': [{'SuitLen': 6, 'Meta': { 'Notes': 'To Play'}}]},
+			{'Bid': '5C', 'Criteria': [{'Meta': {'Notes': 'Pass/Correct'}}]}
+			],
+		'Seq': ['3NT', '-']},
+		{'Bids': [
+			{'Bid': '-', 'Criteria': [{'SuitLen': {'C': 7}}]},
+			{'Bid': '4D', 'Criteria': [{'SuitLen': {'D': 7}}]}
+			],
+		'Seq': ['3NT', '-', '4C', '-']},
+		{'Bids': [
+			{'Bid': '4H', 'Criteria': [{'SuitLen': [0,1]}]},
+			{'Bid': '4S', 'Criteria': [{'SuitLen': [0,1]}]},
+			{'Bid': '4NT', 'Criteria': [{'AnySuit': {'C': [0,1], 'D': [0, 1]}}]},
+			{'Bid': '5C', 'Criteria': [{'SuitLen': 7, 'Meta': {'Notes': 'No Short Suit'}}]},
+			{'Bid': '5D', 'Criteria': [{'SuitLen': 7, 'Meta': {'Notes': 'No Short Suit'}}]}
+			],
+		'Seq': ['3NT', '-', '4D', '-']},
+		{'Bids': [
+			{'Bid': '-', 'Criteria': [{'SuitLen': {'C': 7}}]},
+			{'Bid': '5D', 'Criteria': [{'SuitLen': {'D': 7}}]}
+			],
+		'Seq': ['3NT', '-', '5C', '-']},
+	]});
 
