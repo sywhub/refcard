@@ -46,7 +46,6 @@ class SimStat extends BidSystem {
             'Lebensohl 1NT': {'BidSeq': [['1NT', '2D'], ['1NT', '2H'], ['1NT', '2S']]},
             'Lebensohl 2x': {'BidSeq': [['2D', 'X', '-'], ['2H', 'X', '-'], ['2S', 'X', '-']]},
             'NMF': {'BidSeq': [
-                        ['1H', '-', '1S', '-', '1NT', '-'],
                         ['1C', '-', '1H', '-', '1NT', '-'],
                         ['1C', '-', '1S', '-', '1NT', '-'],
                         ['1D', '-', '1H', '-', '1NT', '-'],
@@ -60,9 +59,9 @@ class SimStat extends BidSystem {
             'Michaels&U2NT': {'BidSeq': [['1S'], ['1H'], ['1C'], ['1D']],
                 'PostFilter': (board, seat) => {
                     return board.seats[seat].HCP >= 6 && board.seats[seat].Suits.filter(s => s == 5).length == 2;}},
-            'Ogust': {'PreCheck': [{'HCP': [6, 11], 'SuitLen': {'S': 6}, 'Meta': {'PreCheckHint': ['2S', '-', '2NT', '-']}},
-                                    {'HCP': [6, 11], 'SuitLen': {'H': 6}, 'Meta': {'PreCheckHint': ['2H', '-', '2NT', '-']}},
-                                    {'HCP': [6, 11], 'SuitLen': {'D': 6}, 'Meta': {'PreCheckHint': ['2D', '-', '2NT', '-']}}],
+            'Ogust': {'PreCheck': [{'HCP': [6, 11], 'SuitLen': {'S': 6}, 'Meta': {'Annotation': ['2S', '-', '2NT', '-']}},
+                                    {'HCP': [6, 11], 'SuitLen': {'H': 6}, 'Meta': {'Annotation': ['2H', '-', '2NT', '-']}},
+                                    {'HCP': [6, 11], 'SuitLen': {'D': 6}, 'Meta': {'Annotation': ['2D', '-', '2NT', '-']}}],
                     'Caption': 'Sample hands for Ogust'},
             '8.5 tricks': {'PreCheck': [{'HCP': [11, 14], 'AnySuit': {'D': 5, 'C': 5}}],
                 'PostFilter': (board, seat) => {
@@ -632,8 +631,8 @@ class SimStat extends BidSystem {
                             (!hasPostFilter || !this.SimulateMap[caseName].PostFilter(this.board, seat));
                         if (found) {
                             let annotation = null;
-                            if ('Meta' in criteria[c] && 'PreCheckHint' in criteria[c].Meta)
-                                annotation = this.seqString(criteria[c].Meta.PreCheckHint.slice(0, -1));
+                            if ('Meta' in criteria[c] && 'Annotation' in criteria[c].Meta)
+                                annotation = this.seqString(criteria[c].Meta.Annotation);
                             let sIdx = this.pushSample(samples, seat, pushPartner, annotation);
                             this.showOneSample(e, samples, sIdx);
                             if (!hasPostFilter) {
@@ -658,38 +657,3 @@ class SimStat extends BidSystem {
 // Click handlers
 function Simulate(e) { simModule.action(simModule.SimulateMap); }
 function RunStat(e) { simModule.action(simModule.StatsMap); }
-function SaveToFile(e) {
-    var e = document.getElementById('BBOLin');
-    if (e != null) 
-        DownLoadToFile('BBOLin.lin', 'BBOLin', 'BBO LIN Format');
-    else {
-        e = document.getElementById('SamplesContents');
-        let txt = '';
-        let tmpText = '';
-        for (const c of e.children) {
-            switch (c.className) {
-                case 'Counter':
-                    txt += `${c.innerText} `;
-                    break;
-                case 'Annotation':
-                    tmpText = c.innerText;
-                    for (const [c,sym] of Object.entries({'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663'})) 
-                        tmpText = tmpText.replaceAll(`${sym}`, `${c}`);
-                    txt += tmpText + ' ';
-                    break;
-                case 'Hand':
-                    tmpText = c.innerText;
-                    for (const [c,sym] of Object.entries({'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663'})) 
-                        tmpText = tmpText.replaceAll(`${sym}`, `${c}:`);
-                    txt += tmpText + '\n';
-                    break;
-            }
-        }
-        e = document.createElement('div');
-        e.setAttribute('id', 'SimStatTxt');
-        e.innerText = txt;
-        document.body.appendChild(e);
-        DownLoadToFile('ExericseHands.txt', 'SimStatTxt', 'Simulated Hands');
-        e.remove();
-    }
-}

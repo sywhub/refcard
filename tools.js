@@ -132,3 +132,39 @@ function seqKey(seq) {
     }
     return sKey;
 }
+
+function SaveToFile(e) {
+    var e = document.getElementById('BBOLin');
+    if (e != null) 
+        DownLoadToFile('BBOLin.lin', 'BBOLin', 'BBO LIN Format');
+    else {
+        e = document.getElementById('SamplesContents');
+        let txt = '';
+        let tmpText = '';
+        for (const c of e.children) {
+            switch (c.className) {
+                case 'Counter':
+                    txt += `${c.innerText} `;
+                    break;
+                case 'Annotation':
+                    tmpText = c.innerText;
+                    for (const [c,sym] of Object.entries({'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663'})) 
+                        tmpText = tmpText.replaceAll(`${sym}`, `${c}`);
+                    txt += tmpText + ' ';
+                    break;
+                case 'Hand':
+                    tmpText = c.innerText;
+                    for (const [c,sym] of Object.entries({'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663'})) 
+                        tmpText = tmpText.replaceAll(`${sym}`, `${c}:`);
+                    txt += tmpText + '\n';
+                    break;
+            }
+        }
+        e = document.createElement('div');
+        e.setAttribute('id', 'SimStatTxt');
+        e.innerText = txt;
+        document.body.appendChild(e);
+        DownLoadToFile('ExericseHands.txt', 'SimStatTxt', 'Simulated Hands');
+        e.remove();
+    }
+}

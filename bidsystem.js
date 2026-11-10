@@ -314,6 +314,9 @@ class BidSystem {
                     // ignore
                     met = true;
                     break;
+                case 'Bid': // ignore and assume met
+                    met = true;
+                    break;
                 default:
                     console.log(`Unknown criteria ${k} in ${JSON.stringify(c)}`);
                     met = false;
