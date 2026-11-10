@@ -1,3 +1,4 @@
+/* Common code for simulator and statistics. */
 class SimStats extends BidSystem {
     // Make a sub div element for displaying the results.  This is to allow us to clear the results without affecting the menu.
     constructor() {

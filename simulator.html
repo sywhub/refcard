@@ -17,6 +17,7 @@ var BidComponents = [];
 <script src="simabout.js"></script>
 <script src="config.js"></script>
 <script src="bidsystem.js"></script>
+<script src="simstats.js"></script>
 <script src="simulate.js"></script>
 <script>
 var Config = new Settings();
@@ -41,9 +42,7 @@ document.title=document.querySelector('meta[name="title"]').content
 <div id='HeadMenu' style="padding-bottom: 1vh; border-bottom: 1px solid rgb(202, 199, 199);"></div>
 <div class="ListDisplay" id="ListDisplay" style="clear: both;"></div>
 <script>
-[// ['Test', 'CardUnitTest'], 
-    ['About', 'AboutSimulate'], ['Settings', 'Config3'], ['Simulator', 'Simulate'],
-    ['Statistics', 'RunStat'], ['Download', 'SaveToFile']].forEach(x => {
+[['Settings', 'Config3'], ['Simulator', 'Simulate'], ['Download', 'SaveToFile']].forEach(x => {
     let divE = document.getElementById('HeadMenu');
     let e = document.createElement('input');
     e.setAttribute('type', 'button');
