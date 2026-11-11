@@ -34,7 +34,7 @@ class BridgeStats extends SimStats {
             Config.makeBidRules();
         }
         this.makeDynamicMap();
-        let menuSet = Object.keys(this.StatsMap).filter(v => v != 'Name');
+        let menuSet = Object.keys(this.StatsMap).filter(v => v != 'Name').sort();
         const e = document.getElementById(menuId);
         this.makeSelect(e, 'Scenario: ', 'Scenario', menuSet);
         this.board = new Board(new Deck());
@@ -217,16 +217,23 @@ class BridgeStats extends SimStats {
         // column headers, provided by caller
         for (const k of statObj.colHdrs)
             tblDiv.insertAdjacentHTML('beforeend', `<div class="TblHeader" style="grid-column: ${++i}; grid-row: 1;">${k}</div>`);
+        var rawElem = [];
+        i = 0;
+        for (const k of statObj.colHdrs) {
+            rawElem.push(document.createElement('div'));
+            let e = rawElem[rawElem.length - 1];
+            e.setAttribute('class', 'TblCell');
+            e.setAttribute('style', `grid-column: ${++i}; grid-row: 2;`);
+            e.innerHTML = 0;
+            tblDiv.appendChild(e);
+        }
 
         let stabilized = false;
         let dblIdx = 0;
-        // The running count.  Hardcoded to be the 1st column, 2nd row.
-        let rawElem = document.createElement('div');
-        rawElem.setAttribute('class', 'TblCell');
-        rawElem.setAttribute('style', 'grid-column: 1; grid-row: 2;');
-        tblDiv.appendChild(rawElem);
+
         // Use interval to improve UI.
         // Interval is async.  Make sure this is the end of the execution.
+        let pre = this.StatsMap[s].PreCheck;
         let sid = setInterval(() => {
             let round = 'round' in statObj ? statObj.round : 100;
             while (round-- > 0) {
@@ -235,34 +242,39 @@ class BridgeStats extends SimStats {
                 let c = 0
                 // Keep dealing until we find a hand that matches the criteria.
                 do {
-                    ++rawCount['Dealt']
+                    ++rawCount['Dealt']; // required key
                     this.board.deal();
-                    for (seat = 0; seat < 4 && !found; ++seat)
-                        for (c = 0; c < this.StatsMap[s].PreCheck.length && !found; ++c) {
-                            let pre = this.StatsMap[s].PreCheck[c];
+                    for (c = 0; c < pre.length && !found; ++c) {
+                        for (seat = 0; seat < 4 && !found; ++seat) {
                             found = this.matchCriteria(this.board.seats[seat],
-                                Object.hasOwn(pre, 'Bid') ? pre.Bid : null, pre);
+                                Object.hasOwn(pre[c], 'Bid') ? pre[c].Bid : null, pre[c]);
                         }
+                    }
                 } while (!found);
-                // Found!
-                // Decrement the counter to indext the right element.
-                ++rawCount['Open'];
+                // Found a board that passed one of the pre-checks
+                if (Object.hasOwn(rawCount, 'Open'))
+                    ++rawCount['Open'];
                 --seat;
                 --c
+
+                /* Post evaluation after the board has passed pre-check
+                 * The return value is passed to counter function verbatim.
+                 * That's the contract between those two.
+                 */
                 let boardEval = statObj.evalFunc(seat, c, this.board);
                 statObj.countFunc(boardEval, rawCount, samples, seat);
             }
             stabilized = statObj.calcDblBuf(dblBuf, dblIdx, rawCount);
             dblIdx = 1 - dblIdx;    // flip
-            rawElem.innerHTML= `${rawCount['Dealt']}`;
+            i = 0;
+            for (const k of statObj.colHdrs)
+                rawElem[i++].innerHTML = `${rawCount[k]}`;
             // Done.  First stop the interval, then display the results.
             if (stabilized) {
                 clearInterval(sid);
                 if ('displayFunc' in statObj)
                     statObj.sampleFunc(e, dblBuf);
                 else {
-                    for (i = 1; i < statObj.colHdrs.length; ++i)
-                        tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 2;">${rawCount[statObj.colHdrs[i]]}</div>`);
                     for (i = 1; i < statObj.colHdrs.length; ++i)
                         tblDiv.insertAdjacentHTML('beforeend', `<div class="TblCell" style="grid-column: ${i+1}; grid-row: 3;">${(100*dblBuf[dblIdx][statObj.colHdrs[i]]).toFixed(2)}%</div>`);
                     this.showSamples(e, samples, "Samples of hands that meet the criteria.");
